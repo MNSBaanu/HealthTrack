@@ -19,5 +19,8 @@ namespace HealthTrack.Models
 
         [NotMapped]
         public override string DashboardController => "Client";
+
+        [NotMapped]
+        public override string RoleDisplayName => "Client";
     }
 }

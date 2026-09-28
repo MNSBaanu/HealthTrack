@@ -1,0 +1,135 @@
+@model List<ClientPerformanceViewModel>
+@{
+    ViewData["Title"] = "Reports";
+    var activities = ViewData["PopularActivities"] as List<ActivityStatViewModel> ?? new List<ActivityStatViewModel>();
+    var topSessions = activities.FirstOrDefault()?.Sessions ?? 0;
+    var weekStart = DateTime.Today.AddDays(-6);
+    var activeClients = Model.Count(c => c.LastLoginAt >= weekStart);
+    var clientsWithWorkouts = Model.Count(c => c.WorkoutCount > 0);
+    var averageWorkouts = Model.Count == 0 ? 0 : Model.Average(c => c.WorkoutCount);
+}
+
+<div class="ht-head">
+    <div>
+        <h1 class="ht-title">Client performance</h1>
+    </div>
+    <div class="ht-head-actions">
+        <a class="btn btn-line" asp-action="ExportReport" asp-route-format="csv"><i class="bi bi-filetype-csv"></i>Export CSV</a>
+        <a class="btn btn-primary" asp-action="ExportReport" asp-route-format="pdf"><i class="bi bi-file-earmark-pdf"></i>Export PDF</a>
+    </div>
+</div>
+
+<div class="ht-ledger">
+    <div>
+        <div class="ht-overline">Clients</div>
+        <div class="value">@Model.Count</div>
+    </div>
+    <div>
+        <div class="ht-overline">Active in 7 days</div>
+        <div class="value">@activeClients</div>
+        <div class="hint">@(Model.Count == 0 ? 0 : activeClients * 100 / Model.Count)% of clients</div>
+    </div>
+    <div>
+        <div class="ht-overline">Have logged a workout</div>
+        <div class="value">@clientsWithWorkouts</div>
+    </div>
+    <div>
+        <div class="ht-overline">Avg. workouts</div>
+        <div class="value">@averageWorkouts.ToString("0.#")<small>per client</small></div>
+    </div>
+</div>
+
+<section class="ht-card mb-3">
+    <div class="ht-card-head">
+        <h2>Performance by client</h2>
+        <span class="ht-overline">Sorted by name</span>
+    </div>
+    @if (Model.Any())
+    {
+        <div class="table-responsive">
+            <table class="ht-table">
+                <thead>
+                    <tr>
+                        <th>Client</th>
+                        <th>Start</th>
+                        <th>Current</th>
+                        <th>Change</th>
+                        <th>BMI</th>
+                        <th>Workouts</th>
+                        <th>Burned</th>
+                        <th>Meals</th>
+                        <th>Last active</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var client in Model)
+                    {
+                        <tr>
+                            <td>
+                                <div class="ht-member">
+                                    <span class="ht-monogram muted">@Person.GetInitials(client.Name)</span>
+                                    <div>
+                                        <div class="name">@client.Name</div>
+                                        <span class="sub">@client.Email</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="num">@(client.StartWeightKg?.ToString("0.0") ?? "–")</td>
+                            <td class="num">@(client.CurrentWeightKg?.ToString("0.0") ?? "–")</td>
+                            <td>
+                                @if (client.WeightChangeKg is double change && change != 0)
+                                {
+                                    <span class="ht-pill @(change < 0 ? "success" : "clay")">@(change < 0 ? "▼" : "▲") @Math.Abs(change).ToString("0.0") kg</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">–</span>
+                                }
+                            </td>
+                            <td class="num">@(client.CurrentBmi?.ToString("0.0") ?? "–")</td>
+                            <td class="num">@client.WorkoutCount <span class="sub">@client.TotalMinutes min</span></td>
+                            <td class="num">@client.TotalCaloriesBurned.ToString("N0") <small>kcal</small></td>
+                            <td class="num">@client.MealLogCount</td>
+                            <td class="text-nowrap">@(client.LastLoginAt?.ToString("d MMM yyyy") ?? "Never")</td>
+                            <td><a class="btn-icon" asp-action="ClientDetails" asp-route-id="@client.ClientId" title="View client" aria-label="View @client.Name"><i class="bi bi-arrow-right"></i></a></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="ht-card-body text-muted">No clients have registered yet.</div>
+    }
+</section>
+
+<section class="ht-card">
+    <div class="ht-card-head">
+        <h2>Popular routines</h2>
+        <span class="ht-overline">Top 10 by sessions</span>
+    </div>
+    <div class="ht-card-body">
+        @if (activities.Any())
+        {
+            <ol class="ht-bars-list">
+                @foreach (var activity in activities)
+                {
+                    var width = topSessions == 0 ? 0 : activity.Sessions * 100.0 / topSessions;
+                    <li>
+                        <div class="row-top">
+                            <strong>@activity.Activity</strong>
+                            <span class="text-muted">@activity.Sessions sessions &middot; @activity.TotalMinutes min &middot; @(activity.ClientCount == 1 ? "1 client" : $"{activity.ClientCount} clients")</span>
+                        </div>
+                        <div class="ht-bar"><span style="width: @width.ToString("0.#", CultureInfo.InvariantCulture)%"></span></div>
+                    </li>
+                }
+            </ol>
+        }
+        else
+        {
+            <p class="text-muted mb-0">No workouts have been logged yet.</p>
+        }
+    </div>
+</section>

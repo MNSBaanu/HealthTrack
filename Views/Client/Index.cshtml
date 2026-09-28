@@ -1,0 +1,210 @@
+@model ClientDashboardViewModel
+@{
+    ViewData["Title"] = "Overview";
+    var hour = DateTime.Now.Hour;
+    var greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+    var firstName = Model.Client.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? Model.Client.Name;
+    var latest = Model.LatestMetric;
+    var bmi = latest?.Bmi;
+    var bmiPosition = bmi.HasValue ? Math.Clamp((bmi.Value - 15) / 20 * 100, 2, 98) : 0;
+    var noWorkouts = new EmptyStateViewModel("bi-lightning-charge", "Your journal is empty", "Log your first workout to start building your training history.", "Log a workout", "WorkoutLogs");
+}
+
+<div class="ht-head">
+    <div>
+        <div class="ht-overline">@DateTime.Now.ToString("dddd · d MMMM yyyy")</div>
+        <h1 class="ht-title">@greeting, @firstName.</h1>
+        <p class="ht-lede">
+            @if (!string.IsNullOrWhiteSpace(Model.Client.FitnessGoal))
+            {
+                <span><i class="bi bi-flag me-1"></i>Working towards: <strong class="text-dark">@Model.Client.FitnessGoal</strong></span>
+            }
+            else
+            {
+                <span>Here's where you stand today.</span>
+            }
+        </p>
+    </div>
+    <div class="ht-head-actions">
+        <a class="btn btn-line" asp-controller="HealthMetrics" asp-action="Create"><i class="bi bi-plus-lg"></i>Weigh-in</a>
+        <a class="btn btn-line" asp-controller="MealLogs" asp-action="Create"><i class="bi bi-plus-lg"></i>Meal</a>
+        <a class="btn btn-primary" asp-controller="WorkoutLogs" asp-action="Create"><i class="bi bi-plus-lg"></i>Log workout</a>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-lg-5">
+        <section class="ht-card ink ht-hero-tile h-100">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="ht-overline">Current weight</span>
+                @if (Model.WeightChangeKg is double change)
+                {
+                    <span class="ht-pill on-ink">
+                        <i class="bi @(change <= 0 ? "bi-arrow-down" : "bi-arrow-up")"></i>@Math.Abs(change).ToString("0.0") kg since you started
+                    </span>
+                }
+            </div>
+
+            @if (latest != null)
+            {
+                <div class="big">@latest.WeightKg.ToString("0.0")<small>kg</small></div>
+
+                <div class="ht-bmi">
+                    <div class="ht-bmi-head">
+                        <span class="ht-overline">Body mass index &middot; @latest.BmiCategory</span>
+                        <strong>@(bmi?.ToString("0.0") ?? "–")</strong>
+                    </div>
+                    <div class="ht-bmi-scale">
+                        <div class="ht-bmi-track">
+                            <span class="under" style="width: 17.5%"></span>
+                            <span class="normal" style="width: 32.5%"></span>
+                            <span class="over" style="width: 25%"></span>
+                            <span class="obese" style="width: 25%"></span>
+                        </div>
+                        @if (bmi.HasValue)
+                        {
+                            <span class="ht-bmi-pin" style="left: @bmiPosition.ToString("0.#", CultureInfo.InvariantCulture)%"></span>
+                        }
+                    </div>
+                </div>
+
+                <div class="ht-hero-foot">
+                    <span>Height @Model.Client.HeightCm.ToString("0.#") cm &middot; updated @latest.RecordedAt.ToString("d MMM")</span>
+                    <a asp-controller="HealthMetrics" asp-action="Create">New weigh-in <i class="bi bi-arrow-right"></i></a>
+                </div>
+            }
+            else
+            {
+                <div class="big">&ndash;</div>
+                <p class="mb-0">Record your first weigh-in to see your BMI here.</p>
+                <div class="ht-hero-foot">
+                    <a asp-controller="HealthMetrics" asp-action="Create">Record weight <i class="bi bi-arrow-right"></i></a>
+                </div>
+            }
+        </section>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="row g-3 h-100">
+            <div class="col-sm-6">
+                <div class="ht-card ht-tile">
+                    <div class="ht-tile-top"><span class="ht-overline">Workouts this week</span><span class="ht-glyph saffron"><i class="bi bi-lightning-charge"></i></span></div>
+                    <div class="value">@Model.WorkoutsThisWeek<small>sessions</small></div>
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <div class="ht-card ht-tile">
+                    <div class="ht-tile-top"><span class="ht-overline">Active minutes</span><span class="ht-glyph slate"><i class="bi bi-stopwatch"></i></span></div>
+                    <div class="value">@Model.MinutesThisWeek<small>min</small></div>
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <div class="ht-card ht-tile">
+                    <div class="ht-tile-top"><span class="ht-overline">Burned this week</span><span class="ht-glyph clay"><i class="bi bi-fire"></i></span></div>
+                    <div class="value">@Model.CaloriesBurnedThisWeek.ToString("N0")<small>kcal</small></div>
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <div class="ht-card ht-tile">
+                    <div class="ht-tile-top"><span class="ht-overline">Eaten today</span><span class="ht-glyph success"><i class="bi bi-cup-hot"></i></span></div>
+                    <div class="value">@Model.CaloriesConsumedToday.ToString("N0")<small>kcal</small></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <section class="ht-card h-100">
+            <div class="ht-card-head">
+                <h2>Training journal</h2>
+                <a asp-controller="WorkoutLogs" asp-action="Index">View all <i class="bi bi-arrow-right"></i></a>
+            </div>
+            @if (Model.RecentWorkouts.Any())
+            {
+                <ul class="ht-journal">
+                    @foreach (var workout in Model.RecentWorkouts)
+                    {
+                        <li class="ht-entry">
+                            <partial name="_DateBadge" model="workout.LoggedAt" />
+                            <div>
+                                <div class="title">@workout.Activity</div>
+                                <div class="meta">@workout.DurationMinutes min &middot; @workout.LoggedAt.ToString("HH:mm")</div>
+                            </div>
+                            <div class="figure">@workout.CaloriesBurned.ToString("N0")<small>kcal</small></div>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <partial name="_EmptyState" model="noWorkouts" />
+            }
+        </section>
+    </div>
+
+    <div class="col-lg-5 d-flex flex-column gap-3">
+        <section class="ht-card">
+            <div class="ht-card-head">
+                <h2>Reminders</h2>
+                @if (Model.Notifications.Any())
+                {
+                    <span class="ht-pill saffron">@Model.Notifications.Count new</span>
+                }
+            </div>
+            @if (Model.Notifications.Any())
+            {
+                <ul class="ht-notes">
+                    @foreach (var note in Model.Notifications.Take(4))
+                    {
+                        <li class="ht-note unread">
+                            <partial name="_NotificationIcon" model="note.Type" />
+                            <div class="body">
+                                <div class="message">@note.Message</div>
+                                <div class="time">@((note.ScheduledFor ?? note.CreatedAt).ToString("d MMM, HH:mm"))</div>
+                            </div>
+                        </li>
+                    }
+                </ul>
+                <div class="px-4 pb-3 pt-1">
+                    <a class="small fw-semibold" asp-controller="Notifications" asp-action="Index">Open all notifications <i class="bi bi-arrow-right"></i></a>
+                </div>
+            }
+            else
+            {
+                <div class="ht-card-body d-flex align-items-center gap-3">
+                    <span class="ht-glyph success"><i class="bi bi-check2"></i></span>
+                    <span class="text-muted">You're all caught up.</span>
+                </div>
+            }
+        </section>
+
+        <section class="ht-card flex-grow-1">
+            <div class="ht-card-head">
+                <h2>Recent meals</h2>
+                <a asp-controller="MealLogs" asp-action="Index">View all <i class="bi bi-arrow-right"></i></a>
+            </div>
+            @if (Model.RecentMeals.Any())
+            {
+                <ul class="ht-journal">
+                    @foreach (var meal in Model.RecentMeals)
+                    {
+                        <li class="ht-entry">
+                            <partial name="_DateBadge" model="meal.LoggedAt" />
+                            <div class="text-truncate">
+                                <div class="title">@meal.MealType</div>
+                                <div class="meta text-truncate">@(string.IsNullOrWhiteSpace(meal.FoodItems) ? meal.LoggedAt.ToString("HH:mm") : meal.FoodItems)</div>
+                            </div>
+                            <div class="figure">@meal.Calories.ToString("N0")<small>kcal</small></div>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <div class="ht-card-body text-muted">No meals logged yet. <a asp-controller="MealLogs" asp-action="Create">Log one now</a>.</div>
+            }
+        </section>
+    </div>
+</div>

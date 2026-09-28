@@ -1,0 +1,31 @@
+@model MealLog
+
+<div asp-validation-summary="ModelOnly" class="ht-flash error" role="alert"></div>
+<div class="row g-3">
+    <div class="col-md-6">
+        <label asp-for="MealType" class="form-label">Meal</label>
+        <select asp-for="MealType" asp-items="Html.GetEnumSelectList<MealType>()" class="form-select"></select>
+        <span asp-validation-for="MealType" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="Calories" class="form-label"></label>
+        <div class="ht-input-unit">
+            <input asp-for="Calories" class="form-control" placeholder="550" />
+            <span class="unit">kcal</span>
+        </div>
+        <span asp-validation-for="Calories" class="text-danger"></span>
+    </div>
+    <div class="col-12">
+        <label asp-for="FoodItems" class="form-label">What you ate</label>
+        <textarea asp-for="FoodItems" class="form-control" rows="3" maxlength="500" placeholder="e.g. Rice, dhal curry, grilled chicken" data-counter="foodCounter"></textarea>
+        <div class="d-flex justify-content-between">
+            <span asp-validation-for="FoodItems" class="text-danger"></span>
+            <span class="form-text ms-auto" id="foodCounter">@(Model.FoodItems?.Length ?? 0) / 500</span>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="LoggedAt" class="form-label">Date &amp; time</label>
+        <input asp-for="LoggedAt" asp-format="{0:yyyy-MM-ddTHH:mm}" class="form-control" max="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" />
+        <span asp-validation-for="LoggedAt" class="text-danger"></span>
+    </div>
+</div>

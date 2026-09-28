@@ -1,0 +1,65 @@
+@model List<WorkoutLog>
+@{
+    ViewData["Title"] = "Workouts";
+    var emptyState = new EmptyStateViewModel("bi-lightning-charge", "No workouts yet", "Every session you log builds your training history and weekly totals.", "Log a workout", "WorkoutLogs");
+}
+
+<div class="ht-head">
+    <div>
+        <h1 class="ht-title">Training journal</h1>
+    </div>
+    <div class="ht-head-actions">
+        <a class="btn btn-primary" asp-action="Create"><i class="bi bi-plus-lg"></i>Log workout</a>
+    </div>
+</div>
+
+@if (Model.Any())
+{
+    var topActivity = Model.GroupBy(w => w.Activity, StringComparer.OrdinalIgnoreCase)
+        .OrderByDescending(g => g.Count())
+        .First().Key;
+    <div class="ht-ledger">
+        <div>
+            <div class="ht-overline">Sessions</div>
+            <div class="value">@Model.Count</div>
+        </div>
+        <div>
+            <div class="ht-overline">Active time</div>
+            <div class="value">@((Model.Sum(w => w.DurationMinutes) / 60.0).ToString("0.#"))<small>hours</small></div>
+        </div>
+        <div>
+            <div class="ht-overline">Calories burned</div>
+            <div class="value">@Model.Sum(w => w.CaloriesBurned).ToString("N0")<small>kcal</small></div>
+        </div>
+        <div>
+            <div class="ht-overline">Favourite</div>
+            <div class="value text">@topActivity</div>
+        </div>
+    </div>
+
+    <section class="ht-card">
+        <ul class="ht-journal">
+            @foreach (var workout in Model)
+            {
+                <li class="ht-entry with-actions">
+                    <partial name="_DateBadge" model="workout.LoggedAt" />
+                    <div>
+                        <div class="title">@workout.Activity</div>
+                        <div class="meta">@workout.LoggedAt.ToString("dddd, HH:mm") &middot; @workout.DurationMinutes min</div>
+                    </div>
+                    <div class="figure">@workout.CaloriesBurned.ToString("N0")<small>kcal</small></div>
+                    <div class="ht-row-actions">
+                        <a class="btn-icon" asp-action="Edit" asp-route-id="@workout.WorkoutLogId" title="Edit" aria-label="Edit workout"><i class="bi bi-pencil"></i></a>
+                        <a class="btn-icon danger" asp-action="Delete" asp-route-id="@workout.WorkoutLogId" title="Delete" aria-label="Delete workout"><i class="bi bi-trash3"></i></a>
+                    </div>
+                </li>
+            }
+        </ul>
+    </section>
+}
+else
+{
+    <section class="ht-card">
+        <partial name="_EmptyState" model="emptyState" />
+    </section>
+}

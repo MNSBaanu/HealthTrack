@@ -1,0 +1,18 @@
+@model HealthMetric
+
+<div asp-validation-summary="ModelOnly" class="ht-flash error" role="alert"></div>
+<div class="row g-3">
+    <div class="col-md-6">
+        <label asp-for="WeightKg" class="form-label">Weight</label>
+        <div class="ht-input-unit">
+            <input asp-for="WeightKg" class="form-control" step="0.1" placeholder="70.0" autofocus />
+            <span class="unit">kg</span>
+        </div>
+        <span asp-validation-for="WeightKg" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="RecordedAt" class="form-label">Date &amp; time</label>
+        <input asp-for="RecordedAt" asp-format="{0:yyyy-MM-ddTHH:mm}" class="form-control" max="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" />
+        <span asp-validation-for="RecordedAt" class="text-danger"></span>
+    </div>
+</div>

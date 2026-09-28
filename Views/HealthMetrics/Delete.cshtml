@@ -1,0 +1,28 @@
+@model HealthMetric
+@{
+    ViewData["Title"] = "Delete measurement";
+}
+
+<a class="ht-back" asp-action="Index"><i class="bi bi-arrow-left"></i>Health metrics</a>
+
+<section class="ht-card ht-narrow">
+    <div class="ht-card-body ht-confirm">
+        <span class="ht-glyph clay xl"><i class="bi bi-trash3"></i></span>
+        <h1 class="ht-title sm">Delete this measurement?</h1>
+        <p class="ht-lede mx-auto">This can't be undone. Your charts and BMI history will update.</p>
+
+        <div class="ht-entry boxed">
+            <partial name="_DateBadge" model="Model.RecordedAt" />
+            <div>
+                <div class="title">Weigh-in</div>
+                <div class="meta">@Model.RecordedAt.ToString("dddd, HH:mm") &middot; BMI @(Model.Bmi?.ToString("0.0") ?? "–")</div>
+            </div>
+            <div class="figure">@Model.WeightKg.ToString("0.0")<small>kg</small></div>
+        </div>
+
+        <form asp-action="Delete" asp-route-id="@Model.MetricId" method="post" class="d-flex justify-content-center gap-2">
+            <a class="btn btn-line" asp-action="Index">Keep it</a>
+            <button type="submit" class="btn btn-danger"><i class="bi bi-trash3"></i>Delete</button>
+        </form>
+    </div>
+</section>

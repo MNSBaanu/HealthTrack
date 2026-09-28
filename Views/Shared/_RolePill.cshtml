@@ -1,0 +1,11 @@
+@model string
+
+@{
+    var tone = Model switch
+    {
+        AppRoles.Admin => "ink",
+        AppRoles.Client => "saffron",
+        _ => "slate"
+    };
+}
+<span class="ht-pill @tone">@Model</span>

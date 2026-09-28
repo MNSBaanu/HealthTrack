@@ -1,0 +1,13 @@
+@model string
+
+@{
+    var tone = Model switch
+    {
+        "Normal" => "success",
+        "Underweight" => "slate",
+        "Overweight" => "saffron",
+        "Obese" => "clay",
+        _ => string.Empty
+    };
+}
+<span class="ht-pill @tone">@Model</span>

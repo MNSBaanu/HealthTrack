@@ -1,0 +1,151 @@
+@model Client
+@{
+    ViewData["Title"] = Model.Name;
+    var latest = Model.HealthMetrics.FirstOrDefault();
+    var first = Model.HealthMetrics.LastOrDefault();
+    var change = latest != null && first != null && latest != first ? Math.Round(latest.WeightKg - first.WeightKg, 1) : (double?)null;
+}
+
+<a class="ht-back" asp-action="Users"><i class="bi bi-arrow-left"></i>All users</a>
+
+<section class="ht-card ink mb-3">
+    <div class="ht-banner">
+        <span class="ht-monogram lg">@Model.Initials</span>
+        <div class="flex-grow-1">
+            <div class="ht-overline">Client profile</div>
+            <h2>@Model.Name</h2>
+            <div class="ht-on-ink-muted">@Model.Email</div>
+            <div class="facts">
+                <span class="ht-pill on-ink"><i class="bi bi-calendar3"></i>Joined @Model.CreatedAt.ToString("d MMM yyyy")</span>
+                <span class="ht-pill on-ink"><i class="bi bi-clock-history"></i>Last active @(Model.LastLoginAt?.ToString("d MMM, HH:mm") ?? "never")</span>
+                @if (!string.IsNullOrWhiteSpace(Model.FitnessGoal))
+                {
+                    <span class="ht-pill saffron"><i class="bi bi-flag"></i>@Model.FitnessGoal</span>
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="ht-ledger">
+    <div>
+        <div class="ht-overline">Height</div>
+        <div class="value">@Model.HeightCm.ToString("0.#")<small>cm</small></div>
+    </div>
+    <div>
+        <div class="ht-overline">Current weight</div>
+        <div class="value">@(latest?.WeightKg.ToString("0.0") ?? "–")<small>kg</small></div>
+        @if (change.HasValue)
+        {
+            <div class="hint">@(change.Value <= 0 ? "▼" : "▲") @Math.Abs(change.Value).ToString("0.0") kg since start</div>
+        }
+    </div>
+    <div>
+        <div class="ht-overline">BMI</div>
+        <div class="value">@(latest?.Bmi?.ToString("0.0") ?? "–")</div>
+        <div class="hint">@(latest?.BmiCategory ?? "No data")</div>
+    </div>
+    <div>
+        <div class="ht-overline">Workouts</div>
+        <div class="value">@Model.WorkoutLogs.Count</div>
+        <div class="hint">@Model.WorkoutLogs.Sum(w => w.CaloriesBurned).ToString("N0") kcal burned</div>
+    </div>
+    <div>
+        <div class="ht-overline">Meals logged</div>
+        <div class="value">@Model.MealLogs.Count</div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <section class="ht-card h-100">
+            <div class="ht-card-head">
+                <h2>Recent workouts</h2>
+                <span class="ht-overline">Latest 8</span>
+            </div>
+            @if (Model.WorkoutLogs.Any())
+            {
+                <ul class="ht-journal">
+                    @foreach (var workout in Model.WorkoutLogs.Take(8))
+                    {
+                        <li class="ht-entry">
+                            <partial name="_DateBadge" model="workout.LoggedAt" />
+                            <div>
+                                <div class="title">@workout.Activity</div>
+                                <div class="meta">@workout.DurationMinutes min &middot; @workout.LoggedAt.ToString("HH:mm")</div>
+                            </div>
+                            <div class="figure">@workout.CaloriesBurned.ToString("N0")<small>kcal</small></div>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <div class="ht-card-body text-muted">No workouts logged.</div>
+            }
+        </section>
+    </div>
+    <div class="col-lg-5">
+        <section class="ht-card h-100">
+            <div class="ht-card-head">
+                <h2>Weigh-ins</h2>
+                <span class="ht-overline">Latest 8</span>
+            </div>
+            @if (Model.HealthMetrics.Any())
+            {
+                <table class="ht-table">
+                    <thead>
+                        <tr><th>Date</th><th>Weight</th><th>BMI</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var metric in Model.HealthMetrics.Take(8))
+                        {
+                            <tr>
+                                <td class="text-nowrap">@metric.RecordedAt.ToString("d MMM yyyy")</td>
+                                <td class="num">@metric.WeightKg.ToString("0.0") <small>kg</small></td>
+                                <td><partial name="_BmiPill" model="metric.BmiCategory" /></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="ht-card-body text-muted">No measurements recorded.</div>
+            }
+        </section>
+    </div>
+    <div class="col-12">
+        <section class="ht-card">
+            <div class="ht-card-head">
+                <h2>Recent meals</h2>
+                <span class="ht-overline">Latest 8</span>
+            </div>
+            @if (Model.MealLogs.Any())
+            {
+                <div class="table-responsive">
+                    <table class="ht-table">
+                        <thead>
+                            <tr><th>Date</th><th>Meal</th><th>What they ate</th><th>Calories</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var meal in Model.MealLogs.Take(8))
+                            {
+                                <tr>
+                                    <td class="text-nowrap">@meal.LoggedAt.ToString("d MMM yyyy, HH:mm")</td>
+                                    <td><partial name="_MealTypePill" model="meal.MealType" /></td>
+                                    <td class="text-muted">@(string.IsNullOrWhiteSpace(meal.FoodItems) ? "—" : meal.FoodItems)</td>
+                                    <td class="num">@meal.Calories.ToString("N0") <small>kcal</small></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="ht-card-body text-muted">No meals logged.</div>
+            }
+        </section>
+    </div>
+</div>

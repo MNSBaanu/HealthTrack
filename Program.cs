@@ -7,6 +7,7 @@ using HealthTrack.Services;
 using QuestPDF.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
 
 QuestPDF.Settings.License = LicenseType.Community;
 

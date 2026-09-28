@@ -1,0 +1,84 @@
+@model ProfileViewModel
+@{
+    ViewData["Title"] = "My profile";
+}
+
+<div class="ht-head">
+    <div>
+        <h1 class="ht-title">Your profile</h1>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-4">
+        <section class="ht-card ink ht-hero-tile">
+            <span class="ht-monogram lg">@Person.GetInitials(Model.Name)</span>
+            <h2 class="ht-profile-name">@Model.Name</h2>
+            <div class="text-truncate ht-on-ink-muted">@Model.Email</div>
+            <ul class="ht-facts">
+                <li><span>Height</span><strong>@(Model.HeightCm?.ToString("0.#") ?? "–") cm</strong></li>
+                <li><span>Date of birth</span><strong>@(Model.DateOfBirth?.ToString("d MMM yyyy") ?? "–")</strong></li>
+                <li><span>Goal</span><strong class="text-end ms-3">@(string.IsNullOrWhiteSpace(Model.FitnessGoal) ? "Not set" : Model.FitnessGoal)</strong></li>
+            </ul>
+        </section>
+    </div>
+
+    <div class="col-lg-8">
+        <section class="ht-card">
+            <div class="ht-card-body">
+                <form asp-controller="Client" asp-action="Profile" method="post" novalidate>
+                    <div asp-validation-summary="ModelOnly" class="ht-flash error" role="alert"></div>
+
+                    <fieldset class="ht-fieldset">
+                        <legend>Personal details</legend>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="Name" class="form-label">Full name</label>
+                                <input asp-for="Name" class="form-control" />
+                                <span asp-validation-for="Name" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Email" class="form-label"></label>
+                                <input asp-for="Email" class="form-control" readonly />
+                                <div class="form-text">Your email is used to sign in and can't be changed.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="DateOfBirth" class="form-label"></label>
+                                <input asp-for="DateOfBirth" class="form-control" max="@DateTime.Today.AddDays(-1).ToString("yyyy-MM-dd")" />
+                                <span asp-validation-for="DateOfBirth" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="ht-fieldset">
+                        <legend>Body &amp; goal</legend>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="HeightCm" class="form-label">Height</label>
+                                <div class="ht-input-unit">
+                                    <input asp-for="HeightCm" class="form-control" step="0.1" />
+                                    <span class="unit">cm</span>
+                                </div>
+                                <span asp-validation-for="HeightCm" class="text-danger"></span>
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="FitnessGoal" class="form-label"></label>
+                                <input asp-for="FitnessGoal" class="form-control" placeholder="e.g. Run 10 km without stopping" />
+                                <span asp-validation-for="FitnessGoal" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <div class="ht-form-actions">
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-check2"></i>Save changes</button>
+                        <a class="btn btn-line" asp-controller="Client" asp-action="Index">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

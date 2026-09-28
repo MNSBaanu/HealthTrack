@@ -21,5 +21,22 @@ namespace HealthTrack.Models
 
         [NotMapped]
         public virtual string DashboardController => "Home";
+
+        [NotMapped]
+        public virtual string RoleDisplayName => "Member";
+
+        [NotMapped]
+        public string Initials => GetInitials(Name);
+
+        public static string GetInitials(string name)
+        {
+            var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            return parts.Length switch
+            {
+                0 => "?",
+                1 => parts[0][..1].ToUpperInvariant(),
+                _ => (parts[0][..1] + parts[^1][..1]).ToUpperInvariant()
+            };
+        }
     }
 }

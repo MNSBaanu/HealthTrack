@@ -1,0 +1,58 @@
+@model SendNotificationViewModel
+@{
+    ViewData["Title"] = "Broadcast";
+    var recipients = ViewData["Recipients"] as List<SelectListItem> ?? new List<SelectListItem>();
+}
+
+<div class="ht-head">
+    <div>
+        <h1 class="ht-title">Send a notification</h1>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-8 col-xl-7">
+        <section class="ht-card">
+            <div class="ht-card-body">
+                <form asp-action="SendNotification" method="post" novalidate>
+                    <div asp-validation-summary="ModelOnly" class="ht-flash error" role="alert"></div>
+                    <div class="row g-3">
+                        <div class="col-md-7">
+                            <label asp-for="RecipientId" class="form-label"></label>
+                            <select asp-for="RecipientId" asp-items="recipients" class="form-select">
+                                <option value="">Everyone &middot; all clients (@recipients.Count)</option>
+                            </select>
+                            <span asp-validation-for="RecipientId" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-5">
+                            <label asp-for="Type" class="form-label"></label>
+                            <select asp-for="Type" asp-items="Html.GetEnumSelectList<NotificationType>()" class="form-select"></select>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="Message" class="form-label"></label>
+                            <textarea asp-for="Message" class="form-control" rows="4" maxlength="300" placeholder="e.g. The gym will be closed this Sunday for maintenance." data-counter="messageCounter"></textarea>
+                            <div class="d-flex justify-content-between">
+                                <span asp-validation-for="Message" class="text-danger"></span>
+                                <span class="form-text ms-auto" id="messageCounter">@(Model.Message?.Length ?? 0) / 300</span>
+                            </div>
+                        </div>
+                        <div class="col-md-7">
+                            <label asp-for="ScheduledFor" class="form-label">Deliver at <span class="text-lowercase fw-normal">(optional)</span></label>
+                            <input asp-for="ScheduledFor" asp-format="{0:yyyy-MM-ddTHH:mm}" type="datetime-local" class="form-control" min="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" />
+                            <div class="form-text">Leave empty to send it straight away.</div>
+                            <span asp-validation-for="ScheduledFor" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="ht-form-actions">
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-send"></i>Send notification</button>
+                        <a class="btn btn-line" asp-action="Index">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

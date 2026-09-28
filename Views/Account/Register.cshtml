@@ -1,0 +1,90 @@
+@model RegisterViewModel
+@{
+    ViewData["Title"] = "Create account";
+    Layout = "_AuthLayout";
+}
+
+<div class="ht-auth-form wide">
+    <h1>Open your journal.</h1>
+
+    <form asp-controller="Account" asp-action="Register" method="post" novalidate>
+        <div asp-validation-summary="ModelOnly" class="ht-flash error" role="alert"></div>
+
+        <fieldset class="ht-fieldset">
+            <legend>About you</legend>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="Name" class="form-label">Full name</label>
+                    <input asp-for="Name" class="form-control" autocomplete="name" autofocus />
+                    <span asp-validation-for="Name" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Email" class="form-label"></label>
+                    <input asp-for="Email" class="form-control" autocomplete="email" placeholder="you@example.com" />
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="DateOfBirth" class="form-label"></label>
+                    <input asp-for="DateOfBirth" class="form-control" max="@DateTime.Today.AddDays(-1).ToString("yyyy-MM-dd")" />
+                    <span asp-validation-for="DateOfBirth" class="text-danger"></span>
+                </div>
+            </div>
+        </fieldset>
+
+        <fieldset class="ht-fieldset">
+            <legend>Your starting point</legend>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="HeightCm" class="form-label">Height</label>
+                    <div class="ht-input-unit">
+                        <input asp-for="HeightCm" class="form-control" step="0.1" placeholder="170" />
+                        <span class="unit">cm</span>
+                    </div>
+                    <span asp-validation-for="HeightCm" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="WeightKg" class="form-label">Current weight</label>
+                    <div class="ht-input-unit">
+                        <input asp-for="WeightKg" class="form-control" step="0.1" placeholder="70" />
+                        <span class="unit">kg</span>
+                    </div>
+                    <span asp-validation-for="WeightKg" class="text-danger"></span>
+                </div>
+                <div class="col-12">
+                    <label asp-for="FitnessGoal" class="form-label"></label>
+                    <input asp-for="FitnessGoal" class="form-control" placeholder="e.g. Lose 5 kg before December" />
+                    <span asp-validation-for="FitnessGoal" class="text-danger"></span>
+                </div>
+            </div>
+        </fieldset>
+
+        <fieldset class="ht-fieldset">
+            <legend>Security</legend>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="Password" class="form-label"></label>
+                    <input asp-for="Password" class="form-control" autocomplete="new-password" />
+                    <span asp-validation-for="Password" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="ConfirmPassword" class="form-label"></label>
+                    <input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" />
+                    <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                </div>
+                <div class="col-12">
+                    <div class="form-text"><i class="bi bi-shield-lock me-1"></i>At least 8 characters, with an uppercase letter, a lowercase letter, a number and a symbol.</div>
+                </div>
+            </div>
+        </fieldset>
+
+        <button type="submit" class="btn btn-primary btn-lg w-100 mt-4">Create my account <i class="bi bi-arrow-right"></i></button>
+    </form>
+
+    <div class="ht-auth-switch">
+        Already have an account? <a asp-controller="Account" asp-action="Login">Sign in</a>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

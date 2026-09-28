@@ -26,23 +26,30 @@ author: MNS Baanu
 - `dotnet ef database update` (also runs automatically on app start)
 
 ## Folder structure
-- `Controllers/`, `Views/`, `wwwroot/`: MVC template
+- `Controllers/`: BaseController (abstract) -> ClientBaseController (abstract, Client role) -> Client, HealthMetrics, WorkoutLogs, MealLogs; BaseController -> Account, Notifications, Admin; Home
+- `Views/`, `wwwroot/`: MVC template (Client/Admin views pending)
 - `Models/`: Person (abstract, IdentityUser), Client, Admin, HealthMetric, WorkoutLog, MealLog, Notification
-- `Models/Data/HealthTrackDbContext.cs`: IdentityDbContext<Person>
+- `Models/ViewModels/`: form and dashboard view models
+- `Models/Data/`: HealthTrackDbContext (IdentityDbContext<Person>), DbSeeder (roles + default admin)
+- `Services/`: INotificationService/NotificationService (reminders, sending), IExportService/ExportService (CSV, PDF via QuestPDF), ReportSection; registered in DI by interface
 - `Migrations/`: EF migrations
 - `Private/`: docs, diagrams, reference material (excluded from build)
 
 ## How it works
 - Person inherits IdentityUser; Client and Admin inherit Person (TPH in `Users`; Identity tables renamed without the AspNet prefix, discriminator column `Role`).
 - Client 1:N HealthMetric, WorkoutLog, MealLog; Person 1:N Notification.
-- BMI is derived (not stored) from WeightKg and Client.HeightCm.
-- Pending migrations are applied at startup via `Database.Migrate()`.
+- BMI is derived (not stored) via `HealthMetric.CalculateBmi`; Person.DashboardController is virtual and overridden by Client/Admin for post-login redirect (polymorphism).
+- Pending migrations are applied and roles/default admin (`AdminAccount` in appsettings.json) seeded at startup.
+- Identity cookie auth; `[Authorize(Roles = ...)]` per controller; global anti-forgery filter; lockout after 5 failed logins.
+- Client registration records the first weight so the dashboard shows metrics immediately.
+- Reminders (workout, meal, weekly weigh-in) are generated once per day when the client dashboard loads.
 
 ## Open issues
 - [ ] Trainer entity, Appointment, WorkoutPlan, DietPlan, Feedback, Client.TrainerId (partner's side)
-- [ ] Register Identity services and roles (backend)
-- [ ] Client and Admin controllers and views
-- [ ] PDF/CSV export, notifications, analytics
+- [ ] Client and Admin views (frontend)
+- [ ] Trainer assignments on the admin dashboard (needs Trainer entity)
 
 ## Log
 - 2026-09-28: Client/Admin database schema with Identity; InitialCreate migration; ER diagram updated.
+- 2026-09-28: Client and Admin backend: Identity auth, dashboards, log CRUD, progress data, CSV/PDF export, notifications, admin user management and reports.
+- 2026-09-28: OOP refactor: service interfaces, base controllers, polymorphic dashboard redirect, encapsulated BMI, typed JSON view models, one type per file.

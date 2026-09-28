@@ -22,6 +22,6 @@ namespace HealthTrack.Models
         [Range(0, 10000)]
         public int CaloriesBurned { get; set; }
 
-        public DateTime LoggedAt { get; set; } = DateTime.UtcNow;
+        public DateTime LoggedAt { get; set; } = DateTime.Now;
     }
 }

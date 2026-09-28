@@ -2,14 +2,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace HealthTrack.Models
 {
-    public enum MealType
-    {
-        Breakfast,
-        Lunch,
-        Dinner,
-        Snack
-    }
-
     public class MealLog
     {
         [Key]
@@ -28,6 +20,6 @@ namespace HealthTrack.Models
         [StringLength(500)]
         public string? FoodItems { get; set; }
 
-        public DateTime LoggedAt { get; set; } = DateTime.UtcNow;
+        public DateTime LoggedAt { get; set; } = DateTime.Now;
     }
 }

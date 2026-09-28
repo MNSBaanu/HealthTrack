@@ -21,13 +21,16 @@ author: MNS Baanu
 .NET 8, ASP.NET Core MVC, EF Core 8.0.26, SQL Server (`LAPTOP-KK271TP3\LOCALHOST`, database `HealthTrackDB`, script in `Private/Database/HealthTrackDB.sql`), ASP.NET Core Identity, Bootstrap 5.
 
 ## Commands
+- First setup on a new machine: copy `appsettings.Local.example.json` to `appsettings.Local.json` and set your SQL Server name (file is Git-ignored)
 - `dotnet build`
 - `dotnet ef migrations add <Name>`
 - `dotnet ef database update` (also runs automatically on app start)
 
 ## Folder structure
 - `Controllers/`: BaseController (abstract) -> ClientBaseController (abstract, Client role) -> Client, HealthMetrics, WorkoutLogs, MealLogs; BaseController -> Account, Notifications, Admin; Home
-- `Views/`, `wwwroot/`: MVC template (Client/Admin views pending)
+- `Views/`: _Layout (app masthead), _AuthLayout (split sign-in); Client, HealthMetrics, WorkoutLogs, MealLogs, Notifications, Admin, Account views; shared partials (_DateBadge, _BmiPill, _MealTypePill, _RolePill, _StatusPill, _NotificationIcon, _EmptyState)
+- `ViewComponents/`: UserMenu, NotificationBell
+- `wwwroot/`: site.css (journal design system: ink / paper / saffron, Outfit + Inter), site.js (confirm prompts, counters), charts.js (Chart.js progress and usage charts)
 - `Models/`: Person (abstract, IdentityUser), Client, Admin, HealthMetric, WorkoutLog, MealLog, Notification
 - `Models/ViewModels/`: form and dashboard view models
 - `Models/Data/`: HealthTrackDbContext (IdentityDbContext<Person>), DbSeeder (roles + default admin)
@@ -46,10 +49,14 @@ author: MNS Baanu
 
 ## Open issues
 - [ ] Trainer entity, Appointment, WorkoutPlan, DietPlan, Feedback, Client.TrainerId (partner's side)
-- [ ] Client and Admin views (frontend)
+- [ ] Runtime check of Client/Admin pages in the browser
 - [ ] Trainer assignments on the admin dashboard (needs Trainer entity)
 
 ## Log
 - 2026-09-28: Client/Admin database schema with Identity; InitialCreate migration; ER diagram updated.
 - 2026-09-28: Client and Admin backend: Identity auth, dashboards, log CRUD, progress data, CSV/PDF export, notifications, admin user management and reports.
 - 2026-09-28: OOP refactor: service interfaces, base controllers, polymorphic dashboard redirect, encapsulated BMI, typed JSON view models, one type per file.
+- 2026-09-28: Client and Admin frontend: journal-style design system, three layouts, all Client/Admin/Account views, view components, Chart.js charts.
+- 2026-09-28: Removed landing page (not in assignment); `/` redirects to Sign in or the user's dashboard.
+- 2026-09-28: Per-developer connection string in Git-ignored appsettings.Local.json; shared appsettings.json keeps a LocalDB default.
+- 2026-09-28: Simplified UI content (no subtitles, side tips or decorative text) and switched fonts to Outfit (headings, numbers) and Inter (body).

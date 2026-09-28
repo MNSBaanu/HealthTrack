@@ -1,0 +1,57 @@
+@model List<Notification>
+@{
+    ViewData["Title"] = "Notifications";
+    var unreadCount = Model.Count(n => !n.IsRead);
+}
+
+<div class="ht-head">
+    <div>
+        <h1 class="ht-title">Notifications</h1>
+        <p class="ht-lede">@(unreadCount == 0 ? "You're all caught up." : $"You have {unreadCount} unread notification{(unreadCount == 1 ? "" : "s")}.")</p>
+    </div>
+    @if (unreadCount > 0)
+    {
+        <div class="ht-head-actions">
+            <form asp-action="MarkAllAsRead" method="post">
+                <button type="submit" class="btn btn-line"><i class="bi bi-check2-all"></i>Mark all as read</button>
+            </form>
+        </div>
+    }
+</div>
+
+<section class="ht-card ht-narrow wide">
+    @if (Model.Any())
+    {
+        <ul class="ht-notes">
+            @foreach (var note in Model)
+            {
+                <li class="ht-note @(note.IsRead ? "read" : "unread")">
+                    <partial name="_NotificationIcon" model="note.Type" />
+                    <div class="body">
+                        <div class="message">@note.Message</div>
+                        <div class="time">@note.Type &middot; @((note.ScheduledFor ?? note.CreatedAt).ToString("dddd d MMM, HH:mm"))</div>
+                    </div>
+                    <div class="actions">
+                        @if (!note.IsRead)
+                        {
+                            <form asp-action="MarkAsRead" asp-route-id="@note.NotificationId" method="post">
+                                <button type="submit" class="btn-icon" title="Mark as read" aria-label="Mark as read"><i class="bi bi-check2"></i></button>
+                            </form>
+                        }
+                        <form asp-action="Delete" asp-route-id="@note.NotificationId" method="post" data-confirm="Delete this notification?">
+                            <button type="submit" class="btn-icon danger" title="Delete" aria-label="Delete notification"><i class="bi bi-x-lg"></i></button>
+                        </form>
+                    </div>
+                </li>
+            }
+        </ul>
+    }
+    else
+    {
+        <div class="ht-empty">
+            <span class="ht-glyph success"><i class="bi bi-bell-slash"></i></span>
+            <h3>Nothing here yet</h3>
+            <p>Reminders about workouts, meals and messages from the HealthTrack team will appear here.</p>
+        </div>
+    }
+</section>

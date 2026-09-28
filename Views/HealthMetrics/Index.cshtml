@@ -1,0 +1,85 @@
+@model List<HealthMetric>
+@{
+    ViewData["Title"] = "Health metrics";
+    var emptyState = new EmptyStateViewModel("bi-rulers", "No measurements yet", "Record your weight to start tracking your BMI over time.", "Record weight", "HealthMetrics");
+}
+
+<div class="ht-head">
+    <div>
+        <h1 class="ht-title">Health metrics</h1>
+    </div>
+    <div class="ht-head-actions">
+        <a class="btn btn-primary" asp-action="Create"><i class="bi bi-plus-lg"></i>Record weight</a>
+    </div>
+</div>
+
+@if (Model.Any())
+{
+    var latest = Model.First();
+    <div class="ht-ledger">
+        <div>
+            <div class="ht-overline">Latest</div>
+            <div class="value">@latest.WeightKg.ToString("0.0")<small>kg</small></div>
+            <div class="hint">@latest.RecordedAt.ToString("d MMM yyyy")</div>
+        </div>
+        <div>
+            <div class="ht-overline">Current BMI</div>
+            <div class="value">@(latest.Bmi?.ToString("0.0") ?? "–")</div>
+            <div class="hint">@latest.BmiCategory</div>
+        </div>
+        <div>
+            <div class="ht-overline">Lowest</div>
+            <div class="value">@Model.Min(m => m.WeightKg).ToString("0.0")<small>kg</small></div>
+        </div>
+        <div>
+            <div class="ht-overline">Highest</div>
+            <div class="value">@Model.Max(m => m.WeightKg).ToString("0.0")<small>kg</small></div>
+        </div>
+        <div>
+            <div class="ht-overline">Entries</div>
+            <div class="value">@Model.Count</div>
+        </div>
+    </div>
+
+    <section class="ht-card">
+        <div class="table-responsive">
+            <table class="ht-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Weight</th>
+                        <th>BMI</th>
+                        <th>Category</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var metric in Model)
+                    {
+                        <tr>
+                            <td>
+                                <span class="fw-semibold text-dark">@metric.RecordedAt.ToString("d MMM yyyy")</span>
+                                <span class="sub">@metric.RecordedAt.ToString("dddd, HH:mm")</span>
+                            </td>
+                            <td class="num">@metric.WeightKg.ToString("0.0") <small>kg</small></td>
+                            <td class="num">@(metric.Bmi?.ToString("0.0") ?? "–")</td>
+                            <td><partial name="_BmiPill" model="metric.BmiCategory" /></td>
+                            <td>
+                                <div class="ht-row-actions">
+                                    <a class="btn-icon" asp-action="Edit" asp-route-id="@metric.MetricId" title="Edit" aria-label="Edit measurement"><i class="bi bi-pencil"></i></a>
+                                    <a class="btn-icon danger" asp-action="Delete" asp-route-id="@metric.MetricId" title="Delete" aria-label="Delete measurement"><i class="bi bi-trash3"></i></a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+}
+else
+{
+    <section class="ht-card">
+        <partial name="_EmptyState" model="emptyState" />
+    </section>
+}

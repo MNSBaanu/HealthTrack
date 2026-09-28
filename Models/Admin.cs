@@ -10,5 +10,8 @@ namespace HealthTrack.Models
 
         [NotMapped]
         public override string DashboardController => "Admin";
+
+        [NotMapped]
+        public override string RoleDisplayName => "Administrator";
     }
 }

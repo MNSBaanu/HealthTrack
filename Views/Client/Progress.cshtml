@@ -1,0 +1,65 @@
+@{
+    ViewData["Title"] = "Progress";
+}
+
+<div class="ht-head">
+    <div>
+        <h1 class="ht-title">Your progress</h1>
+    </div>
+    <div class="ht-head-actions align-items-center">
+        <div class="ht-segment" role="group" aria-label="Date range">
+            <button type="button" data-range="7">7 days</button>
+            <button type="button" data-range="30" class="active">30 days</button>
+            <button type="button" data-range="90">90 days</button>
+        </div>
+        <div class="dropdown">
+            <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-download"></i>Export
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end ht-menu">
+                <li><a class="dropdown-item" asp-controller="Client" asp-action="Export" asp-route-format="pdf"><i class="bi bi-file-earmark-pdf me-2"></i>PDF report</a></li>
+                <li><a class="dropdown-item" asp-controller="Client" asp-action="Export" asp-route-format="csv"><i class="bi bi-filetype-csv me-2"></i>CSV spreadsheet</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<section class="ht-card mb-3">
+    <div class="ht-card-head">
+        <h2>Weight &amp; BMI</h2>
+        <span class="ht-overline">Weight on the left axis &middot; BMI on the right</span>
+    </div>
+    <div class="ht-card-body">
+        <div class="ht-chart">
+            <canvas id="weightChart" aria-label="Weight and BMI chart" role="img"></canvas>
+            <div class="ht-chart-empty d-none" id="weightEmpty">
+                <span class="ht-glyph saffron mb-2"><i class="bi bi-rulers"></i></span>
+                No weigh-ins in this period. <a asp-controller="HealthMetrics" asp-action="Create">Record one</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="ht-card">
+    <div class="ht-card-head">
+        <h2>Calories in vs. out</h2>
+        <span class="ht-overline">Daily totals</span>
+    </div>
+    <div class="ht-card-body">
+        <div class="ht-chart">
+            <canvas id="calorieChart" aria-label="Calories consumed and burned chart" role="img"></canvas>
+            <div class="ht-chart-empty d-none" id="calorieEmpty">
+                <span class="ht-glyph clay mb-2"><i class="bi bi-fire"></i></span>
+                No workouts or meals in this period.
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="~/js/charts.js" asp-append-version="true"></script>
+    <script>
+        HealthTrackCharts.progress("@Url.Action("ProgressData", "Client")");
+    </script>
+}

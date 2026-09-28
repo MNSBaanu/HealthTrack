@@ -16,11 +16,31 @@ namespace HealthTrack.Models
         [Range(1, 500)]
         public double WeightKg { get; set; }
 
-        public DateTime RecordedAt { get; set; } = DateTime.UtcNow;
+        public DateTime RecordedAt { get; set; } = DateTime.Now;
 
         [NotMapped]
-        public double? Bmi => Client is { HeightCm: > 0 }
-            ? Math.Round(WeightKg / Math.Pow(Client.HeightCm / 100, 2), 1)
-            : null;
+        public double? Bmi => Client == null ? null : CalculateBmi(WeightKg, Client.HeightCm);
+
+        [NotMapped]
+        public string BmiCategory => GetBmiCategory(Bmi);
+
+        public static double? CalculateBmi(double weightKg, double heightCm)
+        {
+            if (heightCm <= 0)
+            {
+                return null;
+            }
+            var heightM = heightCm / 100;
+            return Math.Round(weightKg / (heightM * heightM), 1);
+        }
+
+        public static string GetBmiCategory(double? bmi) => bmi switch
+        {
+            null => "Unknown",
+            < 18.5 => "Underweight",
+            < 25 => "Normal",
+            < 30 => "Overweight",
+            _ => "Obese"
+        };
     }
 }

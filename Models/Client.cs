@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace HealthTrack.Models
 {
@@ -15,5 +16,8 @@ namespace HealthTrack.Models
         public ICollection<WorkoutLog> WorkoutLogs { get; set; } = new List<WorkoutLog>();
 
         public ICollection<MealLog> MealLogs { get; set; } = new List<MealLog>();
+
+        [NotMapped]
+        public override string DashboardController => "Client";
     }
 }

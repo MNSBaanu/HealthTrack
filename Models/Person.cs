@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.AspNetCore.Identity;
 
 namespace HealthTrack.Models
@@ -12,10 +13,13 @@ namespace HealthTrack.Models
         [DataType(DataType.Date)]
         public DateTime DateOfBirth { get; set; }
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         public DateTime? LastLoginAt { get; set; }
 
         public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
+
+        [NotMapped]
+        public virtual string DashboardController => "Home";
     }
 }

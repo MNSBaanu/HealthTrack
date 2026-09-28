@@ -2,14 +2,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace HealthTrack.Models
 {
-    public enum NotificationType
-    {
-        Workout,
-        Meal,
-        Appointment,
-        General
-    }
-
     public class Notification
     {
         [Key]
@@ -28,7 +20,7 @@ namespace HealthTrack.Models
 
         public bool IsRead { get; set; }
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         public DateTime? ScheduledFor { get; set; }
     }

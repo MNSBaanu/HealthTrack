@@ -27,6 +27,11 @@ namespace HealthTrack.Models.Data
         {
             base.OnModelCreating(builder);
 
+            builder.Entity<Notification>().HasOne(n => n.Appointment).WithMany()
+                .HasForeignKey(n => n.AppointmentId).OnDelete(DeleteBehavior.NoAction);
+            builder.Entity<Notification>().HasIndex(n => n.AppointmentId).IsUnique()
+                .HasFilter("[AppointmentId] IS NOT NULL");
+
             builder.Entity<ClientTrainerAssignment>().HasKey(a => a.ClientId);
             builder.Entity<ClientTrainerAssignment>().HasOne(a => a.Client).WithOne(c => c.TrainerAssignment)
                 .HasForeignKey<ClientTrainerAssignment>(a => a.ClientId).OnDelete(DeleteBehavior.Cascade);

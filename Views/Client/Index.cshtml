@@ -33,6 +33,16 @@
 </div>
 
 <div class="row g-3 mb-3">
+    <div class="col-12"><section class="ht-card">
+        <div class="ht-card-head"><h2>Your Trainer</h2></div>
+        <div class="ht-card-body">
+            @if (Model.Client.TrainerAssignment is { } assignment)
+            {
+                <strong>@assignment.Trainer.Name</strong>
+            }
+            else { <span class="text-muted">No Trainer is assigned to your account yet.</span> }
+        </div>
+    </section></div>
     <div class="col-lg-5">
         <section class="ht-card ink ht-hero-tile h-100">
             <div class="d-flex justify-content-between align-items-center">

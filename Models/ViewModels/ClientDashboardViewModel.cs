@@ -12,5 +12,7 @@ namespace HealthTrack.Models.ViewModels
         public List<WorkoutLog> RecentWorkouts { get; set; } = new();
         public List<MealLog> RecentMeals { get; set; } = new();
         public List<Notification> Notifications { get; set; } = new();
+        public List<AppointmentViewModel> UpcomingAppointments { get; set; } = new();
+        public string AppointmentTimeZone { get; set; } = string.Empty;
     }
 }

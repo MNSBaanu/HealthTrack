@@ -1,0 +1,31 @@
+@model AppointmentListViewModel
+@{ ViewData["Title"] = "My appointments"; }
+<div class="ht-head">
+    <div><h1 class="ht-title">My appointments</h1><p class="ht-lede">Consultation requests and their current status. Times shown in @Model.TimeZoneLabel.</p></div>
+    <a class="btn btn-primary" asp-action="Book"><i class="bi bi-calendar-plus"></i>Book a consultation</a>
+</div>
+<section class="ht-card">
+    @if (!Model.Appointments.Any())
+    {
+        <div class="ht-card-body text-muted">You have no appointments yet. <a asp-action="Book">Book your first consultation</a>.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead><tr><th scope="col">Provider</th><th scope="col">Date and time</th><th scope="col">Status</th><th scope="col">Details</th></tr></thead>
+                <tbody>
+                    @foreach (var appointment in Model.Appointments)
+                    {
+                        <tr>
+                            <td><strong>@appointment.ProviderName</strong><div class="small text-muted">@appointment.ProviderKind</div></td>
+                            <td>@appointment.Start.ToString("d MMM yyyy, HH:mm")–@appointment.End.ToString("HH:mm")</td>
+                            <td>@appointment.Status</td>
+                            <td><a asp-action="Details" asp-route-id="@appointment.Id" aria-label="View appointment with @appointment.ProviderName">View</a></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

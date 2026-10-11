@@ -218,8 +218,17 @@ namespace HealthTrack.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("NotificationId"));
 
+                    b.Property<int?>("AppointmentId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("AppointmentStartUtc")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDismissed")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsRead")
                         .HasColumnType("bit");
@@ -242,6 +251,10 @@ namespace HealthTrack.Migrations
                         .HasColumnType("nvarchar(20)");
 
                     b.HasKey("NotificationId");
+
+                    b.HasIndex("AppointmentId")
+                        .IsUnique()
+                        .HasFilter("[AppointmentId] IS NOT NULL");
 
                     b.HasIndex("PersonId");
 
@@ -616,11 +629,18 @@ namespace HealthTrack.Migrations
 
             modelBuilder.Entity("HealthTrack.Models.Notification", b =>
                 {
+                    b.HasOne("HealthTrack.Models.Appointment", "Appointment")
+                        .WithMany()
+                        .HasForeignKey("AppointmentId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("HealthTrack.Models.Person", "Person")
                         .WithMany("Notifications")
                         .HasForeignKey("PersonId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Appointment");
 
                     b.Navigation("Person");
                 });

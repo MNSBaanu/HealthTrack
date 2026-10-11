@@ -9,5 +9,6 @@ namespace HealthTrack.Services
         Task<List<Notification>> GetVisibleAsync(string personId, bool unreadOnly);
         Task<int> GetUnreadCountAsync(string personId);
         Task GenerateDailyRemindersAsync(string clientId);
+        Task GenerateAppointmentRemindersAsync(string clientId);
     }
 }

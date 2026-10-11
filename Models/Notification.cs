@@ -23,5 +23,10 @@ namespace HealthTrack.Models
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         public DateTime? ScheduledFor { get; set; }
+        // Set only for automatic consultation reminders; manual messages stay independent.
+        public int? AppointmentId { get; set; }
+        public Appointment? Appointment { get; set; }
+        public DateTime? AppointmentStartUtc { get; set; }
+        public bool IsDismissed { get; set; }
     }
 }

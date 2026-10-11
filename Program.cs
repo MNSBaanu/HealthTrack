@@ -31,6 +31,7 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<AppointmentTime>();
 builder.Services.AddScoped<AppointmentBookingService>();
 builder.Services.AddScoped<TrainerAssignmentQueries>();
+builder.Services.AddHostedService<AppointmentReminderWorker>();
 
 var app = builder.Build();
 

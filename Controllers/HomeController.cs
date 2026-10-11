@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using HealthTrack.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HealthTrack.Controllers
@@ -7,15 +9,34 @@ namespace HealthTrack.Controllers
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
+        private readonly UserManager<Person> _userManager;
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(ILogger<HomeController> logger, UserManager<Person> userManager)
         {
             _logger = logger;
+            _userManager = userManager;
         }
 
         public IActionResult Index()
         {
-            return View();
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                if (User.IsInRole(AppRoles.Trainer)) return View("TrainerPending");
+                return RedirectToAction(nameof(Dashboard));
+            }
+            return RedirectToAction("Login", "Account");
+        }
+
+        [Authorize]
+        public async Task<IActionResult> Dashboard()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+            if (user is Trainer) return View("TrainerPending");
+            return RedirectToAction("Index", user.DashboardController);
         }
 
         public IActionResult Privacy()

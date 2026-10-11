@@ -1,0 +1,25 @@
+@model AssignmentListViewModel
+@{ ViewData["Title"] = "Trainer assignments"; }
+<div class="ht-head"><div><h1 class="ht-title">Trainer assignments</h1><p class="ht-lede">Manage the current Trainer for each Client.</p></div></div>
+<form asp-action="Index" method="get" class="ht-card ht-filter mb-3">
+    <input name="search" value="@Model.Search" type="search" class="form-control" placeholder="Search Client or Trainer" aria-label="Search assignments" />
+    <label class="text-nowrap"><input name="unassignedOnly" type="checkbox" value="true" checked="@Model.UnassignedOnly" /> Unassigned only</label>
+    <button class="btn btn-primary" type="submit">Filter</button><a class="btn btn-line" asp-action="Index">Clear</a>
+</form>
+<section class="ht-card">
+    @if (!Model.Clients.Any()) { <div class="ht-card-body text-muted">No Clients match these filters.</div> }
+    else
+    {
+        <div class="table-responsive"><table class="ht-table">
+            <thead><tr><th scope="col">Client</th><th scope="col">Trainer</th><th scope="col">Actions</th></tr></thead>
+            <tbody>
+                @foreach (var client in Model.Clients)
+                {
+                    <tr><td><strong>@client.ClientName</strong><div class="small text-muted">@client.ClientEmail</div></td>
+                        <td>@(client.TrainerName ?? "Unassigned")</td>
+                        <td><a asp-action="Edit" asp-route-id="@client.ClientId">@(client.TrainerId == null ? "Assign Trainer" : "Manage assignment")</a></td></tr>
+                }
+            </tbody>
+        </table></div>
+    }
+</section>

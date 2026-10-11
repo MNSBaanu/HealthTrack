@@ -39,3 +39,6 @@ ehthumbs.db
 Desktop.ini
 .DS_Store
 
+
+# Per-developer settings (SQL Server connection)
+appsettings.Local.json

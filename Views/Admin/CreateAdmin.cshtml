@@ -1,0 +1,78 @@
+@model CreateAdminViewModel
+@{
+    ViewData["Title"] = "New administrator";
+}
+
+<a class="ht-back" asp-action="Users"><i class="bi bi-arrow-left"></i>All users</a>
+<div class="ht-head">
+    <div>
+        <h1 class="ht-title">New administrator</h1>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-8 col-xl-7">
+        <section class="ht-card">
+            <div class="ht-card-body">
+                <form asp-action="CreateAdmin" method="post" novalidate>
+                    <div asp-validation-summary="ModelOnly" class="ht-flash error" role="alert"></div>
+
+                    <fieldset class="ht-fieldset">
+                        <legend>Details</legend>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="Name" class="form-label">Full name</label>
+                                <input asp-for="Name" class="form-control" autofocus />
+                                <span asp-validation-for="Name" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Email" class="form-label"></label>
+                                <input asp-for="Email" class="form-control" autocomplete="off" />
+                                <span asp-validation-for="Email" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="DateOfBirth" class="form-label"></label>
+                                <input asp-for="DateOfBirth" class="form-control" max="@DateTime.Today.AddDays(-1).ToString("yyyy-MM-dd")" />
+                                <span asp-validation-for="DateOfBirth" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="AccessLevel" class="form-label"></label>
+                                <select asp-for="AccessLevel" class="form-select">
+                                    <option value="1">Level 1 &middot; Standard</option>
+                                    <option value="2">Level 2 &middot; Senior</option>
+                                    <option value="3">Level 3 &middot; Full access</option>
+                                </select>
+                                <span asp-validation-for="AccessLevel" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="ht-fieldset">
+                        <legend>Temporary password</legend>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="Password" class="form-label"></label>
+                                <input asp-for="Password" class="form-control" autocomplete="new-password" />
+                                <span asp-validation-for="Password" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="ConfirmPassword" class="form-label"></label>
+                                <input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" />
+                                <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <div class="ht-form-actions">
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-person-check"></i>Create administrator</button>
+                        <a class="btn btn-line" asp-action="Users">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

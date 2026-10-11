@@ -1,0 +1,15 @@
+@model AppointmentViewModel
+@{ ViewData["Title"] = "Appointment details"; }
+<a class="ht-back" asp-action="Index"><i class="bi bi-arrow-left"></i>My appointments</a>
+<div class="ht-head"><div><h1 class="ht-title">Appointment details</h1><p class="ht-lede">Current consultation information.</p></div></div>
+<div class="row"><div class="col-lg-8"><section class="ht-card"><div class="ht-card-body">
+    <dl class="row mb-0">
+        <dt class="col-sm-4">Provider</dt><dd class="col-sm-8">@Model.ProviderName (@Model.ProviderKind)</dd>
+        @if (!string.IsNullOrWhiteSpace(Model.Specialty)) { <dt class="col-sm-4">Specialty</dt><dd class="col-sm-8">@Model.Specialty</dd> }
+        <dt class="col-sm-4">Starts</dt><dd class="col-sm-8">@Model.Start.ToString("dddd, d MMM yyyy HH:mm")</dd>
+        <dt class="col-sm-4">Ends</dt><dd class="col-sm-8">@Model.End.ToString("dddd, d MMM yyyy HH:mm")</dd>
+        <dt class="col-sm-4">Timezone</dt><dd class="col-sm-8">@ViewData["TimeZoneLabel"]</dd>
+        <dt class="col-sm-4">Status</dt><dd class="col-sm-8">@Model.Status</dd>
+        <dt class="col-sm-4">Your notes</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Notes) ? "No notes provided." : Model.Notes)</dd>
+    </dl>
+</div></section></div></div>

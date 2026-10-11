@@ -1,0 +1,28 @@
+@model MealLog
+@{
+    ViewData["Title"] = "Delete meal";
+}
+
+<a class="ht-back" asp-action="Index"><i class="bi bi-arrow-left"></i>Meal diary</a>
+
+<section class="ht-card ht-narrow">
+    <div class="ht-card-body ht-confirm">
+        <span class="ht-glyph clay xl"><i class="bi bi-trash3"></i></span>
+        <h1 class="ht-title sm">Delete this meal?</h1>
+        <p class="ht-lede mx-auto">This can't be undone. Your daily calorie totals will update.</p>
+
+        <div class="ht-entry boxed">
+            <partial name="_DateBadge" model="Model.LoggedAt" />
+            <div class="text-truncate">
+                <div class="title">@Model.MealType</div>
+                <div class="meta text-truncate">@(string.IsNullOrWhiteSpace(Model.FoodItems) ? Model.LoggedAt.ToString("dddd, HH:mm") : Model.FoodItems)</div>
+            </div>
+            <div class="figure">@Model.Calories.ToString("N0")<small>kcal</small></div>
+        </div>
+
+        <form asp-action="Delete" asp-route-id="@Model.MealLogId" method="post" class="d-flex justify-content-center gap-2">
+            <a class="btn btn-line" asp-action="Index">Keep it</a>
+            <button type="submit" class="btn btn-danger"><i class="bi bi-trash3"></i>Delete</button>
+        </form>
+    </div>
+</section>

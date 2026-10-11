@@ -35,15 +35,6 @@
                                 <input asp-for="DateOfBirth" class="form-control" max="@DateTime.Today.AddDays(-1).ToString("yyyy-MM-dd")" />
                                 <span asp-validation-for="DateOfBirth" class="text-danger"></span>
                             </div>
-                            <div class="col-md-6">
-                                <label asp-for="AccessLevel" class="form-label"></label>
-                                <select asp-for="AccessLevel" class="form-select">
-                                    <option value="1">Level 1 &middot; Standard</option>
-                                    <option value="2">Level 2 &middot; Senior</option>
-                                    <option value="3">Level 3 &middot; Full access</option>
-                                </select>
-                                <span asp-validation-for="AccessLevel" class="text-danger"></span>
-                            </div>
                         </div>
                     </fieldset>
 

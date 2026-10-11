@@ -34,7 +34,7 @@ namespace HealthTrack.Models.Data
                 Email = email,
                 EmailConfirmed = true,
                 Name = configuration["AdminAccount:Name"] ?? "Administrator",
-                AccessLevel = 3
+                AccessLevel = 1
             };
             var result = await userManager.CreateAsync(admin, password);
             if (result.Succeeded)

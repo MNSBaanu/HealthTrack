@@ -16,6 +16,7 @@ namespace HealthTrack.Models
         public ICollection<WorkoutLog> WorkoutLogs { get; set; } = new List<WorkoutLog>();
 
         public ICollection<MealLog> MealLogs { get; set; } = new List<MealLog>();
+        public ClientTrainerAssignment? TrainerAssignment { get; set; }
 
         [NotMapped]
         public override string DashboardController => "Client";

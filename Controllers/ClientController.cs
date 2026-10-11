@@ -33,7 +33,8 @@ namespace HealthTrack.Controllers
             var clientId = CurrentUserId;
             await _notificationService.GenerateDailyRemindersAsync(clientId);
 
-            var client = await Context.Clients.FirstAsync(c => c.Id == clientId);
+            var client = await Context.Clients.Include(c => c.TrainerAssignment).ThenInclude(a => a!.Trainer)
+                .FirstAsync(c => c.Id == clientId);
             var metrics = await Context.HealthMetrics
                 .Where(m => m.ClientId == clientId)
                 .OrderBy(m => m.RecordedAt)

@@ -57,6 +57,10 @@
 </div>
 
 <div class="row g-3">
+    <div class="col-12"><section class="ht-card">
+        <div class="ht-card-head"><h2>Assigned Trainer</h2><a asp-controller="Assignments" asp-action="Edit" asp-route-id="@Model.Id">Manage assignment</a></div>
+        <div class="ht-card-body">@(Model.TrainerAssignment?.Trainer.Name ?? "No Trainer assigned.")</div>
+    </section></div>
     <div class="col-lg-7">
         <section class="ht-card h-100">
             <div class="ht-card-head">

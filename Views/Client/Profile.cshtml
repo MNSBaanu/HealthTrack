@@ -12,7 +12,8 @@
 <div class="row g-3">
     <div class="col-lg-4">
         <section class="ht-card ink ht-hero-tile">
-            <span class="ht-monogram lg">@Person.GetInitials(Model.Name)</span>
+            <img id="profile-photo-preview" class="ht-profile-photo" src="@(Model.HasPhoto ? Url.Action("ProfilePhoto", "Client") : null)" alt="Your profile photo" hidden="@(!Model.HasPhoto)" />
+            <span id="profile-photo-initials" class="ht-monogram lg" hidden="@Model.HasPhoto">@Person.GetInitials(Model.Name)</span>
             <h2 class="ht-profile-name">@Model.Name</h2>
             <div class="text-truncate ht-on-ink-muted">@Model.Email</div>
             <ul class="ht-facts">
@@ -26,8 +27,17 @@
     <div class="col-lg-8">
         <section class="ht-card">
             <div class="ht-card-body">
-                <form asp-controller="Client" asp-action="Profile" method="post" novalidate>
+                <form asp-controller="Client" asp-action="Profile" method="post" enctype="multipart/form-data" novalidate>
                     <div asp-validation-summary="ModelOnly" class="ht-flash error" role="alert"></div>
+
+                    <fieldset class="ht-fieldset">
+                        <legend>Profile photo</legend>
+                        <label asp-for="Photo" class="form-label">Upload photo</label>
+                        <input asp-for="Photo" type="file" class="form-control" accept="image/jpeg,image/png" aria-describedby="profile-photo-hint" />
+                        <div id="profile-photo-hint" class="form-text">JPG or PNG, maximum 2 MB and 4096 × 4096 pixels. Save changes to upload.</div>
+                        <span asp-validation-for="Photo" class="text-danger"></span>
+                        <div id="profile-photo-error" class="text-danger" role="alert"></div>
+                    </fieldset>
 
                     <fieldset class="ht-fieldset">
                         <legend>Personal details</legend>
@@ -81,4 +91,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/profile-photo.js" asp-append-version="true"></script>
 }

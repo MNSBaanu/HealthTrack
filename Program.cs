@@ -27,6 +27,9 @@ builder.Services.AddIdentity<Person, IdentityRole>(options =>
     .AddDefaultTokenProviders();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IExportService, ExportService>();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<AppointmentTime>();
+builder.Services.AddScoped<AppointmentBookingService>();
 
 var app = builder.Build();
 

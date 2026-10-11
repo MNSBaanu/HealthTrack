@@ -13,14 +13,19 @@ namespace HealthTrack.Controllers
         private readonly ILogger<ClientController> _logger;
         private readonly INotificationService _notificationService;
         private readonly IExportService _exportService;
+        private readonly AppointmentTime _appointmentTime;
+        private readonly TimeProvider _clock;
 
         public ClientController(ILogger<ClientController> logger, HealthTrackDbContext context, UserManager<Person> userManager,
-            INotificationService notificationService, IExportService exportService)
+            INotificationService notificationService, IExportService exportService,
+            AppointmentTime appointmentTime, TimeProvider clock)
             : base(context, userManager)
         {
             _logger = logger;
             _notificationService = notificationService;
             _exportService = exportService;
+            _appointmentTime = appointmentTime;
+            _clock = clock;
         }
 
         public async Task<IActionResult> Index()
@@ -35,6 +40,12 @@ namespace HealthTrack.Controllers
                 .ToListAsync();
 
             var today = DateTime.Today;
+            var nowUtc = _clock.GetUtcNow().UtcDateTime;
+            var upcoming = await Context.Appointments.AsNoTracking()
+                .Include(a => a.Slot).ThenInclude(s => s.Provider)
+                .Where(a => a.ClientId == clientId && a.Slot.StartUtc > nowUtc
+                    && (a.Status == AppointmentStatus.Pending || a.Status == AppointmentStatus.Approved))
+                .OrderBy(a => a.Slot.StartUtc).Take(3).ToListAsync();
             var weekStart = today.AddDays(-6);
             var weekWorkouts = await Context.WorkoutLogs
                 .Where(w => w.ClientId == clientId && w.LoggedAt >= weekStart)
@@ -43,6 +54,8 @@ namespace HealthTrack.Controllers
             var model = new ClientDashboardViewModel
             {
                 Client = client,
+                UpcomingAppointments = upcoming.Select(_appointmentTime.ToViewModel).ToList(),
+                AppointmentTimeZone = _appointmentTime.Label,
                 LatestMetric = metrics.LastOrDefault(),
                 WeightChangeKg = metrics.Count > 1 ? Math.Round(metrics[^1].WeightKg - metrics[0].WeightKg, 1) : null,
                 WorkoutsThisWeek = weekWorkouts.Count,

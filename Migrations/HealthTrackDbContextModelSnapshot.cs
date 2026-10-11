@@ -22,6 +22,110 @@ namespace HealthTrack.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("HealthTrack.Models.Appointment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ClientId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("RequestedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("SlotId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SlotId")
+                        .IsUnique()
+                        .HasFilter("[Status] <> 2");
+
+                    b.HasIndex("ClientId", "Status");
+
+                    b.ToTable("Appointments", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Appointments_Status", "[Status] IN (0, 1, 2, 3)");
+                        });
+                });
+
+            modelBuilder.Entity("HealthTrack.Models.AvailabilitySlot", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("EndUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsAvailable")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("ProviderId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("StartUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProviderId", "StartUtc", "EndUtc");
+
+                    b.ToTable("AvailabilitySlots", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_AvailabilitySlots_TimeRange", "[EndUtc] > [StartUtc]");
+                        });
+                });
+
+            modelBuilder.Entity("HealthTrack.Models.ConsultationProvider", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("PersonId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Specialty")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PersonId")
+                        .IsUnique()
+                        .HasFilter("[PersonId] IS NOT NULL");
+
+                    b.ToTable("ConsultationProviders");
+                });
+
             modelBuilder.Entity("HealthTrack.Models.HealthMetric", b =>
                 {
                     b.Property<int>("MetricId")
@@ -397,6 +501,46 @@ namespace HealthTrack.Migrations
                     b.HasDiscriminator().HasValue("Client");
                 });
 
+            modelBuilder.Entity("HealthTrack.Models.Appointment", b =>
+                {
+                    b.HasOne("HealthTrack.Models.Client", "Client")
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("HealthTrack.Models.AvailabilitySlot", "Slot")
+                        .WithMany("Appointments")
+                        .HasForeignKey("SlotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Client");
+
+                    b.Navigation("Slot");
+                });
+
+            modelBuilder.Entity("HealthTrack.Models.AvailabilitySlot", b =>
+                {
+                    b.HasOne("HealthTrack.Models.ConsultationProvider", "Provider")
+                        .WithMany("Slots")
+                        .HasForeignKey("ProviderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Provider");
+                });
+
+            modelBuilder.Entity("HealthTrack.Models.ConsultationProvider", b =>
+                {
+                    b.HasOne("HealthTrack.Models.Person", "Person")
+                        .WithMany()
+                        .HasForeignKey("PersonId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Person");
+                });
+
             modelBuilder.Entity("HealthTrack.Models.HealthMetric", b =>
                 {
                     b.HasOne("HealthTrack.Models.Client", "Client")
@@ -490,6 +634,16 @@ namespace HealthTrack.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("HealthTrack.Models.AvailabilitySlot", b =>
+                {
+                    b.Navigation("Appointments");
+                });
+
+            modelBuilder.Entity("HealthTrack.Models.ConsultationProvider", b =>
+                {
+                    b.Navigation("Slots");
                 });
 
             modelBuilder.Entity("HealthTrack.Models.Person", b =>

@@ -147,6 +147,32 @@
     <div class="col-lg-5 d-flex flex-column gap-3">
         <section class="ht-card">
             <div class="ht-card-head">
+                <h2>Upcoming appointments</h2>
+                <a asp-controller="Appointments" asp-action="Index">View all <i class="bi bi-arrow-right"></i></a>
+            </div>
+            @if (Model.UpcomingAppointments.Any())
+            {
+                <ul class="ht-journal">
+                    @foreach (var appointment in Model.UpcomingAppointments)
+                    {
+                        <li class="ht-entry">
+                            <partial name="_DateBadge" model="appointment.Start" />
+                            <div>
+                                <a class="title" asp-controller="Appointments" asp-action="Details" asp-route-id="@appointment.Id">@appointment.ProviderName</a>
+                                <div class="meta">@appointment.Start.ToString("d MMM, HH:mm")–@appointment.End.ToString("HH:mm") &middot; @appointment.Status</div>
+                            </div>
+                        </li>
+                    }
+                </ul>
+                <div class="ht-card-body small text-muted">Times shown in @Model.AppointmentTimeZone.</div>
+            }
+            else
+            {
+                <div class="ht-card-body text-muted">No upcoming appointments. <a asp-controller="Appointments" asp-action="Book">Book a consultation</a>.</div>
+            }
+        </section>
+        <section class="ht-card">
+            <div class="ht-card-head">
                 <h2>Reminders</h2>
                 @if (Model.Notifications.Any())
                 {

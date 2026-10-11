@@ -23,5 +23,11 @@ namespace HealthTrack.Models.ViewModels
         [StringLength(200)]
         [Display(Name = "Fitness Goal")]
         public string? FitnessGoal { get; set; }
+
+        [Display(Name = "Profile photo")]
+        public IFormFile? Photo { get; set; }
+
+        [Microsoft.AspNetCore.Mvc.ModelBinding.BindNever]
+        public bool HasPhoto { get; set; }
     }
 }

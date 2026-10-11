@@ -536,6 +536,13 @@ namespace HealthTrack.Migrations
                     b.Property<double>("HeightCm")
                         .HasColumnType("float");
 
+                    b.Property<byte[]>("ProfilePhoto")
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<string>("ProfilePhotoContentType")
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
                     b.HasDiscriminator().HasValue("Client");
                 });
 

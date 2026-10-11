@@ -13,6 +13,8 @@ namespace HealthTrack.Models.Data
 
         public DbSet<Client> Clients { get; set; }
         public DbSet<Admin> Admins { get; set; }
+        public DbSet<Trainer> Trainers { get; set; }
+        public DbSet<ClientTrainerAssignment> ClientTrainerAssignments { get; set; }
         public DbSet<HealthMetric> HealthMetrics { get; set; }
         public DbSet<WorkoutLog> WorkoutLogs { get; set; }
         public DbSet<MealLog> MealLogs { get; set; }
@@ -24,6 +26,13 @@ namespace HealthTrack.Models.Data
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+
+            builder.Entity<ClientTrainerAssignment>().HasKey(a => a.ClientId);
+            builder.Entity<ClientTrainerAssignment>().HasOne(a => a.Client).WithOne(c => c.TrainerAssignment)
+                .HasForeignKey<ClientTrainerAssignment>(a => a.ClientId).OnDelete(DeleteBehavior.Cascade);
+            builder.Entity<ClientTrainerAssignment>().HasOne(a => a.Trainer).WithMany(t => t.ClientAssignments)
+                .HasForeignKey(a => a.TrainerId).OnDelete(DeleteBehavior.Restrict);
+            builder.Entity<ClientTrainerAssignment>().Property(a => a.RowVersion).IsRowVersion();
 
             builder.Entity<ConsultationProvider>().HasOne(p => p.Person).WithMany()
                 .HasForeignKey(p => p.PersonId).OnDelete(DeleteBehavior.Restrict);
@@ -55,6 +64,7 @@ namespace HealthTrack.Models.Data
             builder.Entity<Person>()
                 .HasDiscriminator<string>("Role")
                 .HasValue<Client>("Client")
+                .HasValue<Trainer>("Trainer")
                 .HasValue<Admin>("Admin");
 
             builder.Entity<MealLog>()

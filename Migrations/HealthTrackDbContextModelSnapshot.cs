@@ -91,6 +91,31 @@ namespace HealthTrack.Migrations
                         });
                 });
 
+            modelBuilder.Entity("HealthTrack.Models.ClientTrainerAssignment", b =>
+                {
+                    b.Property<string>("ClientId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("AssignedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("TrainerId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("ClientId");
+
+                    b.HasIndex("TrainerId");
+
+                    b.ToTable("ClientTrainerAssignments");
+                });
+
             modelBuilder.Entity("HealthTrack.Models.ConsultationProvider", b =>
                 {
                     b.Property<int>("Id")
@@ -501,6 +526,13 @@ namespace HealthTrack.Migrations
                     b.HasDiscriminator().HasValue("Client");
                 });
 
+            modelBuilder.Entity("HealthTrack.Models.Trainer", b =>
+                {
+                    b.HasBaseType("HealthTrack.Models.Person");
+
+                    b.HasDiscriminator().HasValue("Trainer");
+                });
+
             modelBuilder.Entity("HealthTrack.Models.Appointment", b =>
                 {
                     b.HasOne("HealthTrack.Models.Client", "Client")
@@ -529,6 +561,25 @@ namespace HealthTrack.Migrations
                         .IsRequired();
 
                     b.Navigation("Provider");
+                });
+
+            modelBuilder.Entity("HealthTrack.Models.ClientTrainerAssignment", b =>
+                {
+                    b.HasOne("HealthTrack.Models.Client", "Client")
+                        .WithOne("TrainerAssignment")
+                        .HasForeignKey("HealthTrack.Models.ClientTrainerAssignment", "ClientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("HealthTrack.Models.Trainer", "Trainer")
+                        .WithMany("ClientAssignments")
+                        .HasForeignKey("TrainerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Client");
+
+                    b.Navigation("Trainer");
                 });
 
             modelBuilder.Entity("HealthTrack.Models.ConsultationProvider", b =>
@@ -657,7 +708,14 @@ namespace HealthTrack.Migrations
 
                     b.Navigation("MealLogs");
 
+                    b.Navigation("TrainerAssignment");
+
                     b.Navigation("WorkoutLogs");
+                });
+
+            modelBuilder.Entity("HealthTrack.Models.Trainer", b =>
+                {
+                    b.Navigation("ClientAssignments");
                 });
 #pragma warning restore 612, 618
         }

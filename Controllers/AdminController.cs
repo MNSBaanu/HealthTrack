@@ -36,6 +36,17 @@ namespace HealthTrack.Controllers
                 TotalUsers = await Context.Users.CountAsync(),
                 TotalClients = await Context.Clients.CountAsync(),
                 TotalAdmins = await Context.Admins.CountAsync(),
+                TotalTrainers = await Context.Trainers.CountAsync(),
+                AssignedClients = await Context.ClientTrainerAssignments.CountAsync(),
+                UnassignedClients = await Context.Clients.CountAsync(c => c.TrainerAssignment == null),
+                RecentAssignments = await Context.ClientTrainerAssignments.AsNoTracking()
+                    .OrderByDescending(a => a.AssignedAtUtc).Take(5)
+                    .Select(a => new AssignmentRowViewModel
+                    {
+                        ClientId = a.ClientId, ClientName = a.Client.Name,
+                        TrainerId = a.TrainerId, TrainerName = a.Trainer.Name,
+                        AssignedAtUtc = a.AssignedAtUtc
+                    }).ToListAsync(),
                 NewUsersThisWeek = await Context.Users.CountAsync(u => u.CreatedAt >= weekStart),
                 ActiveUsersThisWeek = await Context.Users.CountAsync(u => u.LastLoginAt >= weekStart),
                 LockedUsers = await Context.Users.CountAsync(u => u.LockoutEnd > now),
@@ -97,6 +108,7 @@ namespace HealthTrack.Controllers
                 .Include(c => c.HealthMetrics.OrderByDescending(m => m.RecordedAt))
                 .Include(c => c.WorkoutLogs.OrderByDescending(w => w.LoggedAt))
                 .Include(c => c.MealLogs.OrderByDescending(m => m.LoggedAt))
+                .Include(c => c.TrainerAssignment).ThenInclude(a => a!.Trainer)
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(c => c.Id == id);
             return client == null ? NotFound() : View(client);
@@ -180,7 +192,18 @@ namespace HealthTrack.Controllers
                 return NotFound();
             }
 
-            var result = await UserManager.DeleteAsync(user);
+            if (user is Trainer && await Context.ClientTrainerAssignments.AnyAsync(a => a.TrainerId == id))
+            {
+                TempData["Error"] = "Reassign or remove this Trainer's Client assignments before deleting the account.";
+                return RedirectToAction(nameof(Users));
+            }
+            IdentityResult result;
+            try { result = await UserManager.DeleteAsync(user); }
+            catch (DbUpdateException ex) when (ex.InnerException is Microsoft.Data.SqlClient.SqlException { Number: 547 })
+            {
+                TempData["Error"] = "This account has linked records. Remove its current assignments or retain the account for existing consultations.";
+                return RedirectToAction(nameof(Users));
+            }
             if (!result.Succeeded)
             {
                 TempData["Error"] = string.Join(" ", result.Errors.Select(e => e.Description));

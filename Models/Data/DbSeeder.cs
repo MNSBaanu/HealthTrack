@@ -7,7 +7,7 @@ namespace HealthTrack.Models.Data
         public static async Task SeedAsync(IServiceProvider services, IConfiguration configuration)
         {
             var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-            foreach (var role in new[] { AppRoles.Admin, AppRoles.Client })
+            foreach (var role in new[] { AppRoles.Admin, AppRoles.Client, AppRoles.Trainer })
             {
                 if (!await roleManager.RoleExistsAsync(role))
                 {

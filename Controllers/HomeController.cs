@@ -21,6 +21,7 @@ namespace HealthTrack.Controllers
         {
             if (User.Identity?.IsAuthenticated == true)
             {
+                if (User.IsInRole(AppRoles.Trainer)) return View("TrainerPending");
                 return RedirectToAction(nameof(Dashboard));
             }
             return RedirectToAction("Login", "Account");
@@ -34,6 +35,7 @@ namespace HealthTrack.Controllers
             {
                 return RedirectToAction("Login", "Account");
             }
+            if (user is Trainer) return View("TrainerPending");
             return RedirectToAction("Index", user.DashboardController);
         }
 

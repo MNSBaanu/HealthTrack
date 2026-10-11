@@ -1,0 +1,109 @@
+@model List<UserSummaryViewModel>
+@inject Microsoft.AspNetCore.Identity.UserManager<Person> UserManager
+@{
+    ViewData["Title"] = "Users";
+    var search = ViewData["Search"] as string;
+    var role = ViewData["Role"] as string;
+    var currentUserId = UserManager.GetUserId(User);
+    var isFiltered = !string.IsNullOrWhiteSpace(search) || !string.IsNullOrWhiteSpace(role);
+}
+
+<div class="ht-head">
+    <div>
+        <h1 class="ht-title">Users</h1>
+    </div>
+    <div class="ht-head-actions">
+        <a class="btn btn-primary" asp-action="CreateAdmin"><i class="bi bi-person-plus"></i>New admin</a>
+    </div>
+</div>
+
+<form asp-action="Users" method="get" class="ht-card ht-filter mb-3">
+    <div class="ht-input-icon flex-grow-1">
+        <i class="bi bi-search"></i>
+        <input type="search" name="search" value="@search" class="form-control" placeholder="Search by name or email" aria-label="Search users" />
+    </div>
+    <select name="role" class="form-select" aria-label="Filter by role">
+        <option value="">All roles</option>
+        <option value="@AppRoles.Client" selected="@(role == AppRoles.Client)">Clients</option>
+        <option value="@AppRoles.Admin" selected="@(role == AppRoles.Admin)">Admins</option>
+        <option value="@AppRoles.Trainer" selected="@(role == AppRoles.Trainer)">Trainers</option>
+    </select>
+    <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i>Filter</button>
+    @if (isFiltered)
+    {
+        <a class="btn btn-line" asp-action="Users">Clear</a>
+    }
+</form>
+
+<section class="ht-card">
+    @if (Model.Any())
+    {
+        <div class="table-responsive">
+            <table class="ht-table">
+                <thead>
+                    <tr>
+                        <th>Member</th>
+                        <th>Role</th>
+                        <th>Joined</th>
+                        <th>Last active</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model)
+                    {
+                        var isSelf = user.Id == currentUserId;
+                        <tr>
+                            <td>
+                                <div class="ht-member">
+                                    <span class="ht-monogram @(isSelf ? "" : "muted")">@Person.GetInitials(user.Name)</span>
+                                    <div>
+                                        <div class="name">@user.Name @if (isSelf) { <span class="ht-pill ms-1">You</span> }</div>
+                                        <span class="sub">@user.Email</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><partial name="_RolePill" model="user.Role" /></td>
+                            <td class="text-nowrap">@user.CreatedAt.ToString("d MMM yyyy")</td>
+                            <td class="text-nowrap">@(user.LastLoginAt?.ToString("d MMM yyyy, HH:mm") ?? "Never")</td>
+                            <td><partial name="_StatusPill" model="user.IsLocked" /></td>
+                            <td>
+                                <div class="ht-row-actions">
+                                    @if (user.Role == AppRoles.Client)
+                                    {
+                                        <a class="btn-icon" asp-action="ClientDetails" asp-route-id="@user.Id" title="View client" aria-label="View @user.Name"><i class="bi bi-eye"></i></a>
+                                        <a class="btn-icon" asp-controller="Assignments" asp-action="Edit" asp-route-id="@user.Id" title="Manage Trainer assignment" aria-label="Manage Trainer for @user.Name"><i class="bi bi-person-check"></i></a>
+                                    }
+                                    @if (!isSelf)
+                                    {
+                                        <form asp-action="ToggleLock" asp-route-id="@user.Id" method="post"
+                                              data-confirm="@(user.IsLocked ? $"Unlock {user.Name}'s account?" : $"Lock {user.Name}'s account? They will be signed out and unable to sign in.")">
+                                            <button type="submit" class="btn-icon" title="@(user.IsLocked ? "Unlock" : "Lock")" aria-label="@(user.IsLocked ? "Unlock" : "Lock") @user.Name">
+                                                <i class="bi @(user.IsLocked ? "bi-unlock" : "bi-lock")"></i>
+                                            </button>
+                                        </form>
+                                        <form asp-action="DeleteUser" asp-route-id="@user.Id" method="post"
+                                              data-confirm="Permanently delete @user.Name and all of their records? This can't be undone.">
+                                            <button type="submit" class="btn-icon danger" title="Delete" aria-label="Delete @user.Name"><i class="bi bi-trash3"></i></button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="ht-table-foot">Showing @(Model.Count == 1 ? "1 member" : $"{Model.Count} members")</div>
+    }
+    else
+    {
+        <div class="ht-empty">
+            <span class="ht-glyph saffron"><i class="bi bi-search"></i></span>
+            <h3>No matching users</h3>
+            <p>Try a different name, email or role.</p>
+            <a class="btn btn-line" asp-action="Users">Clear filters</a>
+        </div>
+    }
+</section>

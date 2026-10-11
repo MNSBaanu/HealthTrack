@@ -1,46 +1,83 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - HealthTrack</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/HealthTrack.styles.css" asp-append-version="true" />
+    <partial name="_HeadPartial" />
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">HealthTrack</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
+    @{
+        var isSignedIn = User.Identity?.IsAuthenticated == true;
+        var isClient = User.IsInRole(AppRoles.Client);
+        var isAdmin = User.IsInRole(AppRoles.Admin);
+        var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+        var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+        string Tab(string controller, params string[] actions) =>
+            currentController == controller && (actions.Length == 0 || Array.IndexOf(actions, currentAction) >= 0) ? "ht-tab active" : "ht-tab";
+    }
+    <header class="ht-masthead">
+        <div class="container-xl ht-masthead-inner">
+            <a class="ht-wordmark" asp-controller="Home" asp-action="@(isSignedIn ? "Dashboard" : "Index")"><span class="dot"></span>Health<em>Track</em></a>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - HealthTrack - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            @if (isSignedIn)
+            {
+                <nav class="ht-tabs" aria-label="Main navigation">
+                    @if (isClient)
+                    {
+                        <a class="@Tab("Client", "Index")" asp-controller="Client" asp-action="Index"><i class="bi bi-grid-1x2"></i>Overview</a>
+                        <a class="@Tab("Client", "Progress")" asp-controller="Client" asp-action="Progress"><i class="bi bi-graph-up"></i>Progress</a>
+                        <a class="@Tab("HealthMetrics")" asp-controller="HealthMetrics" asp-action="Index"><i class="bi bi-rulers"></i>Metrics</a>
+                        <a class="@Tab("WorkoutLogs")" asp-controller="WorkoutLogs" asp-action="Index"><i class="bi bi-lightning-charge"></i>Workouts</a>
+                        <a class="@Tab("MealLogs")" asp-controller="MealLogs" asp-action="Index"><i class="bi bi-cup-hot"></i>Meals</a>
+                        <a class="@Tab("Appointments")" asp-controller="Appointments" asp-action="Index"><i class="bi bi-calendar-check"></i>Appointments</a>
+                    }
+                    @if (isAdmin)
+                    {
+                        <a class="@Tab("Admin", "Index")" asp-controller="Admin" asp-action="Index"><i class="bi bi-grid-1x2"></i>Console</a>
+                        <a class="@Tab("Admin", "Users", "ClientDetails", "CreateAdmin")" asp-controller="Admin" asp-action="Users"><i class="bi bi-people"></i>Users</a>
+                        <a class="@Tab("Assignments")" asp-controller="Assignments" asp-action="Index"><i class="bi bi-person-check"></i>Assignments</a>
+                        <a class="@Tab("Admin", "Reports")" asp-controller="Admin" asp-action="Reports"><i class="bi bi-journal-text"></i>Reports</a>
+                        <a class="@Tab("Admin", "SendNotification")" asp-controller="Admin" asp-action="SendNotification"><i class="bi bi-megaphone"></i>Broadcast</a>
+                    }
+                </nav>
+                <div class="ht-mast-actions">
+                    @await Component.InvokeAsync("NotificationBell")
+                    @await Component.InvokeAsync("UserMenu")
+                </div>
+            }
+            else
+            {
+                <div class="ht-mast-actions py-3">
+                    <a class="btn btn-sm btn-line-light" asp-controller="Account" asp-action="Login">Sign in</a>
+                    <a class="btn btn-sm btn-accent" asp-controller="Account" asp-action="Register">Get started</a>
+                </div>
+            }
         </div>
+    </header>
+
+    <main class="ht-page" role="main">
+        <div class="container-xl">
+            @if (TempData["Success"] is string success)
+            {
+                <div class="ht-flash success alert fade show" role="status">
+                    <i class="bi bi-check2-circle"></i><span>@success</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+            @if (TempData["Error"] is string error)
+            {
+                <div class="ht-flash error alert fade show" role="alert">
+                    <i class="bi bi-exclamation-octagon"></i><span>@error</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+            @RenderBody()
+        </div>
+    </main>
+
+    <footer class="container-xl ht-app-footer">
+        <span>&copy; 2026 HealthTrack</span>
+        <a asp-controller="Home" asp-action="Privacy">Privacy policy</a>
     </footer>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

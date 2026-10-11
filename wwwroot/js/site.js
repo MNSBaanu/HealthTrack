@@ -1,4 +1,17 @@
-﻿// Please see documentation at https://learn.microsoft.com/aspnet/core/client-side/bundling-and-minification
-// for details on configuring this project to bundle and minify static web assets.
+document.addEventListener("submit", function (event) {
+    const message = event.target.getAttribute("data-confirm");
+    if (message && !window.confirm(message)) {
+        event.preventDefault();
+    }
+});
 
-// Write your JavaScript code.
+document.addEventListener("input", function (event) {
+    const field = event.target;
+    const counterId = field.getAttribute("data-counter");
+    if (counterId) {
+        const counter = document.getElementById(counterId);
+        if (counter) {
+            counter.textContent = field.value.length + " / " + field.getAttribute("maxlength");
+        }
+    }
+});

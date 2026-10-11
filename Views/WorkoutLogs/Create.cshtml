@@ -1,0 +1,31 @@
+@model WorkoutLog
+@{
+    ViewData["Title"] = "Log workout";
+}
+
+<a class="ht-back" asp-action="Index"><i class="bi bi-arrow-left"></i>Training journal</a>
+<div class="ht-head">
+    <div>
+        <h1 class="ht-title">Log a workout</h1>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-8 col-xl-7">
+        <section class="ht-card">
+            <div class="ht-card-body">
+                <form asp-action="Create" method="post" novalidate>
+                    <partial name="_Form" model="Model" />
+                    <div class="ht-form-actions">
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-check2"></i>Save workout</button>
+                        <a class="btn btn-line" asp-action="Index">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

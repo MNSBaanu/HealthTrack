@@ -1,0 +1,174 @@
+@model AdminDashboardViewModel
+@{
+    ViewData["Title"] = "Admin console";
+    var topSessions = Model.PopularActivities.FirstOrDefault()?.Sessions ?? 0;
+    var weeklyLogs = Model.WorkoutLogsThisWeek + Model.MealLogsThisWeek + Model.MetricsThisWeek;
+}
+
+<div class="ht-head">
+    <div>
+        <div class="ht-overline">Admin console &middot; @DateTime.Now.ToString("dddd d MMMM yyyy")</div>
+        <h1 class="ht-title">System overview</h1>
+    </div>
+    <div class="ht-head-actions">
+        <a class="btn btn-line" asp-action="SendNotification"><i class="bi bi-megaphone"></i>Broadcast</a>
+        <a class="btn btn-line" asp-action="CreateAdmin"><i class="bi bi-person-plus"></i>New admin</a>
+        <a class="btn btn-primary" asp-action="Reports"><i class="bi bi-journal-text"></i>Reports</a>
+    </div>
+</div>
+
+<div class="ht-ledger">
+    <div>
+        <div class="ht-overline">Total users</div>
+        <div class="value">@Model.TotalUsers</div>
+    </div>
+    <div>
+        <div class="ht-overline">Clients</div>
+        <div class="value">@Model.TotalClients</div>
+    </div>
+    <div>
+        <div class="ht-overline">Admins</div>
+        <div class="value">@Model.TotalAdmins</div>
+    </div>
+    <div>
+        <div class="ht-overline">New this week</div>
+        <div class="value">@Model.NewUsersThisWeek</div>
+    </div>
+    <div>
+        <div class="ht-overline">Active this week</div>
+        <div class="value">@Model.ActiveUsersThisWeek</div>
+    </div>
+    <div>
+        <div class="ht-overline">Locked</div>
+        <div class="value">@Model.LockedUsers</div>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-12">
+        <section class="ht-card">
+            <div class="ht-card-head"><h2>Trainer assignments</h2><a asp-controller="Assignments" asp-action="Index">Manage assignments <i class="bi bi-arrow-right"></i></a></div>
+            <div class="ht-card-body">
+                <div class="row g-3 mb-3">
+                    <div class="col-sm-4"><span class="ht-overline">Trainers</span><div class="fs-3 fw-semibold" data-stat="trainers">@Model.TotalTrainers</div></div>
+                    <div class="col-sm-4"><span class="ht-overline">Assigned Clients</span><div class="fs-3 fw-semibold" data-stat="assigned">@Model.AssignedClients</div></div>
+                    <div class="col-sm-4"><span class="ht-overline">Unassigned Clients</span><div class="fs-3 fw-semibold" data-stat="unassigned">@Model.UnassignedClients</div></div>
+                </div>
+                @if (Model.RecentAssignments.Any())
+                {
+                    <ul class="list-unstyled mb-0">
+                        @foreach (var assignment in Model.RecentAssignments)
+                        {
+                            <li class="py-1"><a asp-controller="Assignments" asp-action="Edit" asp-route-id="@assignment.ClientId">@assignment.ClientName</a> &middot; @assignment.TrainerName</li>
+                        }
+                    </ul>
+                }
+                else { <p class="text-muted mb-0">No Clients have been assigned a Trainer yet.</p> }
+            </div>
+        </section>
+    </div>
+    <div class="col-lg-8">
+        <section class="ht-card h-100">
+            <div class="ht-card-head">
+                <h2>System usage</h2>
+                <span class="ht-overline">Last 14 days</span>
+            </div>
+            <div class="ht-card-body">
+                <div class="ht-chart">
+                    <canvas id="usageChart" aria-label="System usage chart" role="img"></canvas>
+                </div>
+            </div>
+        </section>
+    </div>
+    <div class="col-lg-4">
+        <section class="ht-card ink ht-hero-tile h-100">
+            <span class="ht-overline">Entries logged this week</span>
+            <div class="big">@weeklyLogs</div>
+            <ul class="ht-facts mt-0">
+                <li><span><i class="bi bi-lightning-charge me-2"></i>Workouts</span><strong>@Model.WorkoutLogsThisWeek</strong></li>
+                <li><span><i class="bi bi-cup-hot me-2"></i>Meals</span><strong>@Model.MealLogsThisWeek</strong></li>
+                <li><span><i class="bi bi-rulers me-2"></i>Measurements</span><strong>@Model.MetricsThisWeek</strong></li>
+            </ul>
+        </section>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-5">
+        <section class="ht-card h-100">
+            <div class="ht-card-head">
+                <h2>Popular routines</h2>
+                <a asp-action="Reports">Full report <i class="bi bi-arrow-right"></i></a>
+            </div>
+            <div class="ht-card-body">
+                @if (Model.PopularActivities.Any())
+                {
+                    <ol class="ht-bars-list">
+                        @foreach (var activity in Model.PopularActivities)
+                        {
+                            var width = topSessions == 0 ? 0 : activity.Sessions * 100.0 / topSessions;
+                            <li>
+                                <div class="row-top">
+                                    <strong>@activity.Activity</strong>
+                                    <span class="text-muted">@activity.Sessions sessions &middot; @(activity.ClientCount == 1 ? "1 client" : $"{activity.ClientCount} clients")</span>
+                                </div>
+                                <div class="ht-bar"><span style="width: @width.ToString("0.#", CultureInfo.InvariantCulture)%"></span></div>
+                            </li>
+                        }
+                    </ol>
+                }
+                else
+                {
+                    <p class="text-muted mb-0">No workouts have been logged yet.</p>
+                }
+            </div>
+        </section>
+    </div>
+    <div class="col-lg-7">
+        <section class="ht-card h-100">
+            <div class="ht-card-head">
+                <h2>Newest members</h2>
+                <a asp-action="Users">All users <i class="bi bi-arrow-right"></i></a>
+            </div>
+            <div class="table-responsive">
+                <table class="ht-table">
+                    <thead>
+                        <tr>
+                            <th>Member</th>
+                            <th>Role</th>
+                            <th>Joined</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var user in Model.RecentUsers)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="ht-member">
+                                        <span class="ht-monogram muted">@Person.GetInitials(user.Name)</span>
+                                        <div>
+                                            <div class="name">@user.Name</div>
+                                            <span class="sub">@user.Email</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><partial name="_RolePill" model="user.Role" /></td>
+                                <td class="text-nowrap">@user.CreatedAt.ToString("d MMM yyyy")</td>
+                                <td><partial name="_StatusPill" model="user.IsLocked" /></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="~/js/charts.js" asp-append-version="true"></script>
+    <script>
+        HealthTrackCharts.usage("@Url.Action("UsageData", "Admin")");
+    </script>
+}

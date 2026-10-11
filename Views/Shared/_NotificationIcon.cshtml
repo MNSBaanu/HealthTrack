@@ -1,0 +1,12 @@
+@model NotificationType
+
+@{
+    var (icon, tone) = Model switch
+    {
+        NotificationType.Workout => ("bi-lightning-charge", "saffron"),
+        NotificationType.Meal => ("bi-cup-hot", "clay"),
+        NotificationType.Appointment => ("bi-calendar-event", "slate"),
+        _ => ("bi-bell", "ink")
+    };
+}
+<span class="ht-glyph @tone"><i class="bi @icon"></i></span>

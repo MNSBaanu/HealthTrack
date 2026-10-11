@@ -1,0 +1,81 @@
+@model List<MealLog>
+@{
+    ViewData["Title"] = "Meals";
+    var today = DateTime.Today;
+    var emptyState = new EmptyStateViewModel("bi-cup-hot", "No meals logged yet", "Log what you eat to see your daily calories next to the calories you burn.", "Log a meal", "MealLogs");
+}
+
+<div class="ht-head">
+    <div>
+        <h1 class="ht-title">Meal diary</h1>
+    </div>
+    <div class="ht-head-actions">
+        <a class="btn btn-primary" asp-action="Create"><i class="bi bi-plus-lg"></i>Log meal</a>
+    </div>
+</div>
+
+@if (Model.Any())
+{
+    var todaysMeals = Model.Where(m => m.LoggedAt >= today).ToList();
+    <div class="ht-ledger">
+        <div>
+            <div class="ht-overline">Eaten today</div>
+            <div class="value">@todaysMeals.Sum(m => m.Calories).ToString("N0")<small>kcal</small></div>
+            <div class="hint">@(todaysMeals.Count == 1 ? "1 meal" : $"{todaysMeals.Count} meals")</div>
+        </div>
+        <div>
+            <div class="ht-overline">Average meal</div>
+            <div class="value">@Model.Average(m => m.Calories).ToString("N0")<small>kcal</small></div>
+        </div>
+        <div>
+            <div class="ht-overline">Meals logged</div>
+            <div class="value">@Model.Count</div>
+        </div>
+        <div>
+            <div class="ht-overline">Days recorded</div>
+            <div class="value">@Model.Select(m => m.LoggedAt.Date).Distinct().Count()</div>
+        </div>
+    </div>
+
+    <section class="ht-card">
+        <div class="table-responsive">
+            <table class="ht-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Meal</th>
+                        <th>What you ate</th>
+                        <th>Calories</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var meal in Model)
+                    {
+                        <tr>
+                            <td>
+                                <span class="fw-semibold text-dark">@meal.LoggedAt.ToString("d MMM yyyy")</span>
+                                <span class="sub">@meal.LoggedAt.ToString("dddd, HH:mm")</span>
+                            </td>
+                            <td><partial name="_MealTypePill" model="meal.MealType" /></td>
+                            <td class="text-muted">@(string.IsNullOrWhiteSpace(meal.FoodItems) ? "—" : meal.FoodItems)</td>
+                            <td class="num">@meal.Calories.ToString("N0") <small>kcal</small></td>
+                            <td>
+                                <div class="ht-row-actions">
+                                    <a class="btn-icon" asp-action="Edit" asp-route-id="@meal.MealLogId" title="Edit" aria-label="Edit meal"><i class="bi bi-pencil"></i></a>
+                                    <a class="btn-icon danger" asp-action="Delete" asp-route-id="@meal.MealLogId" title="Delete" aria-label="Delete meal"><i class="bi bi-trash3"></i></a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+}
+else
+{
+    <section class="ht-card">
+        <partial name="_EmptyState" model="emptyState" />
+    </section>
+}

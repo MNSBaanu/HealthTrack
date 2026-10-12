@@ -1,0 +1,180 @@
+@model WorkoutPlanFormViewModel
+@{
+    ViewData["Title"] = "New workout plan";
+}
+
+<a class="ht-back" asp-action="WorkoutPlans"><i class="bi bi-arrow-left"></i>All workout plans</a>
+
+<div class="ht-head">
+    <div>
+        <h1 class="ht-title">Create workout plan</h1>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-10">
+        <section class="ht-card">
+            <div class="ht-card-body p-4">
+                <form asp-action="CreateWorkoutPlan" method="post" id="planForm">
+                    <div asp-validation-summary="ModelOnly" class="ht-flash error" role="alert"></div>
+
+                    <fieldset class="ht-fieldset mb-4">
+                        <legend>Plan overview</legend>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="ClientId" class="form-label">Assign to Client</label>
+                                <select asp-for="ClientId" class="form-select" asp-items="Model.AssignedClients" required>
+                                    <option value="">-- Choose client --</option>
+                                </select>
+                                <span asp-validation-for="ClientId" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Title" class="form-label">Plan Title</label>
+                                <input asp-for="Title" class="form-control" placeholder="e.g. 4-Week Hypertrophy Split" required />
+                                <span asp-validation-for="Title" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="Goal" class="form-label">Primary Goal</label>
+                                <input asp-for="Goal" class="form-control" placeholder="e.g. Muscle Gain, Fat Loss" />
+                                <span asp-validation-for="Goal" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="StartDate" class="form-label">Start Date</label>
+                                <input asp-for="StartDate" class="form-control" type="date" required />
+                                <span asp-validation-for="StartDate" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="EndDate" class="form-label">End Date (optional)</label>
+                                <input asp-for="EndDate" class="form-control" type="date" />
+                                <span asp-validation-for="EndDate" class="text-danger small"></span>
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="Description" class="form-label">Coaching Notes & Instructions</label>
+                                <textarea asp-for="Description" class="form-control" rows="2" placeholder="Overall instructions for this workout cycle..."></textarea>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="ht-fieldset mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <legend class="mb-0">Exercises & Schedule</legend>
+                            <button type="button" class="btn btn-sm btn-line" id="addExerciseBtn">
+                                <i class="bi bi-plus-lg me-1"></i>Add exercise
+                            </button>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table ht-table align-middle" id="exercisesTable">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 15%;">Day</th>
+                                        <th style="width: 25%;">Exercise name</th>
+                                        <th style="width: 12%;">Sets</th>
+                                        <th style="width: 12%;">Reps</th>
+                                        <th style="width: 12%;">Duration</th>
+                                        <th style="width: 18%;">Notes / Rest</th>
+                                        <th style="width: 6%;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (int i = 0; i < Model.Items.Count; i++)
+                                    {
+                                        <tr class="exercise-row">
+                                            <td>
+                                                <select name="Items[@i].DayOfWeek" class="form-select form-select-sm">
+                                                    <option value="">Daily</option>
+                                                    <option value="1" selected="@(Model.Items[i].DayOfWeek == DayOfWeek.Monday)">Mon</option>
+                                                    <option value="2" selected="@(Model.Items[i].DayOfWeek == DayOfWeek.Tuesday)">Tue</option>
+                                                    <option value="3" selected="@(Model.Items[i].DayOfWeek == DayOfWeek.Wednesday)">Wed</option>
+                                                    <option value="4" selected="@(Model.Items[i].DayOfWeek == DayOfWeek.Thursday)">Thu</option>
+                                                    <option value="5" selected="@(Model.Items[i].DayOfWeek == DayOfWeek.Friday)">Fri</option>
+                                                    <option value="6" selected="@(Model.Items[i].DayOfWeek == DayOfWeek.Saturday)">Sat</option>
+                                                    <option value="0" selected="@(Model.Items[i].DayOfWeek == DayOfWeek.Sunday)">Sun</option>
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <input name="Items[@i].ExerciseName" value="@Model.Items[i].ExerciseName" class="form-control form-control-sm" placeholder="e.g. Squat, Bench Press" required />
+                                            </td>
+                                            <td>
+                                                <input name="Items[@i].Sets" value="@Model.Items[i].Sets" type="number" class="form-control form-control-sm" placeholder="Sets" />
+                                            </td>
+                                            <td>
+                                                <input name="Items[@i].Reps" value="@Model.Items[i].Reps" type="number" class="form-control form-control-sm" placeholder="Reps" />
+                                            </td>
+                                            <td>
+                                                <input name="Items[@i].DurationMinutes" value="@Model.Items[i].DurationMinutes" type="number" class="form-control form-control-sm" placeholder="Min" />
+                                            </td>
+                                            <td>
+                                                <input name="Items[@i].Instructions" value="@Model.Items[i].Instructions" class="form-control form-control-sm" placeholder="Rest/guidance" />
+                                            </td>
+                                            <td class="text-end">
+                                                <button type="button" class="btn btn-sm btn-line-danger remove-row-btn" title="Remove"><i class="bi bi-trash"></i></button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </fieldset>
+
+                    <div class="ht-form-actions">
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1"></i>Save & assign plan</button>
+                        <a class="btn btn-line" asp-action="WorkoutPlans">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.getElementById('addExerciseBtn').addEventListener('click', function () {
+            const tbody = document.querySelector('#exercisesTable tbody');
+            const rowCount = tbody.querySelectorAll('tr').length;
+            const newRow = document.createElement('tr');
+            newRow.className = 'exercise-row';
+            newRow.innerHTML = `
+                <td>
+                    <select name="Items[${rowCount}].DayOfWeek" class="form-select form-select-sm">
+                        <option value="">Daily</option>
+                        <option value="1">Mon</option>
+                        <option value="2">Tue</option>
+                        <option value="3">Wed</option>
+                        <option value="4">Thu</option>
+                        <option value="5">Fri</option>
+                        <option value="6">Sat</option>
+                        <option value="0">Sun</option>
+                    </select>
+                </td>
+                <td><input name="Items[${rowCount}].ExerciseName" class="form-control form-control-sm" placeholder="e.g. Deadlift" required /></td>
+                <td><input name="Items[${rowCount}].Sets" type="number" class="form-control form-control-sm" placeholder="Sets" /></td>
+                <td><input name="Items[${rowCount}].Reps" type="number" class="form-control form-control-sm" placeholder="Reps" /></td>
+                <td><input name="Items[${rowCount}].DurationMinutes" type="number" class="form-control form-control-sm" placeholder="Min" /></td>
+                <td><input name="Items[${rowCount}].Instructions" class="form-control form-control-sm" placeholder="Rest/guidance" /></td>
+                <td class="text-end"><button type="button" class="btn btn-sm btn-line-danger remove-row-btn" title="Remove"><i class="bi bi-trash"></i></button></td>
+            `;
+            tbody.appendChild(newRow);
+        });
+
+        document.querySelector('#exercisesTable').addEventListener('click', function (e) {
+            if (e.target.closest('.remove-row-btn')) {
+                const row = e.target.closest('tr');
+                const tbody = document.querySelector('#exercisesTable tbody');
+                if (tbody.querySelectorAll('tr').length > 1) {
+                    row.remove();
+                    // Reindex remaining rows
+                    tbody.querySelectorAll('tr').forEach((r, idx) => {
+                        r.querySelectorAll('input, select').forEach(input => {
+                            const name = input.getAttribute('name');
+                            if (name) {
+                                input.setAttribute('name', name.replace(/Items\[\d+\]/, `Items[${idx}]`));
+                            }
+                        });
+                    });
+                }
+            }
+        });
+    </script>
+}

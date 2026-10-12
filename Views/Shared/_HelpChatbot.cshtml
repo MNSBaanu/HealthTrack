@@ -1,0 +1,27 @@
+@{ var adminBot = User.IsInRole(AppRoles.Admin); }
+<div class="ht-chat" data-healthtrack-chat data-role="@(adminBot ? "admin" : "client")">
+    <section class="ht-chat-panel" id="healthtrack-chat-panel" aria-label="HealthTrack help chat" hidden>
+        <header class="ht-chat-header">
+            <div><strong>HealthTrack help</strong><small>Built-in guide</small></div>
+            <div><button type="button" class="ht-chat-clear" aria-label="Clear chat">Clear</button><button type="button" class="ht-chat-close" aria-label="Close help chat">&times;</button></div>
+        </header>
+        <div class="ht-chat-messages" role="log" aria-live="polite" aria-relevant="additions text"></div>
+        <div class="ht-chat-suggestions" aria-label="Suggested questions">
+            @if (adminBot)
+            {
+                <button type="button">Manage Clients</button><button type="button">Assign a Trainer</button><button type="button">Generate reports</button><button type="button">Send notifications</button>
+            }
+            else
+            {
+                <button type="button">Log a workout</button><button type="button">Log a meal</button><button type="button">Track progress</button><button type="button">Book a consultation</button>
+            }
+        </div>
+        <form class="ht-chat-form">
+            <label for="healthtrack-chat-question" class="visually-hidden">Your HealthTrack question</label>
+            <input id="healthtrack-chat-question" name="question" type="text" maxlength="300" required autocomplete="off" placeholder="Ask how to use HealthTrack…" />
+            <button type="submit" aria-label="Send question"><i class="bi bi-send" aria-hidden="true"></i></button>
+        </form>
+        <p class="ht-chat-footnote">App help only. Chat clears when you leave this page.</p>
+    </section>
+    <button class="ht-chat-launch" type="button" aria-controls="healthtrack-chat-panel" aria-expanded="false"><i class="bi bi-chat-dots" aria-hidden="true"></i><span>Chat</span></button>
+</div>

@@ -1,0 +1,74 @@
+@model CreateTrainerViewModel
+@{
+    ViewData["Title"] = "New trainer";
+}
+
+<a class="ht-back" asp-action="Users"><i class="bi bi-arrow-left"></i>All users</a>
+<div class="ht-head">
+    <div>
+        <h1 class="ht-title">New trainer</h1>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-8 col-xl-7">
+        <section class="ht-card">
+            <div class="ht-card-body">
+                <form asp-action="CreateTrainer" method="post" novalidate>
+                    <div asp-validation-summary="ModelOnly" class="ht-flash error" role="alert"></div>
+
+                    <fieldset class="ht-fieldset mb-4">
+                        <legend>Trainer details</legend>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="Name" class="form-label">Full name</label>
+                                <input asp-for="Name" class="form-control" autofocus required />
+                                <span asp-validation-for="Name" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Email" class="form-label">Email address</label>
+                                <input asp-for="Email" class="form-control" autocomplete="off" required />
+                                <span asp-validation-for="Email" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="DateOfBirth" class="form-label">Date of birth</label>
+                                <input asp-for="DateOfBirth" class="form-control" type="date" max="@DateTime.Today.AddDays(-1).ToString("yyyy-MM-dd")" required />
+                                <span asp-validation-for="DateOfBirth" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Specialty" class="form-label">Specialty / Domain</label>
+                                <input asp-for="Specialty" class="form-control" placeholder="e.g. Strength & Conditioning, HIIT" />
+                                <span asp-validation-for="Specialty" class="text-danger small"></span>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="ht-fieldset mb-4">
+                        <legend>Initial password</legend>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="Password" class="form-label">Password</label>
+                                <input asp-for="Password" class="form-control" autocomplete="new-password" required />
+                                <span asp-validation-for="Password" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="ConfirmPassword" class="form-label">Confirm password</label>
+                                <input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" required />
+                                <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <div class="ht-form-actions">
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-person-check me-1"></i>Create trainer</button>
+                        <a class="btn btn-line" asp-action="Users">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

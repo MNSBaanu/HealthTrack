@@ -1,0 +1,276 @@
+using HealthTrack.Models;
+using HealthTrack.Models.Data;
+using HealthTrack.Models.ViewModels;
+using HealthTrack.Services;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
+namespace HealthTrack.Controllers
+{
+    public class TrainerController : TrainerBaseController
+    {
+        private readonly ITrainerFeedbackService _feedbackService;
+        private readonly ITrainerScheduleService _scheduleService;
+        private readonly AppointmentTime _time;
+
+        public TrainerController(
+            HealthTrackDbContext context,
+            UserManager<Person> userManager,
+            ITrainerFeedbackService feedbackService,
+            ITrainerScheduleService scheduleService,
+            AppointmentTime time)
+            : base(context, userManager)
+        {
+            _feedbackService = feedbackService;
+            _scheduleService = scheduleService;
+            _time = time;
+        }
+
+        public async Task<IActionResult> Index()
+        {
+            var trainerId = CurrentUserId;
+            var trainer = await Context.Trainers.FirstAsync(t => t.Id == trainerId);
+
+            var assignedClientIds = await Context.ClientTrainerAssignments
+                .Where(a => a.TrainerId == trainerId)
+                .Select(a => a.ClientId)
+                .ToListAsync();
+
+            var clients = await Context.Clients
+                .Where(c => assignedClientIds.Contains(c.Id))
+                .Include(c => c.HealthMetrics)
+                .Include(c => c.WorkoutLogs)
+                .Include(c => c.MealLogs)
+                .Include(c => c.WorkoutPlans)
+                .Include(c => c.DietPlans)
+                .ToListAsync();
+
+            var clientSummaries = clients.Select(c =>
+            {
+                var latestMetric = c.HealthMetrics.OrderByDescending(m => m.RecordedAt).FirstOrDefault();
+                var bmi = latestMetric != null ? HealthMetric.CalculateBmi(latestMetric.WeightKg, c.HeightCm) : (double?)null;
+
+                var lastWorkout = c.WorkoutLogs.OrderByDescending(w => w.LoggedAt).FirstOrDefault()?.LoggedAt;
+                var lastMeal = c.MealLogs.OrderByDescending(m => m.LoggedAt).FirstOrDefault()?.LoggedAt;
+                var lastMetricDate = latestMetric?.RecordedAt;
+
+                DateTime? lastActive = new[] { lastWorkout, lastMeal, lastMetricDate, c.LastLoginAt }
+                    .Where(d => d.HasValue)
+                    .Select(d => d!.Value)
+                    .DefaultIfEmpty(DateTime.MinValue)
+                    .Max();
+
+                if (lastActive == DateTime.MinValue) lastActive = null;
+
+                return new TrainerClientSummaryViewModel
+                {
+                    ClientId = c.Id,
+                    Name = c.Name,
+                    Email = c.Email ?? string.Empty,
+                    FitnessGoal = c.FitnessGoal,
+                    HeightCm = c.HeightCm,
+                    CurrentWeightKg = latestMetric?.WeightKg,
+                    CurrentBmi = bmi,
+                    BmiCategory = bmi.HasValue ? HealthMetric.GetBmiCategory(bmi.Value) : null,
+                    LastActiveAt = lastActive,
+                    ActiveWorkoutPlansCount = c.WorkoutPlans.Count(p => p.TrainerId == trainerId && p.IsActive),
+                    ActiveDietPlansCount = c.DietPlans.Count(p => p.TrainerId == trainerId && p.IsActive)
+                };
+            }).OrderBy(c => c.Name).ToList();
+
+            var recentActivities = new List<ClientRecentActivityViewModel>();
+
+            var recentWorkouts = await Context.WorkoutLogs
+                .Where(w => assignedClientIds.Contains(w.ClientId))
+                .Include(w => w.Client)
+                .OrderByDescending(w => w.LoggedAt)
+                .Take(5)
+                .Select(w => new ClientRecentActivityViewModel
+                {
+                    ClientId = w.ClientId,
+                    ClientName = w.Client != null ? w.Client.Name : "Client",
+                    ActivityType = "Workout",
+                    Summary = $"{w.Activity} ({w.DurationMinutes} min, {w.CaloriesBurned} kcal)",
+                    Timestamp = w.LoggedAt
+                })
+                .ToListAsync();
+
+            var recentMeals = await Context.MealLogs
+                .Where(m => assignedClientIds.Contains(m.ClientId))
+                .Include(m => m.Client)
+                .OrderByDescending(m => m.LoggedAt)
+                .Take(5)
+                .Select(m => new ClientRecentActivityViewModel
+                {
+                    ClientId = m.ClientId,
+                    ClientName = m.Client != null ? m.Client.Name : "Client",
+                    ActivityType = "Meal",
+                    Summary = $"{m.MealType}: {m.FoodItems} ({m.Calories} kcal)",
+                    Timestamp = m.LoggedAt
+                })
+                .ToListAsync();
+
+            recentActivities.AddRange(recentWorkouts);
+            recentActivities.AddRange(recentMeals);
+            recentActivities = recentActivities.OrderByDescending(a => a.Timestamp).Take(8).ToList();
+
+            var recentFeedbacks = await Context.TrainerFeedbacks
+                .Where(f => f.TrainerId == trainerId)
+                .Include(f => f.Client)
+                .OrderByDescending(f => f.CreatedAtUtc)
+                .Take(5)
+                .Select(f => new TrainerFeedbackItemViewModel
+                {
+                    Id = f.Id,
+                    ClientId = f.ClientId,
+                    ClientName = f.Client != null ? f.Client.Name : "Client",
+                    Title = f.Title,
+                    Comments = f.Comments,
+                    Category = f.Category,
+                    CreatedAtUtc = f.CreatedAtUtc,
+                    IsReadByClient = f.IsReadByClient
+                })
+                .ToListAsync();
+
+            var schedule = await _scheduleService.GetScheduleAsync(trainerId);
+
+            var model = new TrainerDashboardViewModel
+            {
+                TrainerName = trainer.Name,
+                TotalAssignedClients = clients.Count,
+                PendingAppointmentsCount = schedule.PendingAppointments.Count,
+                ActiveWorkoutPlansCount = await Context.WorkoutPlans.CountAsync(p => p.TrainerId == trainerId && p.IsActive),
+                ActiveDietPlansCount = await Context.DietPlans.CountAsync(p => p.TrainerId == trainerId && p.IsActive),
+                AssignedClients = clientSummaries,
+                PendingAppointments = schedule.PendingAppointments.Take(4).ToList(),
+                RecentActivities = recentActivities,
+                RecentFeedbacks = recentFeedbacks
+            };
+
+            return View(model);
+        }
+
+        public async Task<IActionResult> Clients()
+        {
+            var trainerId = CurrentUserId;
+            var assignedClientIds = await Context.ClientTrainerAssignments
+                .Where(a => a.TrainerId == trainerId)
+                .Select(a => a.ClientId)
+                .ToListAsync();
+
+            var clients = await Context.Clients
+                .Where(c => assignedClientIds.Contains(c.Id))
+                .Include(c => c.HealthMetrics)
+                .Include(c => c.WorkoutPlans)
+                .Include(c => c.DietPlans)
+                .OrderBy(c => c.Name)
+                .ToListAsync();
+
+            var list = clients.Select(c =>
+            {
+                var latestMetric = c.HealthMetrics.OrderByDescending(m => m.RecordedAt).FirstOrDefault();
+                var bmi = latestMetric != null ? HealthMetric.CalculateBmi(latestMetric.WeightKg, c.HeightCm) : (double?)null;
+
+                return new TrainerClientSummaryViewModel
+                {
+                    ClientId = c.Id,
+                    Name = c.Name,
+                    Email = c.Email ?? string.Empty,
+                    FitnessGoal = c.FitnessGoal,
+                    HeightCm = c.HeightCm,
+                    CurrentWeightKg = latestMetric?.WeightKg,
+                    CurrentBmi = bmi,
+                    BmiCategory = bmi.HasValue ? HealthMetric.GetBmiCategory(bmi.Value) : null,
+                    LastActiveAt = c.LastLoginAt,
+                    ActiveWorkoutPlansCount = c.WorkoutPlans.Count(p => p.TrainerId == trainerId && p.IsActive),
+                    ActiveDietPlansCount = c.DietPlans.Count(p => p.TrainerId == trainerId && p.IsActive)
+                };
+            }).ToList();
+
+            return View(list);
+        }
+
+        public async Task<IActionResult> ClientDetails(string id)
+        {
+            var trainerId = CurrentUserId;
+            var isAssigned = await Context.ClientTrainerAssignments
+                .AnyAsync(a => a.TrainerId == trainerId && a.ClientId == id);
+
+            if (!isAssigned)
+            {
+                TempData["Error"] = "This client is not currently assigned to you.";
+                return RedirectToAction(nameof(Clients));
+            }
+
+            var client = await Context.Clients
+                .Include(c => c.HealthMetrics.OrderByDescending(m => m.RecordedAt))
+                .Include(c => c.WorkoutLogs.OrderByDescending(w => w.LoggedAt))
+                .Include(c => c.MealLogs.OrderByDescending(m => m.LoggedAt))
+                .Include(c => c.WorkoutPlans.Where(p => p.TrainerId == trainerId)).ThenInclude(p => p.Items)
+                .Include(c => c.DietPlans.Where(p => p.TrainerId == trainerId)).ThenInclude(p => p.Meals)
+                .Include(c => c.Feedbacks.Where(f => f.TrainerId == trainerId).OrderByDescending(f => f.CreatedAtUtc))
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+            if (client == null) return NotFound();
+
+            var metrics = client.HealthMetrics.OrderBy(m => m.RecordedAt).ToList();
+            var startWeight = metrics.FirstOrDefault()?.WeightKg;
+            var currentWeight = metrics.LastOrDefault()?.WeightKg;
+            var weightChange = startWeight.HasValue && currentWeight.HasValue
+                ? Math.Round(currentWeight.Value - startWeight.Value, 1)
+                : (double?)null;
+
+            var currentBmi = currentWeight.HasValue
+                ? HealthMetric.CalculateBmi(currentWeight.Value, client.HeightCm)
+                : (double?)null;
+
+            var model = new TrainerClientDetailsViewModel
+            {
+                Client = client,
+                StartWeightKg = startWeight,
+                CurrentWeightKg = currentWeight,
+                WeightChangeKg = weightChange,
+                CurrentBmi = currentBmi,
+                BmiCategory = currentBmi.HasValue ? HealthMetric.GetBmiCategory(currentBmi.Value) : null,
+                MetricsHistory = client.HealthMetrics.OrderByDescending(m => m.RecordedAt).Take(15).ToList(),
+                WorkoutHistory = client.WorkoutLogs.OrderByDescending(w => w.LoggedAt).Take(15).ToList(),
+                MealHistory = client.MealLogs.OrderByDescending(m => m.LoggedAt).Take(15).ToList(),
+                WorkoutPlans = client.WorkoutPlans.OrderByDescending(p => p.CreatedAtUtc).ToList(),
+                DietPlans = client.DietPlans.OrderByDescending(p => p.CreatedAtUtc).ToList(),
+                Feedbacks = client.Feedbacks.OrderByDescending(f => f.CreatedAtUtc).ToList(),
+                NewFeedbackForm = new TrainerFeedbackFormViewModel
+                {
+                    ClientId = client.Id,
+                    ClientName = client.Name
+                }
+            };
+
+            return View(model);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SendFeedback(TrainerFeedbackFormViewModel model)
+        {
+            var trainerId = CurrentUserId;
+            var isAssigned = await Context.ClientTrainerAssignments
+                .AnyAsync(a => a.TrainerId == trainerId && a.ClientId == model.ClientId);
+
+            if (!isAssigned)
+            {
+                TempData["Error"] = "Client is not assigned to you.";
+                return RedirectToAction(nameof(Clients));
+            }
+
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = "Please fill in all required feedback fields.";
+                return RedirectToAction(nameof(ClientDetails), new { id = model.ClientId });
+            }
+
+            await _feedbackService.AddFeedbackAsync(trainerId, model);
+            TempData["Success"] = "Feedback sent successfully to the client.";
+            return RedirectToAction(nameof(ClientDetails), new { id = model.ClientId });
+        }
+    }
+}

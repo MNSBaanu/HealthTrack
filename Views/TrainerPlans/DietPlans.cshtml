@@ -1,0 +1,126 @@
+@model DietPlanListViewModel
+@{
+    ViewData["Title"] = "Diet plans";
+}
+
+<div class="ht-head">
+    <div>
+        <div class="ht-overline">Trainer workspace</div>
+        <h1 class="ht-title">Personalized nutrition & diet plans</h1>
+    </div>
+    <div class="ht-head-actions">
+        <a class="btn btn-primary" asp-action="CreateDietPlan"><i class="bi bi-plus-lg"></i>New diet plan</a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <section class="ht-card">
+            <div class="ht-card-body p-3">
+                <form method="get" class="row g-2 align-items-center">
+                    <div class="col-auto">
+                        <label class="form-label mb-0 fw-semibold">Filter by client:</label>
+                    </div>
+                    <div class="col-sm-4">
+                        <select name="clientId" class="form-select form-select-sm" asp-for="SelectedClientId" asp-items="Model.AssignedClients">
+                            <option value="">All assigned clients</option>
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-sm btn-line">Filter</button>
+                        @if (!string.IsNullOrEmpty(Model.SelectedClientId))
+                        {
+                            <a asp-action="DietPlans" class="btn btn-sm btn-link text-muted">Clear</a>
+                        }
+                    </div>
+                </form>
+            </div>
+        </section>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-12">
+        <section class="ht-card">
+            <div class="ht-card-body p-0">
+                @if (Model.Plans.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table ht-table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Plan title</th>
+                                    <th>Client</th>
+                                    <th>Daily target</th>
+                                    <th>Macronutrient goals</th>
+                                    <th>Meals</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var plan in Model.Plans)
+                                {
+                                    <tr>
+                                        <td>
+                                            <a asp-action="EditDietPlan" asp-route-id="@plan.Id" class="fw-semibold">
+                                                @plan.Title
+                                            </a>
+                                            <div class="text-muted small">Created @plan.CreatedAtUtc.ToString("MMM d, yyyy")</div>
+                                        </td>
+                                        <td>
+                                            <strong>@plan.Client?.Name</strong>
+                                            <div class="text-muted small">@plan.Client?.Email</div>
+                                        </td>
+                                        <td>
+                                            <span class="fw-bold">@plan.DailyCalorieTarget kcal</span>
+                                            <div class="text-muted small">
+                                                @plan.StartDate.ToString("MMM d") &ndash; @(plan.EndDate.HasValue ? plan.EndDate.Value.ToString("MMM d, yyyy") : "Ongoing")
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="small">
+                                                P: @(plan.TargetProteinGrams ?? 0)g &middot;
+                                                C: @(plan.TargetCarbsGrams ?? 0)g &middot;
+                                                F: @(plan.TargetFatGrams ?? 0)g
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-light text-dark border">@plan.Meals.Count meals</span>
+                                        </td>
+                                        <td>
+                                            @if (plan.IsActive)
+                                            {
+                                                <span class="ht-pill success">Active</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="ht-pill info">Archived</span>
+                                            }
+                                        </td>
+                                        <td class="text-end">
+                                            <a asp-action="EditDietPlan" asp-route-id="@plan.Id" class="btn btn-sm btn-line">
+                                                <i class="bi bi-pencil me-1"></i>Edit
+                                            </a>
+                                            <form asp-action="ToggleDietPlan" asp-route-id="@plan.Id" method="post" class="d-inline ms-1">
+                                                <button type="submit" class="btn btn-sm btn-line" title="@(plan.IsActive ? "Archive" : "Activate")">
+                                                    <i class="bi @(plan.IsActive ? "bi-archive" : "bi-check-circle")"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="p-4">
+                        <partial name="_EmptyState" model='new EmptyStateViewModel("bi bi-cup-hot", "No diet plans found", "Prescribe personalized nutrition schedules for your assigned clients.", "New diet plan", "TrainerPlans", "CreateDietPlan")' />
+                    </div>
+                }
+            </div>
+        </section>
+    </div>
+</div>

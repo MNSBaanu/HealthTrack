@@ -1,0 +1,96 @@
+@model List<TrainerClientSummaryViewModel>
+@{
+    ViewData["Title"] = "My clients";
+}
+
+<div class="ht-head">
+    <div>
+        <div class="ht-overline">Trainer workspace</div>
+        <h1 class="ht-title">My assigned clients</h1>
+    </div>
+    <div class="ht-head-actions">
+        <a class="btn btn-primary" asp-controller="TrainerPlans" asp-action="CreateWorkoutPlan"><i class="bi bi-plus-lg"></i>Prescribe workout</a>
+        <a class="btn btn-line" asp-controller="TrainerPlans" asp-action="CreateDietPlan"><i class="bi bi-plus-lg"></i>Prescribe diet</a>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-12">
+        <section class="ht-card">
+            <div class="ht-card-body p-0">
+                @if (Model.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table ht-table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Client</th>
+                                    <th>Fitness goal</th>
+                                    <th>Height & Weight</th>
+                                    <th>BMI</th>
+                                    <th>Active plans</th>
+                                    <th>Last login</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var client in Model)
+                                {
+                                    <tr>
+                                        <td>
+                                            <a asp-action="ClientDetails" asp-route-id="@client.ClientId" class="fw-semibold">
+                                                @client.Name
+                                            </a>
+                                            <div class="text-muted small">@client.Email</div>
+                                        </td>
+                                        <td>
+                                            <span>@(string.IsNullOrWhiteSpace(client.FitnessGoal) ? "No goal set" : client.FitnessGoal)</span>
+                                        </td>
+                                        <td>
+                                            <div>@client.HeightCm cm</div>
+                                            <div class="text-muted small">@(client.CurrentWeightKg.HasValue ? $"{client.CurrentWeightKg.Value:F1} kg" : "No weight recorded")</div>
+                                        </td>
+                                        <td>
+                                            @if (client.CurrentBmi.HasValue)
+                                            {
+                                                <partial name="_BmiPill" model="client.CurrentBmi.Value" />
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted small">&ndash;</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-light text-dark border me-1">@client.ActiveWorkoutPlansCount Workouts</span>
+                                            <span class="badge bg-light text-dark border">@client.ActiveDietPlansCount Diets</span>
+                                        </td>
+                                        <td>
+                                            <span class="small text-muted">@(client.LastActiveAt.HasValue ? client.LastActiveAt.Value.ToString("MMM d, yyyy") : "Never")</span>
+                                        </td>
+                                        <td class="text-end">
+                                            <a asp-action="ClientDetails" asp-route-id="@client.ClientId" class="btn btn-sm btn-line">
+                                                <i class="bi bi-person-lines-fill me-1"></i>Inspect
+                                            </a>
+                                            <a asp-controller="TrainerPlans" asp-action="CreateWorkoutPlan" asp-route-clientId="@client.ClientId" class="btn btn-sm btn-line ms-1" title="Prescribe Workout">
+                                                <i class="bi bi-lightning-charge"></i>
+                                            </a>
+                                            <a asp-controller="TrainerPlans" asp-action="CreateDietPlan" asp-route-clientId="@client.ClientId" class="btn btn-sm btn-line ms-1" title="Prescribe Diet">
+                                                <i class="bi bi-cup-hot"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="p-4">
+                        <partial name="_EmptyState" model='new EmptyStateViewModel("bi bi-people", "No clients currently assigned", "When an administrator assigns clients to you, they will appear here with full health history.")' />
+                    </div>
+                }
+            </div>
+        </section>
+    </div>
+</div>

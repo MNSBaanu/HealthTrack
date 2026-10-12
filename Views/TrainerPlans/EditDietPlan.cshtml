@@ -1,0 +1,175 @@
+@model DietPlanFormViewModel
+@{
+    ViewData["Title"] = $"Edit diet plan: {Model.Title}";
+}
+
+<a class="ht-back" asp-action="DietPlans"><i class="bi bi-arrow-left"></i>All diet plans</a>
+
+<div class="ht-head">
+    <div>
+        <h1 class="ht-title">Edit nutrition & diet plan</h1>
+        <div class="text-muted small">Assigned to: <strong>@Model.ClientName</strong></div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-10">
+        <section class="ht-card">
+            <div class="ht-card-body p-4">
+                <form asp-action="EditDietPlan" method="post" id="dietPlanForm">
+                    <input type="hidden" asp-for="Id" />
+                    <input type="hidden" asp-for="ClientId" />
+                    <div asp-validation-summary="ModelOnly" class="ht-flash error" role="alert"></div>
+
+                    <fieldset class="ht-fieldset mb-4">
+                        <legend>Plan overview & target calories</legend>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="Title" class="form-label">Plan Title</label>
+                                <input asp-for="Title" class="form-control" required />
+                                <span asp-validation-for="Title" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="DailyCalorieTarget" class="form-label">Daily Calories (kcal)</label>
+                                <input asp-for="DailyCalorieTarget" class="form-control" type="number" required />
+                                <span asp-validation-for="DailyCalorieTarget" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="TargetProteinGrams" class="form-label">Protein (g)</label>
+                                <input asp-for="TargetProteinGrams" class="form-control" type="number" />
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="TargetCarbsGrams" class="form-label">Carbs (g)</label>
+                                <input asp-for="TargetCarbsGrams" class="form-control" type="number" />
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="TargetFatGrams" class="form-label">Fat (g)</label>
+                                <input asp-for="TargetFatGrams" class="form-control" type="number" />
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="StartDate" class="form-label">Start Date</label>
+                                <input asp-for="StartDate" class="form-control" type="date" required />
+                                <span asp-validation-for="StartDate" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="EndDate" class="form-label">End Date (optional)</label>
+                                <input asp-for="EndDate" class="form-control" type="date" />
+                                <span asp-validation-for="EndDate" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-4 d-flex align-items-center pt-3">
+                                <div class="form-check form-switch mt-2">
+                                    <input class="form-check-input" type="checkbox" asp-for="IsActive" id="activeDietSwitch" />
+                                    <label class="form-check-label fw-semibold" for="activeDietSwitch">Currently Active</label>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="Description" class="form-label">Nutrition Guidelines & Hydration Notes</label>
+                                <textarea asp-for="Description" class="form-control" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="ht-fieldset mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <legend class="mb-0">Meal Recommendations</legend>
+                            <button type="button" class="btn btn-sm btn-line" id="addMealBtn">
+                                <i class="bi bi-plus-lg me-1"></i>Add meal
+                            </button>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table ht-table align-middle" id="mealsTable">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 20%;">Meal type</th>
+                                        <th style="width: 45%;">Recommended foods</th>
+                                        <th style="width: 15%;">Calories</th>
+                                        <th style="width: 15%;">Notes</th>
+                                        <th style="width: 5%;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (int i = 0; i < Model.Meals.Count; i++)
+                                    {
+                                        <tr class="meal-row">
+                                            <td>
+                                                <select name="Meals[@i].MealType" class="form-select form-select-sm">
+                                                    <option value="0" selected="@(Model.Meals[i].MealType == MealType.Breakfast)">Breakfast</option>
+                                                    <option value="1" selected="@(Model.Meals[i].MealType == MealType.Lunch)">Lunch</option>
+                                                    <option value="2" selected="@(Model.Meals[i].MealType == MealType.Dinner)">Dinner</option>
+                                                    <option value="3" selected="@(Model.Meals[i].MealType == MealType.Snack)">Snack</option>
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <input name="Meals[@i].FoodRecommendations" value="@Model.Meals[i].FoodRecommendations" class="form-control form-control-sm" required />
+                                            </td>
+                                            <td>
+                                                <input name="Meals[@i].ApproximateCalories" value="@Model.Meals[i].ApproximateCalories" type="number" class="form-control form-control-sm" />
+                                            </td>
+                                            <td>
+                                                <input name="Meals[@i].Notes" value="@Model.Meals[i].Notes" class="form-control form-control-sm" />
+                                            </td>
+                                            <td class="text-end">
+                                                <button type="button" class="btn btn-sm btn-line-danger remove-meal-btn" title="Remove"><i class="bi bi-trash"></i></button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </fieldset>
+
+                    <div class="ht-form-actions">
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1"></i>Update diet plan</button>
+                        <a class="btn btn-line" asp-action="DietPlans">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.getElementById('addMealBtn').addEventListener('click', function () {
+            const tbody = document.querySelector('#mealsTable tbody');
+            const rowCount = tbody.querySelectorAll('tr').length;
+            const newRow = document.createElement('tr');
+            newRow.className = 'meal-row';
+            newRow.innerHTML = `
+                <td>
+                    <select name="Meals[${rowCount}].MealType" class="form-select form-select-sm">
+                        <option value="0">Breakfast</option>
+                        <option value="1">Lunch</option>
+                        <option value="2">Dinner</option>
+                        <option value="3" selected>Snack</option>
+                    </select>
+                </td>
+                <td><input name="Meals[${rowCount}].FoodRecommendations" class="form-control form-control-sm" placeholder="Recommended foods" required /></td>
+                <td><input name="Meals[${rowCount}].ApproximateCalories" type="number" class="form-control form-control-sm" placeholder="kcal" /></td>
+                <td><input name="Meals[${rowCount}].Notes" class="form-control form-control-sm" placeholder="Optional note" /></td>
+                <td class="text-end"><button type="button" class="btn btn-sm btn-line-danger remove-meal-btn" title="Remove"><i class="bi bi-trash"></i></button></td>
+            `;
+            tbody.appendChild(newRow);
+        });
+
+        document.querySelector('#mealsTable').addEventListener('click', function (e) {
+            if (e.target.closest('.remove-meal-btn')) {
+                const row = e.target.closest('tr');
+                const tbody = document.querySelector('#mealsTable tbody');
+                if (tbody.querySelectorAll('tr').length > 1) {
+                    row.remove();
+                    tbody.querySelectorAll('tr').forEach((r, idx) => {
+                        r.querySelectorAll('input, select').forEach(input => {
+                            const name = input.getAttribute('name');
+                            if (name) {
+                                input.setAttribute('name', name.replace(/Meals\[\d+\]/, `Meals[${idx}]`));
+                            }
+                        });
+                    });
+                }
+            }
+        });
+    </script>
+}

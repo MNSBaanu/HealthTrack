@@ -11,6 +11,11 @@ namespace HealthTrack.Models
         [StringLength(200)]
         public string? FitnessGoal { get; set; }
 
+        public byte[]? ProfilePhoto { get; set; }
+
+        [StringLength(32)]
+        public string? ProfilePhotoContentType { get; set; }
+
         public ICollection<HealthMetric> HealthMetrics { get; set; } = new List<HealthMetric>();
 
         public ICollection<WorkoutLog> WorkoutLogs { get; set; } = new List<WorkoutLog>();

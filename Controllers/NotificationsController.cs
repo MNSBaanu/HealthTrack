@@ -34,7 +34,8 @@ namespace HealthTrack.Controllers
         public async Task<IActionResult> MarkAsRead(int id)
         {
             var notification = await Context.Notifications
-                .FirstOrDefaultAsync(n => n.NotificationId == id && n.PersonId == CurrentUserId);
+                .FirstOrDefaultAsync(n => n.NotificationId == id && n.PersonId == CurrentUserId && !n.IsDismissed
+                    && (n.ScheduledFor == null || n.ScheduledFor <= DateTime.Now));
             if (notification == null)
             {
                 return NotFound();
@@ -48,8 +49,11 @@ namespace HealthTrack.Controllers
         [HttpPost]
         public async Task<IActionResult> MarkAllAsRead()
         {
+            await _notificationService.GenerateAppointmentRemindersAsync(CurrentUserId);
+            var now = DateTime.Now;
             await Context.Notifications
-                .Where(n => n.PersonId == CurrentUserId && !n.IsRead)
+                .Where(n => n.PersonId == CurrentUserId && !n.IsRead && !n.IsDismissed
+                    && (n.ScheduledFor == null || n.ScheduledFor <= now))
                 .ExecuteUpdateAsync(s => s.SetProperty(n => n.IsRead, true));
             return RedirectToAction(nameof(Index));
         }
@@ -57,8 +61,12 @@ namespace HealthTrack.Controllers
         [HttpPost]
         public async Task<IActionResult> Delete(int id)
         {
+            // Keep a dismissed automatic reminder so refreshes do not recreate it.
             await Context.Notifications
-                .Where(n => n.NotificationId == id && n.PersonId == CurrentUserId)
+                .Where(n => n.NotificationId == id && n.PersonId == CurrentUserId && n.AppointmentId != null)
+                .ExecuteUpdateAsync(s => s.SetProperty(n => n.IsDismissed, true));
+            await Context.Notifications
+                .Where(n => n.NotificationId == id && n.PersonId == CurrentUserId && n.AppointmentId == null)
                 .ExecuteDeleteAsync();
             return RedirectToAction(nameof(Index));
         }

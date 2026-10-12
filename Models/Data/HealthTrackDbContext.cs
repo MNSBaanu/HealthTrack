@@ -22,6 +22,11 @@ namespace HealthTrack.Models.Data
         public DbSet<ConsultationProvider> ConsultationProviders { get; set; }
         public DbSet<AvailabilitySlot> AvailabilitySlots { get; set; }
         public DbSet<Appointment> Appointments { get; set; }
+        public DbSet<WorkoutPlan> WorkoutPlans { get; set; }
+        public DbSet<WorkoutPlanItem> WorkoutPlanItems { get; set; }
+        public DbSet<DietPlan> DietPlans { get; set; }
+        public DbSet<DietPlanMeal> DietPlanMeals { get; set; }
+        public DbSet<TrainerFeedback> TrainerFeedbacks { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -81,6 +86,31 @@ namespace HealthTrack.Models.Data
                 .Property(n => n.Type)
                 .HasConversion<string>()
                 .HasMaxLength(20);
+
+            builder.Entity<WorkoutPlan>().HasOne(p => p.Trainer).WithMany(t => t.WorkoutPlans)
+                .HasForeignKey(p => p.TrainerId).OnDelete(DeleteBehavior.Restrict);
+            builder.Entity<WorkoutPlan>().HasOne(p => p.Client).WithMany(c => c.WorkoutPlans)
+                .HasForeignKey(p => p.ClientId).OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<WorkoutPlanItem>().HasOne(i => i.WorkoutPlan).WithMany(p => p.Items)
+                .HasForeignKey(i => i.WorkoutPlanId).OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<DietPlan>().HasOne(p => p.Trainer).WithMany(t => t.DietPlans)
+                .HasForeignKey(p => p.TrainerId).OnDelete(DeleteBehavior.Restrict);
+            builder.Entity<DietPlan>().HasOne(p => p.Client).WithMany(c => c.DietPlans)
+                .HasForeignKey(p => p.ClientId).OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<DietPlanMeal>().HasOne(m => m.DietPlan).WithMany(p => p.Meals)
+                .HasForeignKey(m => m.DietPlanId).OnDelete(DeleteBehavior.Cascade);
+            builder.Entity<DietPlanMeal>().Property(m => m.MealType)
+                .HasConversion<string>().HasMaxLength(20);
+
+            builder.Entity<TrainerFeedback>().HasOne(f => f.Trainer).WithMany(t => t.Feedbacks)
+                .HasForeignKey(f => f.TrainerId).OnDelete(DeleteBehavior.Restrict);
+            builder.Entity<TrainerFeedback>().HasOne(f => f.Client).WithMany(c => c.Feedbacks)
+                .HasForeignKey(f => f.ClientId).OnDelete(DeleteBehavior.Cascade);
+            builder.Entity<TrainerFeedback>().Property(f => f.Category)
+                .HasConversion<string>().HasMaxLength(20);
         }
     }
 }

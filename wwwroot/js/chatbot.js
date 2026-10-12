@@ -7,8 +7,8 @@
     const messages = root.querySelector('.ht-chat-messages');
     const admin = root.dataset.role === 'admin';
     const clientTopics = [
-        [/workout plan|exercise plan|assigned.*workout|routine|exercise schedule/, 'Trainer-assigned workout plan views are not available yet. Personal workouts can still be recorded in your training journal.', '/WorkoutLogs', 'Open workout journal'],
-        [/diet plan|meal plan|diet schedule|assigned.*diet/, 'Trainer-assigned diet schedule views are not available yet. Use Meals to record your food and calories separately.', '/MealLogs', 'Open meal journal'],
+        [/workout plan|exercise plan|assigned.*workout|routine|exercise schedule/, 'Open Plans to view your Trainer-assigned workouts, exercises and weekly schedule. Record completed workouts separately in your journal.', '/ClientPlans', 'Open assigned plans'],
+        [/diet plan|meal plan|diet schedule|assigned.*diet/, 'Open Plans to view your assigned diet, recommended meals and daily targets. Use Meals separately to record what you eat.', '/ClientPlans', 'Open assigned plans'],
         [/remind|notification|alert/, 'Workout and meal reminders appear on your dashboard. Approved consultations generate an appointment reminder within 24 hours of the start time. The app refreshes reminders automatically while running.', '/Notifications', 'Open notifications'],
         [/appointment|consult|booking|book |healthcare|provider/, 'Open Appointments, choose Book a consultation, then select a provider and available time. Requests start Pending. You can track approval, rescheduling and cancellation in the appointment list. If there are no providers or times, availability has not been published yet.', '/Appointments', 'Open appointments'],
         [/trend|progress|chart|calories burned|calorie trend|export/, 'Progress shows weight, BMI, calories burned and calories consumed from your saved records. Add records on different days to see trends. Use the export controls for PDF or CSV.', '/Client/Progress', 'View progress'],

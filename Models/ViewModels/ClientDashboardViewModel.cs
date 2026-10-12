@@ -2,6 +2,8 @@ namespace HealthTrack.Models.ViewModels
 {
     public class ClientDashboardViewModel
     {
+        public List<WorkoutPlan> CurrentWorkoutPlans { get; set; } = new();
+        public List<DietPlan> CurrentDietPlans { get; set; } = new();
         public Client Client { get; set; } = null!;
         public HealthMetric? LatestMetric { get; set; }
         public double? WeightChangeKg { get; set; }

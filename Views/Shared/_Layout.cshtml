@@ -23,6 +23,7 @@
                     @if (isClient)
                     {
                         <a class="@Tab("Client", "Index")" asp-controller="Client" asp-action="Index"><i class="bi bi-grid-1x2"></i>Overview</a>
+                        <a class="@Tab("ClientPlans")" asp-controller="ClientPlans" asp-action="Index"><i class="bi bi-calendar-week"></i>Plans</a>
                         <a class="@Tab("Client", "Progress")" asp-controller="Client" asp-action="Progress"><i class="bi bi-graph-up"></i>Progress</a>
                         <a class="@Tab("HealthMetrics")" asp-controller="HealthMetrics" asp-action="Index"><i class="bi bi-rulers"></i>Metrics</a>
                         <a class="@Tab("WorkoutLogs")" asp-controller="WorkoutLogs" asp-action="Index"><i class="bi bi-lightning-charge"></i>Workouts</a>

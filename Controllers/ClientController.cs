@@ -42,6 +42,7 @@ namespace HealthTrack.Controllers
 
             var today = DateTime.Today;
             var nowUtc = _clock.GetUtcNow().UtcDateTime;
+            var planToday = _appointmentTime.ToLocal(nowUtc).Date;
             var upcoming = await Context.Appointments.AsNoTracking()
                 .Include(a => a.Slot).ThenInclude(s => s.Provider)
                 .Where(a => a.ClientId == clientId && a.Slot.StartUtc > nowUtc
@@ -55,6 +56,14 @@ namespace HealthTrack.Controllers
             var model = new ClientDashboardViewModel
             {
                 Client = client,
+                CurrentWorkoutPlans = await Context.WorkoutPlans.AsNoTracking().Include(p => p.Trainer)
+                    .Where(p => p.ClientId == clientId && p.IsActive && p.StartDate.Date <= planToday
+                        && (!p.EndDate.HasValue || p.EndDate.Value.Date >= planToday))
+                    .OrderByDescending(p => p.StartDate).ThenByDescending(p => p.Id).ToListAsync(),
+                CurrentDietPlans = await Context.DietPlans.AsNoTracking().Include(p => p.Trainer)
+                    .Where(p => p.ClientId == clientId && p.IsActive && p.StartDate.Date <= planToday
+                        && (!p.EndDate.HasValue || p.EndDate.Value.Date >= planToday))
+                    .OrderByDescending(p => p.StartDate).ThenByDescending(p => p.Id).ToListAsync(),
                 UpcomingAppointments = upcoming.Select(_appointmentTime.ToViewModel).ToList(),
                 AppointmentTimeZone = _appointmentTime.Label,
                 LatestMetric = metrics.LastOrDefault(),

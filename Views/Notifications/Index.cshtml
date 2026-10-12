@@ -29,6 +29,10 @@
                     <partial name="_NotificationIcon" model="note.Type" />
                     <div class="body">
                         <div class="message">@note.Message</div>
+                        @if (note.AppointmentId is int appointmentId)
+                        {
+                            <a asp-controller="Appointments" asp-action="Details" asp-route-id="@appointmentId">View appointment</a>
+                        }
                         <div class="time">@note.Type &middot; @((note.ScheduledFor ?? note.CreatedAt).ToString("dddd d MMM, HH:mm"))</div>
                     </div>
                     <div class="actions">

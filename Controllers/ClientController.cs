@@ -90,17 +90,36 @@ namespace HealthTrack.Controllers
                 Name = client.Name,
                 DateOfBirth = client.DateOfBirth,
                 HeightCm = client.HeightCm,
-                FitnessGoal = client.FitnessGoal
+                FitnessGoal = client.FitnessGoal,
+                HasPhoto = client.ProfilePhoto != null
             };
             return View(model);
         }
 
         [HttpPost]
+        [RequestSizeLimit(3 * 1024 * 1024)]
         public async Task<IActionResult> Profile(ProfileViewModel model)
         {
             var client = await Context.Clients.FirstAsync(c => c.Id == CurrentUserId);
             model.Email = client.Email ?? string.Empty;
+            model.HasPhoto = client.ProfilePhoto != null;
             ValidatePastDate(model.DateOfBirth, nameof(model.DateOfBirth));
+            byte[]? photo = null;
+            string? photoType = null;
+            if (model.Photo != null)
+            {
+                if (model.Photo.Length == 0 || model.Photo.Length > 2 * 1024 * 1024)
+                    ModelState.AddModelError(nameof(model.Photo), "Choose a JPG or PNG photo smaller than 2 MB.");
+                else
+                {
+                    using var buffer = new MemoryStream();
+                    await model.Photo.CopyToAsync(buffer);
+                    photo = buffer.ToArray();
+                    photoType = ProfilePhotoValidator.GetContentType(photo, model.Photo.FileName);
+                    if (photoType == null)
+                        ModelState.AddModelError(nameof(model.Photo), "Choose a valid JPG or PNG photo, up to 4096 pixels on each side.");
+                }
+            }
             if (!ModelState.IsValid)
             {
                 return View(model);
@@ -110,10 +129,28 @@ namespace HealthTrack.Controllers
             client.DateOfBirth = model.DateOfBirth!.Value;
             client.HeightCm = model.HeightCm!.Value;
             client.FitnessGoal = model.FitnessGoal;
+            if (photo != null)
+            {
+                client.ProfilePhoto = photo;
+                client.ProfilePhotoContentType = photoType;
+            }
             await Context.SaveChangesAsync();
 
             TempData["Success"] = "Profile updated.";
             return RedirectToAction(nameof(Profile));
+        }
+
+        [HttpGet]
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+        public async Task<IActionResult> ProfilePhoto()
+        {
+            var photo = await Context.Clients.AsNoTracking()
+                .Where(c => c.Id == CurrentUserId)
+                .Select(c => new { c.ProfilePhoto, c.ProfilePhotoContentType }).FirstOrDefaultAsync();
+            if (photo?.ProfilePhoto == null || photo.ProfilePhotoContentType == null)
+                return NotFound();
+            Response.Headers["X-Content-Type-Options"] = "nosniff";
+            return File(photo.ProfilePhoto, photo.ProfilePhotoContentType);
         }
 
         public IActionResult Progress()

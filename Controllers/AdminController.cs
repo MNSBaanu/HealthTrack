@@ -135,8 +135,7 @@ namespace HealthTrack.Controllers
                 Email = model.Email,
                 EmailConfirmed = true,
                 Name = model.Name.Trim(),
-                DateOfBirth = model.DateOfBirth!.Value,
-                AccessLevel = model.AccessLevel
+                DateOfBirth = model.DateOfBirth!.Value
             };
 
             var result = await UserManager.CreateAsync(admin, model.Password);
@@ -273,9 +272,9 @@ namespace HealthTrack.Controllers
             {
                 ModelState.AddModelError(nameof(model.ScheduledFor), "Scheduled time must be in the future.");
             }
-            if (!string.IsNullOrEmpty(model.RecipientId) && !await Context.Users.AnyAsync(u => u.Id == model.RecipientId))
+            if (!string.IsNullOrEmpty(model.RecipientId) && !await Context.Clients.AnyAsync(u => u.Id == model.RecipientId))
             {
-                ModelState.AddModelError(nameof(model.RecipientId), "Recipient not found.");
+                ModelState.AddModelError(nameof(model.RecipientId), "Choose a valid Client recipient.");
             }
             if (!ModelState.IsValid)
             {

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using HealthTrack.Models;
@@ -25,12 +26,30 @@ builder.Services.AddIdentity<Person, IdentityRole>(options =>
     })
     .AddEntityFrameworkStores<HealthTrackDbContext>()
     .AddDefaultTokenProviders();
+// Check persisted account state on every request, including existing sessions.
+builder.Services.Configure<SecurityStampValidatorOptions>(options => options.ValidationInterval = TimeSpan.Zero);
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Events.OnValidatePrincipal = async cookieContext =>
+    {
+        await SecurityStampValidator.ValidatePrincipalAsync(cookieContext);
+        if (cookieContext.Principal?.Identity?.IsAuthenticated != true) return;
+        var users = cookieContext.HttpContext.RequestServices.GetRequiredService<UserManager<Person>>();
+        var user = await users.GetUserAsync(cookieContext.Principal);
+        if (user == null || await users.IsLockedOutAsync(user))
+        {
+            cookieContext.RejectPrincipal();
+            await cookieContext.HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);
+        }
+    };
+});
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IExportService, ExportService>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<AppointmentTime>();
 builder.Services.AddScoped<AppointmentBookingService>();
 builder.Services.AddScoped<TrainerAssignmentQueries>();
+builder.Services.AddHostedService<AppointmentReminderWorker>();
 
 var app = builder.Build();
 

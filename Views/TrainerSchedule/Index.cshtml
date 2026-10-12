@@ -1,0 +1,281 @@
+@model TrainerScheduleViewModel
+@{
+    ViewData["Title"] = "Consultation schedule";
+}
+
+<div class="ht-head">
+    <div>
+        <div class="ht-overline">Trainer consultations &middot; Time zone: @Model.TimeZoneLabel</div>
+        <h1 class="ht-title">Schedule & consultations</h1>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <!-- Publish Availability Slot -->
+    <div class="col-lg-4">
+        <section class="ht-card h-100">
+            <div class="ht-card-head">
+                <h2><i class="bi bi-clock-history saffron me-2"></i>Publish available slot</h2>
+            </div>
+            <div class="ht-card-body p-3">
+                <form asp-action="AddSlot" method="post">
+                    <p class="small text-muted mb-3">Publish consultation hours when clients can book 1-on-1 consultations with you.</p>
+
+                    <div class="mb-3">
+                        <label asp-for="NewSlotForm.StartLocal" class="form-label">Start Date & Time</label>
+                        <input asp-for="NewSlotForm.StartLocal" class="form-control" type="datetime-local" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="NewSlotForm.EndLocal" class="form-label">End Date & Time</label>
+                        <input asp-for="NewSlotForm.EndLocal" class="form-control" type="datetime-local" required />
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-calendar-plus me-1"></i>Publish slot
+                    </button>
+                </form>
+            </div>
+        </section>
+    </div>
+
+    <!-- Active Availability Slots List -->
+    <div class="col-lg-8">
+        <section class="ht-card h-100">
+            <div class="ht-card-head">
+                <h2>Upcoming availability slots</h2>
+                <span class="ht-overline">@Model.UpcomingSlots.Count slots</span>
+            </div>
+            <div class="ht-card-body p-0">
+                @if (Model.UpcomingSlots.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table ht-table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Time slot</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var slot in Model.UpcomingSlots)
+                                {
+                                    <tr>
+                                        <td><strong>@slot.StartLocal.ToString("ddd, MMM d, yyyy")</strong></td>
+                                        <td>@slot.StartLocal.ToString("h:mm tt") &ndash; @slot.EndLocal.ToString("h:mm tt")</td>
+                                        <td>
+                                            @if (slot.IsBooked)
+                                            {
+                                                <span class="ht-pill info"><i class="bi bi-person-check-fill me-1"></i>Booked</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="ht-pill success"><i class="bi bi-circle-fill ht-status-dot"></i>Open</span>
+                                            }
+                                        </td>
+                                        <td class="text-end">
+                                            @if (!slot.IsBooked)
+                                            {
+                                                <form asp-action="DeleteSlot" method="post" class="d-inline">
+                                                    <input type="hidden" name="slotId" value="@slot.Id" />
+                                                    <button type="submit" class="btn btn-sm btn-line-danger" title="Remove slot">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted small">Reserved</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="p-4">
+                        <p class="text-muted small mb-0">No active availability slots published. Use the form on the left to open slots for your clients.</p>
+                    </div>
+                }
+            </div>
+        </section>
+    </div>
+</div>
+
+<!-- ================= CONSULTATION APPOINTMENTS ================= -->
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <section class="ht-card">
+            <div class="ht-card-head">
+                <h2><i class="bi bi-inbox saffron me-2"></i>Pending client booking requests</h2>
+                <span class="ht-overline">Needs your review</span>
+            </div>
+            <div class="ht-card-body p-0">
+                @if (Model.PendingAppointments.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table ht-table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Client</th>
+                                    <th>Appointment time</th>
+                                    <th>Requested on</th>
+                                    <th>Client notes</th>
+                                    <th class="text-end">Decision</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var appt in Model.PendingAppointments)
+                                {
+                                    <tr>
+                                        <td>
+                                            <strong>@appt.ClientName</strong>
+                                            <div class="text-muted small">@appt.ClientEmail</div>
+                                        </td>
+                                        <td>
+                                            <div><strong>@appt.StartLocal.ToString("MMM d, yyyy")</strong></div>
+                                            <div class="text-muted small">@appt.StartLocal.ToString("h:mm tt") &ndash; @appt.EndLocal.ToString("h:mm tt")</div>
+                                        </td>
+                                        <td>
+                                            <span class="small text-muted">@appt.RequestedAtLocal.ToString("MMM d, h:mm tt")</span>
+                                        </td>
+                                        <td>
+                                            <span class="small">@(string.IsNullOrWhiteSpace(appt.Notes) ? "No notes provided" : appt.Notes)</span>
+                                        </td>
+                                        <td class="text-end">
+                                            <form asp-action="Approve" method="post" class="d-inline">
+                                                <input type="hidden" name="appointmentId" value="@appt.Id" />
+                                                <button type="submit" class="btn btn-sm btn-primary">
+                                                    <i class="bi bi-check-lg me-1"></i>Approve
+                                                </button>
+                                            </form>
+                                            <form asp-action="Cancel" method="post" class="d-inline ms-1">
+                                                <input type="hidden" name="appointmentId" value="@appt.Id" />
+                                                <button type="submit" class="btn btn-sm btn-line-danger">
+                                                    <i class="bi bi-x-lg me-1"></i>Decline
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="p-4">
+                        <p class="text-muted small mb-0">No pending consultation requests at this time.</p>
+                    </div>
+                }
+            </div>
+        </section>
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- Upcoming Approved Consultations -->
+    <div class="col-lg-6">
+        <section class="ht-card h-100">
+            <div class="ht-card-head">
+                <h2>Confirmed consultations</h2>
+                <span class="ht-overline">Upcoming</span>
+            </div>
+            <div class="ht-card-body p-0">
+                @if (Model.UpcomingApprovedAppointments.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table ht-table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Client</th>
+                                    <th>Time</th>
+                                    <th class="text-end">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var appt in Model.UpcomingApprovedAppointments)
+                                {
+                                    <tr>
+                                        <td>
+                                            <strong>@appt.ClientName</strong>
+                                            <div class="text-muted small">@appt.ClientEmail</div>
+                                        </td>
+                                        <td>
+                                            <div><strong>@appt.StartLocal.ToString("MMM d, yyyy")</strong></div>
+                                            <div class="text-muted small">@appt.StartLocal.ToString("h:mm tt") &ndash; @appt.EndLocal.ToString("h:mm tt")</div>
+                                        </td>
+                                        <td class="text-end">
+                                            <form asp-action="Cancel" method="post" class="d-inline">
+                                                <input type="hidden" name="appointmentId" value="@appt.Id" />
+                                                <button type="submit" class="btn btn-sm btn-line-danger" title="Cancel Consultation">Cancel</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="p-3"><p class="text-muted small mb-0">No upcoming confirmed consultations.</p></div>
+                }
+            </div>
+        </section>
+    </div>
+
+    <!-- Past / Cancelled Consultations History -->
+    <div class="col-lg-6">
+        <section class="ht-card h-100">
+            <div class="ht-card-head">
+                <h2>Consultation history</h2>
+                <span class="ht-overline">Past & cancelled</span>
+            </div>
+            <div class="ht-card-body p-0">
+                @if (Model.PastOrCancelledAppointments.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table ht-table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Client</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var appt in Model.PastOrCancelledAppointments)
+                                {
+                                    <tr>
+                                        <td><strong>@appt.ClientName</strong></td>
+                                        <td>@appt.StartLocal.ToString("MMM d, yyyy h:mm tt")</td>
+                                        <td>
+                                            @if (appt.Status == AppointmentStatus.Cancelled)
+                                            {
+                                                <span class="ht-pill danger">Cancelled</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="ht-pill success">Completed</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="p-3"><p class="text-muted small mb-0">No past or cancelled consultations recorded.</p></div>
+                }
+            </div>
+        </section>
+    </div>
+</div>

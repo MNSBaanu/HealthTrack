@@ -1,0 +1,377 @@
+@model TrainerClientDetailsViewModel
+@{
+    ViewData["Title"] = $"Client: {Model.Client.Name}";
+}
+
+<a class="ht-back" asp-action="Clients"><i class="bi bi-arrow-left"></i>All clients</a>
+
+<div class="ht-head">
+    <div>
+        <div class="ht-overline">Client profile &middot; @Model.Client.Email</div>
+        <h1 class="ht-title">@Model.Client.Name</h1>
+        <div class="text-muted mt-1">
+            <span class="me-3"><i class="bi bi-flag me-1"></i>Goal: <strong>@(string.IsNullOrWhiteSpace(Model.Client.FitnessGoal) ? "None set" : Model.Client.FitnessGoal)</strong></span>
+            <span class="me-3"><i class="bi bi-rulers me-1"></i>Height: <strong>@Model.Client.HeightCm cm</strong></span>
+            <span><i class="bi bi-calendar me-1"></i>DOB: <strong>@Model.Client.DateOfBirth.ToString("MMM d, yyyy")</strong></span>
+        </div>
+    </div>
+    <div class="ht-head-actions">
+        <a class="btn btn-primary" asp-controller="TrainerPlans" asp-action="CreateWorkoutPlan" asp-route-clientId="@Model.Client.Id">
+            <i class="bi bi-lightning-charge"></i>Prescribe workout
+        </a>
+        <a class="btn btn-line" asp-controller="TrainerPlans" asp-action="CreateDietPlan" asp-route-clientId="@Model.Client.Id">
+            <i class="bi bi-cup-hot"></i>Prescribe diet
+        </a>
+    </div>
+</div>
+
+<div class="ht-ledger">
+    <div>
+        <div class="ht-overline">Start weight</div>
+        <div class="value">@(Model.StartWeightKg.HasValue ? $"{Model.StartWeightKg.Value:F1} kg" : "-")</div>
+    </div>
+    <div>
+        <div class="ht-overline">Current weight</div>
+        <div class="value">@(Model.CurrentWeightKg.HasValue ? $"{Model.CurrentWeightKg.Value:F1} kg" : "-")</div>
+    </div>
+    <div>
+        <div class="ht-overline">Weight change</div>
+        <div class="value">
+            @if (Model.WeightChangeKg.HasValue)
+            {
+                <span class="@(Model.WeightChangeKg.Value <= 0 ? "text-success" : "text-danger")">
+                    @(Model.WeightChangeKg.Value > 0 ? "+" : "")@Model.WeightChangeKg.Value kg
+                </span>
+            }
+            else { <span>-</span> }
+        </div>
+    </div>
+    <div>
+        <div class="ht-overline">Current BMI</div>
+        <div class="value">
+            @if (Model.CurrentBmi.HasValue)
+            {
+                <partial name="_BmiPill" model="Model.CurrentBmi.Value" />
+            }
+            else { <span>-</span> }
+        </div>
+    </div>
+</div>
+
+<!-- ================= ACTIVE PLANS ================= -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-6">
+        <section class="ht-card h-100">
+            <div class="ht-card-head">
+                <h2><i class="bi bi-lightning-charge saffron me-2"></i>Prescribed workout plans</h2>
+                <a class="btn btn-sm btn-line" asp-controller="TrainerPlans" asp-action="CreateWorkoutPlan" asp-route-clientId="@Model.Client.Id">
+                    <i class="bi bi-plus"></i>New plan
+                </a>
+            </div>
+            <div class="ht-card-body p-3">
+                @if (Model.WorkoutPlans.Any())
+                {
+                    <div class="accordion" id="workoutAccordion">
+                        @foreach (var plan in Model.WorkoutPlans)
+                        {
+                            <div class="border rounded p-3 mb-2 bg-white">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h4 class="h6 mb-0 fw-bold">@plan.Title</h4>
+                                    <div>
+                                        @if (plan.IsActive)
+                                        {
+                                            <span class="ht-pill success me-1">Active</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="ht-pill info me-1">Archived</span>
+                                        }
+                                        <a asp-controller="TrainerPlans" asp-action="EditWorkoutPlan" asp-route-id="@plan.Id" class="btn btn-sm btn-line p-1">Edit</a>
+                                    </div>
+                                </div>
+                                <div class="text-muted small mb-2">
+                                    Target: @(string.IsNullOrWhiteSpace(plan.Goal) ? "General Fitness" : plan.Goal) &middot;
+                                    @plan.StartDate.ToString("MMM d") &ndash; @(plan.EndDate.HasValue ? plan.EndDate.Value.ToString("MMM d, yyyy") : "Ongoing")
+                                </div>
+                                @if (plan.Items.Any())
+                                {
+                                    <ul class="list-unstyled small mb-0 ps-2 border-start border-2 border-warning">
+                                        @foreach (var item in plan.Items)
+                                        {
+                                            <li class="py-1">
+                                                <strong>@(item.DayOfWeek.HasValue ? item.DayOfWeek.Value.ToString() : "Daily"):</strong>
+                                                @item.ExerciseName
+                                                <span class="text-muted">
+                                                    (@(item.Sets.HasValue ? $"{item.Sets} sets" : "")@(item.Reps.HasValue ? $" x {item.Reps} reps" : "")@(item.DurationMinutes.HasValue ? $" {item.DurationMinutes} min" : ""))
+                                                </span>
+                                            </li>
+                                        }
+                                    </ul>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted small mb-0">No workout plans prescribed yet for this client.</p>
+                }
+            </div>
+        </section>
+    </div>
+
+    <div class="col-lg-6">
+        <section class="ht-card h-100">
+            <div class="ht-card-head">
+                <h2><i class="bi bi-cup-hot saffron me-2"></i>Prescribed diet plans</h2>
+                <a class="btn btn-sm btn-line" asp-controller="TrainerPlans" asp-action="CreateDietPlan" asp-route-clientId="@Model.Client.Id">
+                    <i class="bi bi-plus"></i>New plan
+                </a>
+            </div>
+            <div class="ht-card-body p-3">
+                @if (Model.DietPlans.Any())
+                {
+                    @foreach (var plan in Model.DietPlans)
+                    {
+                        <div class="border rounded p-3 mb-2 bg-white">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h4 class="h6 mb-0 fw-bold">@plan.Title</h4>
+                                <div>
+                                    @if (plan.IsActive)
+                                    {
+                                        <span class="ht-pill success me-1">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="ht-pill info me-1">Archived</span>
+                                    }
+                                    <a asp-controller="TrainerPlans" asp-action="EditDietPlan" asp-route-id="@plan.Id" class="btn btn-sm btn-line p-1">Edit</a>
+                                </div>
+                            </div>
+                            <div class="text-muted small mb-2">
+                                <strong>@plan.DailyCalorieTarget kcal/day</strong> &middot;
+                                P: @(plan.TargetProteinGrams ?? 0)g &middot; C: @(plan.TargetCarbsGrams ?? 0)g &middot; F: @(plan.TargetFatGrams ?? 0)g
+                            </div>
+                            @if (plan.Meals.Any())
+                            {
+                                <ul class="list-unstyled small mb-0 ps-2 border-start border-2 border-success">
+                                    @foreach (var meal in plan.Meals)
+                                    {
+                                        <li class="py-1">
+                                            <strong>@meal.MealType:</strong> @meal.FoodRecommendations
+                                            @if (meal.ApproximateCalories.HasValue)
+                                            {
+                                                <span class="text-muted">(@meal.ApproximateCalories kcal)</span>
+                                            }
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted small mb-0">No diet plans prescribed yet for this client.</p>
+                }
+            </div>
+        </section>
+    </div>
+</div>
+
+<!-- ================= RECENT CLIENT LOGS ================= -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-6">
+        <section class="ht-card h-100">
+            <div class="ht-card-head">
+                <h2>Client's logged workouts</h2>
+                <span class="ht-overline">Latest 15</span>
+            </div>
+            <div class="ht-card-body p-0">
+                @if (Model.WorkoutHistory.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table ht-table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Activity</th>
+                                    <th>Duration</th>
+                                    <th>Burned</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var w in Model.WorkoutHistory)
+                                {
+                                    <tr>
+                                        <td>@w.LoggedAt.ToString("MMM d")</td>
+                                        <td><strong>@w.Activity</strong></td>
+                                        <td>@w.DurationMinutes min</td>
+                                        <td>@w.CaloriesBurned kcal</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="p-3"><p class="text-muted small mb-0">No workouts logged yet.</p></div>
+                }
+            </div>
+        </section>
+    </div>
+
+    <div class="col-lg-6">
+        <section class="ht-card h-100">
+            <div class="ht-card-head">
+                <h2>Client's logged meals</h2>
+                <span class="ht-overline">Latest 15</span>
+            </div>
+            <div class="ht-card-body p-0">
+                @if (Model.MealHistory.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table ht-table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Meal</th>
+                                    <th>Foods</th>
+                                    <th>Calories</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var m in Model.MealHistory)
+                                {
+                                    <tr>
+                                        <td>@m.LoggedAt.ToString("MMM d")</td>
+                                        <td><partial name="_MealTypePill" model="m.MealType" /></td>
+                                        <td><span class="small">@m.FoodItems</span></td>
+                                        <td>@m.Calories kcal</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="p-3"><p class="text-muted small mb-0">No meals logged yet.</p></div>
+                }
+            </div>
+        </section>
+    </div>
+</div>
+
+<!-- ================= WEIGHT & HEALTH METRICS HISTORY ================= -->
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <section class="ht-card">
+            <div class="ht-card-head">
+                <h2>Health metrics & weight trend</h2>
+                <span class="ht-overline">Recorded by client</span>
+            </div>
+            <div class="ht-card-body p-0">
+                @if (Model.MetricsHistory.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table ht-table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Recorded date</th>
+                                    <th>Weight (kg)</th>
+                                    <th>Calculated BMI</th>
+                                    <th>Category</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var m in Model.MetricsHistory)
+                                {
+                                    var bmi = HealthMetric.CalculateBmi(m.WeightKg, Model.Client.HeightCm);
+                                    <tr>
+                                        <td>@m.RecordedAt.ToString("MMM d, yyyy")</td>
+                                        <td><strong>@m.WeightKg.ToString("F1") kg</strong></td>
+                                        <td><partial name="_BmiPill" model="bmi" /></td>
+                                        <td><span class="ht-pill info">@HealthMetric.GetBmiCategory(bmi)</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="p-3"><p class="text-muted small mb-0">No health metrics recorded yet.</p></div>
+                }
+            </div>
+        </section>
+    </div>
+</div>
+
+<!-- ================= TRAINER FEEDBACK SECTION ================= -->
+<div class="row g-3">
+    <div class="col-lg-6">
+        <section class="ht-card h-100">
+            <div class="ht-card-head">
+                <h2>Send coaching feedback</h2>
+            </div>
+            <div class="ht-card-body p-3">
+                <form asp-action="SendFeedback" method="post">
+                    <input type="hidden" asp-for="NewFeedbackForm.ClientId" />
+
+                    <div class="mb-3">
+                        <label asp-for="NewFeedbackForm.Title" class="form-label">Subject / Title</label>
+                        <input asp-for="NewFeedbackForm.Title" class="form-control" placeholder="e.g. Form feedback on squat sessions" required />
+                        <span asp-validation-for="NewFeedbackForm.Title" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="NewFeedbackForm.Category" class="form-label">Category</label>
+                        <select asp-for="NewFeedbackForm.Category" class="form-select" asp-items="Html.GetEnumSelectList<FeedbackCategory>()"></select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="NewFeedbackForm.Comments" class="form-label">Feedback & Recommendations</label>
+                        <textarea asp-for="NewFeedbackForm.Comments" class="form-control" rows="4" placeholder="Write constructive feedback, technique advice, or meal adjustments for your client..." required></textarea>
+                        <span asp-validation-for="NewFeedbackForm.Comments" class="text-danger small"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-send me-1"></i>Send feedback & notify client
+                    </button>
+                </form>
+            </div>
+        </section>
+    </div>
+
+    <div class="col-lg-6">
+        <section class="ht-card h-100">
+            <div class="ht-card-head">
+                <h2>Previous feedback notes</h2>
+            </div>
+            <div class="ht-card-body p-3">
+                @if (Model.Feedbacks.Any())
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var fb in Model.Feedbacks)
+                        {
+                            <div class="list-group-item px-0 py-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <h5 class="h6 mb-0 fw-bold">@fb.Title</h5>
+                                    <span class="ht-pill info">@fb.Category</span>
+                                </div>
+                                <div class="text-muted small mb-2">@fb.CreatedAtUtc.ToString("MMM d, yyyy h:mm tt")</div>
+                                <p class="mb-0 small text-secondary">@fb.Comments</p>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted small mb-0">No feedback notes recorded yet for this client.</p>
+                }
+            </div>
+        </section>
+    </div>
+</div>

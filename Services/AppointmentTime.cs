@@ -15,6 +15,9 @@ public class AppointmentTime
     public DateTime ToLocal(DateTime utc) => TimeZoneInfo.ConvertTimeFromUtc(
         DateTime.SpecifyKind(utc, DateTimeKind.Utc), _zone);
 
+    public DateTime ToUtc(DateTime local) => TimeZoneInfo.ConvertTimeToUtc(
+        DateTime.SpecifyKind(local, DateTimeKind.Unspecified), _zone);
+
     public AppointmentViewModel ToViewModel(Appointment appointment) => new()
     {
         Id = appointment.Id,

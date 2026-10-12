@@ -151,6 +151,55 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Users));
         }
 
+        [HttpGet]
+        public IActionResult CreateTrainer()
+        {
+            return View(new CreateTrainerViewModel());
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CreateTrainer(CreateTrainerViewModel model)
+        {
+            ValidatePastDate(model.DateOfBirth, nameof(model.DateOfBirth));
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var trainer = new Trainer
+            {
+                UserName = model.Email,
+                Email = model.Email,
+                EmailConfirmed = true,
+                Name = model.Name.Trim(),
+                DateOfBirth = model.DateOfBirth!.Value
+            };
+
+            var result = await UserManager.CreateAsync(trainer, model.Password);
+            if (!result.Succeeded)
+            {
+                AddErrors(result);
+                return View(model);
+            }
+
+            await UserManager.AddToRoleAsync(trainer, AppRoles.Trainer);
+
+            var provider = new ConsultationProvider
+            {
+                Name = trainer.Name,
+                Specialty = string.IsNullOrWhiteSpace(model.Specialty) ? "Fitness & Strength Coaching" : model.Specialty.Trim(),
+                Kind = ConsultationProviderKind.Trainer,
+                IsActive = true,
+                PersonId = trainer.Id
+            };
+            Context.ConsultationProviders.Add(provider);
+            await Context.SaveChangesAsync();
+
+            _logger.LogInformation("Admin {AdminId} created trainer {Email}", CurrentUserId, trainer.Email);
+            TempData["Success"] = $"Trainer {trainer.Name} created successfully.";
+            return RedirectToAction(nameof(Users));
+        }
+
         [HttpPost]
         public async Task<IActionResult> ToggleLock(string id)
         {

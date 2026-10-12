@@ -1,0 +1,33 @@
+@model ClientDashboardViewModel
+<div class="row g-3 mb-3">
+    <div class="col-lg-6"><section class="ht-card h-100">
+        <div class="ht-card-head"><h2>Assigned workout plans</h2><a asp-controller="ClientPlans" asp-action="Index">All plans</a></div>
+        <div class="ht-card-body">
+        @if (!Model.CurrentWorkoutPlans.Any()) { <p class="text-muted mb-0">No active workout plans for today. Upcoming and previous plans are available in All plans.</p> }
+        @foreach (var plan in Model.CurrentWorkoutPlans.Take(3))
+        {
+            <article class="mb-3"><h3 class="h5"><a asp-controller="ClientPlans" asp-action="Workout" asp-route-id="@plan.Id">@plan.Title</a></h3>
+                <p class="small text-muted mb-1">Trainer: @(plan.Trainer?.Name ?? "Trainer unavailable")</p>
+                <p class="small mb-1">@plan.StartDate.ToString("d MMM yyyy") – @(plan.EndDate?.ToString("d MMM yyyy") ?? "No end date")</p>
+                @if (!string.IsNullOrWhiteSpace(plan.Goal)) { <p class="small mb-0">@plan.Goal</p> }
+            </article>
+        }
+        @if (Model.CurrentWorkoutPlans.Count > 3) { <p class="small mb-0">@Model.CurrentWorkoutPlans.Count active plans. Open All plans to see the full list.</p> }
+        </div>
+    </section></div>
+    <div class="col-lg-6"><section class="ht-card h-100">
+        <div class="ht-card-head"><h2>Assigned diet plans</h2><a asp-controller="ClientPlans" asp-action="Index">All plans</a></div>
+        <div class="ht-card-body">
+        @if (!Model.CurrentDietPlans.Any()) { <p class="text-muted mb-0">No active diet plans for today. Upcoming and previous plans are available in All plans.</p> }
+        @foreach (var plan in Model.CurrentDietPlans.Take(3))
+        {
+            <article class="mb-3"><h3 class="h5"><a asp-controller="ClientPlans" asp-action="Diet" asp-route-id="@plan.Id">@plan.Title</a></h3>
+                <p class="small text-muted mb-1">Trainer: @(plan.Trainer?.Name ?? "Trainer unavailable")</p>
+                <p class="small mb-1">@plan.StartDate.ToString("d MMM yyyy") – @(plan.EndDate?.ToString("d MMM yyyy") ?? "No end date")</p>
+                <p class="small mb-0">Daily target: @plan.DailyCalorieTarget.ToString("N0") kcal</p>
+            </article>
+        }
+        @if (Model.CurrentDietPlans.Count > 3) { <p class="small mb-0">@Model.CurrentDietPlans.Count active plans. Open All plans to see the full list.</p> }
+        </div>
+    </section></div>
+</div>

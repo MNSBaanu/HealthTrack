@@ -1,0 +1,40 @@
+@model ClientPlansViewModel
+@{ ViewData["Title"] = "Assigned plans"; }
+<div class="ht-head">
+    <div><h1 class="ht-title">Assigned plans</h1><p class="ht-lede">Workout routines and diet schedules assigned by your Trainer. Your personal logs are separate.</p></div>
+    <a class="btn btn-line" asp-controller="Client" asp-action="Index">Back to overview</a>
+</div>
+<div class="row g-3">
+    <div class="col-lg-6"><section class="ht-card h-100">
+        <div class="ht-card-head"><h2>Workout plans</h2></div>
+        <div class="ht-card-body">
+        @if (!Model.WorkoutPlans.Any()) { <p class="text-muted mb-0">No workout plans assigned yet. Your Trainer's saved plans will appear here.</p> }
+        @foreach (var plan in Model.WorkoutPlans)
+        {
+            <article class="border-bottom pb-3 mb-3">
+                <h3 class="h5"><a asp-action="Workout" asp-route-id="@plan.Id">@plan.Title</a></h3>
+                <span class="ht-pill">@ClientPlanStatus.Get(plan.IsActive, plan.StartDate, plan.EndDate, Model.Today)</span>
+                <p class="small text-muted mt-2 mb-1">Trainer: @(plan.Trainer?.Name ?? "Trainer unavailable")</p>
+                <p class="small mb-1">@plan.StartDate.ToString("d MMM yyyy") – @(plan.EndDate?.ToString("d MMM yyyy") ?? "No end date")</p>
+                @if (!string.IsNullOrWhiteSpace(plan.Goal)) { <p class="mb-0">Goal: @plan.Goal</p> }
+            </article>
+        }
+        </div>
+    </section></div>
+    <div class="col-lg-6"><section class="ht-card h-100">
+        <div class="ht-card-head"><h2>Diet plans</h2></div>
+        <div class="ht-card-body">
+        @if (!Model.DietPlans.Any()) { <p class="text-muted mb-0">No diet plans assigned yet. Your Trainer's saved schedules will appear here.</p> }
+        @foreach (var plan in Model.DietPlans)
+        {
+            <article class="border-bottom pb-3 mb-3">
+                <h3 class="h5"><a asp-action="Diet" asp-route-id="@plan.Id">@plan.Title</a></h3>
+                <span class="ht-pill">@ClientPlanStatus.Get(plan.IsActive, plan.StartDate, plan.EndDate, Model.Today)</span>
+                <p class="small text-muted mt-2 mb-1">Trainer: @(plan.Trainer?.Name ?? "Trainer unavailable")</p>
+                <p class="small mb-1">@plan.StartDate.ToString("d MMM yyyy") – @(plan.EndDate?.ToString("d MMM yyyy") ?? "No end date")</p>
+                <p class="mb-0">Daily target: @plan.DailyCalorieTarget.ToString("N0") kcal</p>
+            </article>
+        }
+        </div>
+    </section></div>
+</div>

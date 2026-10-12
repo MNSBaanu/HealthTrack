@@ -41,6 +41,35 @@ namespace HealthTrack.Models.Data
             {
                 await userManager.AddToRoleAsync(admin, AppRoles.Admin);
             }
+
+            var trainerEmail = "trainer@healthtrack.com";
+            if (await userManager.FindByEmailAsync(trainerEmail) == null)
+            {
+                var trainer = new Trainer
+                {
+                    UserName = trainerEmail,
+                    Email = trainerEmail,
+                    EmailConfirmed = true,
+                    Name = "Coach Alex Rivera",
+                    DateOfBirth = new DateTime(1992, 5, 14)
+                };
+                var trainerResult = await userManager.CreateAsync(trainer, "Trainer@12345");
+                if (trainerResult.Succeeded)
+                {
+                    await userManager.AddToRoleAsync(trainer, AppRoles.Trainer);
+
+                    var dbContext = services.GetRequiredService<HealthTrackDbContext>();
+                    dbContext.ConsultationProviders.Add(new ConsultationProvider
+                    {
+                        Name = trainer.Name,
+                        Specialty = "Strength, Conditioning & Hypertrophy",
+                        Kind = ConsultationProviderKind.Trainer,
+                        IsActive = true,
+                        PersonId = trainer.Id
+                    });
+                    await dbContext.SaveChangesAsync();
+                }
+            }
         }
     }
 }

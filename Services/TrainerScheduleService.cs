@@ -181,52 +181,106 @@ public class TrainerScheduleService : ITrainerScheduleService
     public async Task<(bool Success, string? Error)> ApproveAppointmentAsync(string trainerId, int appointmentId)
     {
         var provider = await GetOrCreateTrainerProviderAsync(trainerId);
-        var appointment = await _context.Appointments
-            .Include(a => a.Slot)
-            .Include(a => a.Client)
-            .FirstOrDefaultAsync(a => a.Id == appointmentId && a.Slot.ProviderId == provider.Id);
 
-        if (appointment == null) return (false, "Appointment not found.");
-
-        if (appointment.Status != AppointmentStatus.Pending)
+        // Use serializable transaction to prevent concurrent approval requests
+        await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+        try
         {
-            return (false, $"Appointment is already {appointment.Status}.");
+            var appointment = await _context.Appointments
+                .Include(a => a.Slot)
+                .Include(a => a.Client)
+                .FirstOrDefaultAsync(a => a.Id == appointmentId && a.Slot.ProviderId == provider.Id);
+
+            if (appointment == null) return (false, "Appointment not found.");
+
+            // Idempotency check: if already approved, return success without duplicate notification
+            if (appointment.Status == AppointmentStatus.Approved)
+            {
+                await transaction.RollbackAsync();
+                return (true, null);
+            }
+
+            // Reject if in any other non-pending state
+            if (appointment.Status != AppointmentStatus.Pending)
+            {
+                return (false, $"Cannot approve appointment that is already {appointment.Status}.");
+            }
+
+            appointment.Status = AppointmentStatus.Approved;
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            var localStart = _time.ToLocal(appointment.Slot.StartUtc);
+            await _notificationService.SendAsync(
+                appointment.ClientId,
+                $"Your consultation appointment on {localStart:MMM dd, yyyy} at {localStart:hh:mm tt} was APPROVED by your Trainer.",
+                NotificationType.Appointment);
+
+            return (true, null);
         }
-
-        appointment.Status = AppointmentStatus.Approved;
-        await _context.SaveChangesAsync();
-
-        var localStart = _time.ToLocal(appointment.Slot.StartUtc);
-        await _notificationService.SendAsync(
-            appointment.ClientId,
-            $"Your consultation appointment on {localStart:MMM dd, yyyy} at {localStart:hh:mm tt} was APPROVED by your Trainer.",
-            NotificationType.Appointment);
-
-        return (true, null);
+        catch (Exception exception) when (IsApprovalConflict(exception))
+        {
+            _context.ChangeTracker.Clear();
+            return (false, "Appointment state changed while processing. Please try again.");
+        }
     }
 
     public async Task<(bool Success, string? Error)> CancelAppointmentAsync(string trainerId, int appointmentId, string? reason)
     {
         var provider = await GetOrCreateTrainerProviderAsync(trainerId);
-        var appointment = await _context.Appointments
-            .Include(a => a.Slot)
-            .Include(a => a.Client)
-            .FirstOrDefaultAsync(a => a.Id == appointmentId && a.Slot.ProviderId == provider.Id);
 
-        if (appointment == null) return (false, "Appointment not found.");
+        // Use serializable transaction to prevent concurrent cancellation requests
+        await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+        try
+        {
+            var appointment = await _context.Appointments
+                .Include(a => a.Slot)
+                .Include(a => a.Client)
+                .FirstOrDefaultAsync(a => a.Id == appointmentId && a.Slot.ProviderId == provider.Id);
 
-        appointment.Status = AppointmentStatus.Cancelled;
-        await _context.SaveChangesAsync();
+            if (appointment == null) return (false, "Appointment not found.");
 
-        var localStart = _time.ToLocal(appointment.Slot.StartUtc);
-        var note = string.IsNullOrWhiteSpace(reason) ? "" : $" Reason: {reason.Trim()}";
-        await _notificationService.SendAsync(
-            appointment.ClientId,
-            $"Your consultation appointment on {localStart:MMM dd, yyyy} at {localStart:hh:mm tt} was CANCELLED by your Trainer.{note}",
-            NotificationType.Appointment);
+            // Idempotency check: if already cancelled, return success without duplicate notification
+            if (appointment.Status == AppointmentStatus.Cancelled)
+            {
+                await transaction.RollbackAsync();
+                return (true, null);
+            }
 
-        return (true, null);
+            // Reject if already completed
+            if (appointment.Status == AppointmentStatus.Completed)
+            {
+                return (false, "Cannot cancel an appointment that is already completed.");
+            }
+
+            var oldStatus = appointment.Status;
+            appointment.Status = AppointmentStatus.Cancelled;
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            var localStart = _time.ToLocal(appointment.Slot.StartUtc);
+            var note = string.IsNullOrWhiteSpace(reason) ? "" : $" Reason: {reason.Trim()}";
+            await _notificationService.SendAsync(
+                appointment.ClientId,
+                $"Your consultation appointment on {localStart:MMM dd, yyyy} at {localStart:hh:mm tt} was CANCELLED by your Trainer.{note}",
+                NotificationType.Appointment);
+
+            return (true, null);
+        }
+        catch (Exception exception) when (IsCancellationConflict(exception))
+        {
+            _context.ChangeTracker.Clear();
+            return (false, "Appointment state changed while processing. Please try again.");
+        }
     }
+
+    private static bool IsApprovalConflict(Exception exception) =>
+        exception is Microsoft.Data.SqlClient.SqlException { Number: 1205 or 2601 or 2627 }
+        || exception is DbUpdateException { InnerException: Microsoft.Data.SqlClient.SqlException { Number: 1205 or 2601 or 2627 } };
+
+    private static bool IsCancellationConflict(Exception exception) =>
+        exception is Microsoft.Data.SqlClient.SqlException { Number: 1205 or 2601 or 2627 }
+        || exception is DbUpdateException { InnerException: Microsoft.Data.SqlClient.SqlException { Number: 1205 or 2601 or 2627 } };
 
     public async Task<(bool Success, string? Error)> RescheduleAppointmentAsync(string trainerId, int appointmentId, int newSlotId)
     {

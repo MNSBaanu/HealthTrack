@@ -95,5 +95,29 @@ namespace HealthTrack.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+
+        [HttpPost]
+        public async Task<IActionResult> Reschedule(int appointmentId, int newSlotId)
+        {
+            var (success, error) = await _scheduleService.RescheduleAppointmentAsync(CurrentUserId, appointmentId, newSlotId);
+            if (!success)
+            {
+                TempData["Error"] = error;
+            }
+            else
+            {
+                TempData["Success"] = "Appointment rescheduled. The client has been notified.";
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> RescheduleAppointment(int appointmentId)
+        {
+            var model = await _scheduleService.LoadReschedulePageAsync(CurrentUserId, appointmentId);
+            if (model == null) return NotFound();
+            return View("Reschedule", model);
+        }
     }
 }

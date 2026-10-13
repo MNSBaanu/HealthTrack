@@ -2,6 +2,7 @@ using HealthTrack.Models;
 using HealthTrack.Models.Data;
 using HealthTrack.Models.ViewModels;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.SqlClient;
 
 namespace HealthTrack.Services;
 
@@ -226,4 +227,101 @@ public class TrainerScheduleService : ITrainerScheduleService
 
         return (true, null);
     }
+
+    public async Task<(bool Success, string? Error)> RescheduleAppointmentAsync(string trainerId, int appointmentId, int newSlotId)
+    {
+        var provider = await GetOrCreateTrainerProviderAsync(trainerId);
+        var appointment = await _context.Appointments
+            .Include(a => a.Slot)
+            .Include(a => a.Client)
+            .FirstOrDefaultAsync(a => a.Id == appointmentId && a.Slot.ProviderId == provider.Id);
+
+        if (appointment == null) return (false, "Appointment not found.");
+
+        if (appointment.Status == AppointmentStatus.Cancelled)
+            return (false, "Cannot reschedule a cancelled appointment.");
+
+        if (appointment.Status == AppointmentStatus.Completed)
+            return (false, "Cannot reschedule a completed appointment.");
+
+        var newSlot = await _context.AvailabilitySlots.Include(s => s.Provider)
+            .FirstOrDefaultAsync(s => s.Id == newSlotId && s.ProviderId == provider.Id);
+
+        if (newSlot == null || !newSlot.IsAvailable || !newSlot.Provider.IsActive)
+            return (false, "The new appointment time is no longer available. Choose another time.");
+
+        var nowUtc = _clock.GetUtcNow().UtcDateTime;
+        if (newSlot.StartUtc <= nowUtc || newSlot.EndUtc <= newSlot.StartUtc)
+            return (false, "Choose an appointment time in the future.");
+
+        // Check for conflicts with serializable isolation to prevent concurrent bookings
+        await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+        try
+        {
+            var conflicts = _context.Appointments.Where(a => a.Status != AppointmentStatus.Cancelled
+                && a.Slot.StartUtc < newSlot.EndUtc && a.Slot.EndUtc > newSlot.StartUtc);
+
+            if (await conflicts.AnyAsync(a => a.Slot.ProviderId == newSlot.ProviderId && a.Id != appointmentId))
+                return (false, "The provider is already booked at that time. Choose another time.");
+
+            if (await conflicts.AnyAsync(a => a.ClientId == appointment.ClientId && a.Id != appointmentId))
+                return (false, "The client already has an appointment that overlaps this time.");
+
+            var oldSlot = appointment.Slot;
+            var oldStart = _time.ToLocal(oldSlot.StartUtc);
+            var newStart = _time.ToLocal(newSlot.StartUtc);
+
+            appointment.SlotId = newSlotId;
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            // Notify client of reschedule with both old and new times
+            await _notificationService.SendAsync(
+                appointment.ClientId,
+                $"Your consultation appointment was rescheduled from {oldStart:MMM dd, yyyy} at {oldStart:hh:mm tt} to {newStart:MMM dd, yyyy} at {newStart:hh:mm tt}.",
+                NotificationType.Appointment);
+
+            return (true, null);
+        }
+        catch (Exception exception) when (IsRescheduleConflict(exception))
+        {
+            _context.ChangeTracker.Clear();
+            return (false, "Availability changed while you were rescheduling. Refresh and choose an available time.");
+        }
+    }
+
+    public async Task<ReschedulePageViewModel?> LoadReschedulePageAsync(string trainerId, int appointmentId)
+    {
+        var provider = await GetOrCreateTrainerProviderAsync(trainerId);
+        var appointment = await _context.Appointments
+            .Include(a => a.Slot).ThenInclude(s => s.Provider)
+            .FirstOrDefaultAsync(a => a.Id == appointmentId && a.Slot.ProviderId == provider.Id);
+
+        if (appointment == null) return null;
+
+        var now = _clock.GetUtcNow().UtcDateTime;
+        var slots = await _context.AvailabilitySlots.AsNoTracking()
+            .Include(s => s.Provider)
+            .Where(s => s.ProviderId == provider.Id && s.IsAvailable && s.StartUtc > now && s.EndUtc > s.StartUtc)
+            .Where(s => !_context.Appointments.Any(a => a.Status != AppointmentStatus.Cancelled
+                && a.Id != appointmentId
+                && a.Slot.StartUtc < s.EndUtc && a.Slot.EndUtc > s.StartUtc))
+            .OrderBy(s => s.StartUtc).ToListAsync();
+
+        return new ReschedulePageViewModel
+        {
+            AppointmentId = appointmentId,
+            NewSlotId = appointment.SlotId,
+            ProviderName = appointment.Slot.Provider.Name,
+            CurrentStartLocal = _time.ToLocal(appointment.Slot.StartUtc),
+            CurrentEndLocal = _time.ToLocal(appointment.Slot.EndUtc),
+            TimeZoneLabel = _time.Label,
+            AvailableSlots = slots.Select(s => new AvailableSlotViewModel(s.Id, s.Provider.Name,
+                _time.ToLocal(s.StartUtc), _time.ToLocal(s.EndUtc))).ToList()
+        };
+    }
+
+    private static bool IsRescheduleConflict(Exception exception) =>
+        exception is Microsoft.Data.SqlClient.SqlException { Number: 1205 or 2601 or 2627 }
+        || exception is DbUpdateException { InnerException: Microsoft.Data.SqlClient.SqlException { Number: 1205 or 2601 or 2627 } };
 }

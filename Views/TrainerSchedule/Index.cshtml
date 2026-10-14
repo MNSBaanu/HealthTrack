@@ -211,7 +211,10 @@
                                             <div class="text-muted small">@appt.StartLocal.ToString("h:mm tt") &ndash; @appt.EndLocal.ToString("h:mm tt")</div>
                                         </td>
                                         <td class="text-end">
-                                            <form asp-action="Cancel" method="post" class="d-inline">
+                                            <a asp-action="RescheduleAppointment" asp-route-appointmentId="@appt.Id" class="btn btn-sm btn-line">
+                                                <i class="bi bi-calendar-event me-1"></i>Reschedule
+                                            </a>
+                                            <form asp-action="Cancel" method="post" class="d-inline ms-1">
                                                 <input type="hidden" name="appointmentId" value="@appt.Id" />
                                                 <button type="submit" class="btn btn-sm btn-line-danger" title="Cancel Consultation">Cancel</button>
                                             </form>

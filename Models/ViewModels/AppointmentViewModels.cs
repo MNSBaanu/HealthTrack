@@ -11,6 +11,23 @@ public class BookingForm
     public string? Notes { get; set; }
 }
 
+public class RescheduleForm
+{
+    [Required(ErrorMessage = "Choose an available appointment time."), Range(1, int.MaxValue)]
+    [Display(Name = "New appointment time")]
+    public int? NewSlotId { get; set; }
+}
+
+public class ReschedulePageViewModel : RescheduleForm
+{
+    public int AppointmentId { get; set; }
+    public string ProviderName { get; set; } = string.Empty;
+    public DateTime CurrentStartLocal { get; set; }
+    public DateTime CurrentEndLocal { get; set; }
+    public List<AvailableSlotViewModel> AvailableSlots { get; set; } = new();
+    public string TimeZoneLabel { get; set; } = string.Empty;
+}
+
 public class BookingPageViewModel : BookingForm
 {
     public int? ProviderId { get; set; }

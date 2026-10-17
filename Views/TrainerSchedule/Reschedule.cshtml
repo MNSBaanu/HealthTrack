@@ -1,0 +1,80 @@
+@model ReschedulePageViewModel
+@{ ViewData["Title"] = "Reschedule consultation"; }
+
+<a class="ht-back" asp-action="Index"><i class="bi bi-arrow-left"></i>Back to schedule</a>
+
+<div class="ht-head">
+    <div>
+        <h1 class="ht-title">Reschedule consultation</h1>
+        <p class="ht-lede">Select a new date and time for the appointment. Times are shown in @Model.TimeZoneLabel.</p>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-5">
+        <section class="ht-card h-100">
+            <div class="ht-card-head">
+                <h2>Current appointment</h2>
+            </div>
+            <div class="ht-card-body">
+                <div class="mb-3">
+                    <div class="text-muted small">Provider</div>
+                    <strong>@Model.ProviderName</strong>
+                </div>
+                <div class="mb-3">
+                    <div class="text-muted small">Current date & time</div>
+                    <strong>@Model.CurrentStartLocal.ToString("ddd, d MMM yyyy")</strong>
+                    <div class="text-muted small">@Model.CurrentStartLocal.ToString("h:mm tt")–@Model.CurrentEndLocal.ToString("h:mm tt")</div>
+                </div>
+                <hr />
+                <p class="text-muted mb-0 small">Select a new time slot on the right to reschedule this consultation. The client will be notified of the change.</p>
+            </div>
+        </section>
+    </div>
+
+    <div class="col-lg-7">
+        <section class="ht-card">
+            <div class="ht-card-body">
+                <form asp-action="Reschedule" method="post">
+                    <input type="hidden" name="appointmentId" value="@Model.AppointmentId" />
+                    <div asp-validation-summary="All" class="text-danger" role="alert"></div>
+
+                    @if (Model.AvailableSlots.Any())
+                    {
+                        <div class="mb-3">
+                            <label asp-for="NewSlotId" class="form-label">Select new appointment time</label>
+                            <select asp-for="NewSlotId" class="form-select">
+                                <option value="">Choose an available time</option>
+                                @foreach (var slot in Model.AvailableSlots)
+                                {
+                                    <option value="@slot.Id" selected="@(Model.NewSlotId == slot.Id)">
+                                        @slot.Start.ToString("ddd, d MMM yyyy HH:mm")–@slot.End.ToString("HH:mm")
+                                    </option>
+                                }
+                            </select>
+                            <span asp-validation-for="NewSlotId" class="text-danger"></span>
+                        </div>
+
+                        <p class="text-muted small mb-3">The client will receive a notification about this reschedule with both the old and new appointment times.</p>
+
+                        <div class="ht-form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-calendar-event me-1"></i>Reschedule appointment
+                            </button>
+                            <a class="btn btn-line" asp-action="Index">Cancel</a>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">No available times for rescheduling. Publish more availability slots or wait for existing appointments to be cancelled.</p>
+                        <div class="ht-form-actions">
+                            <a class="btn btn-line" asp-action="Index">Back to schedule</a>
+                        </div>
+                    }
+                </form>
+            </div>
+        </section>
+    </div>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

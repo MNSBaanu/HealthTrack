@@ -85,7 +85,7 @@
                                         <td>
                                             @if (c.CurrentBmi.HasValue)
                                             {
-                                                <partial name="_BmiPill" model="c.CurrentBmi.Value" />
+                                                <partial name="_BmiPill" model="c.BmiCategory ?? string.Empty" />
                                             }
                                             else { <span>-</span> }
                                         </td>

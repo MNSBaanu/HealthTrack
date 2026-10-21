@@ -21,5 +21,9 @@ namespace HealthTrack.Models.ViewModels
         public double? CurrentBmi => CurrentWeightKg.HasValue
             ? HealthMetric.CalculateBmi(CurrentWeightKg.Value, HeightCm)
             : null;
+
+        public string? BmiCategory => CurrentBmi.HasValue
+            ? HealthMetric.GetBmiCategory(CurrentBmi.Value)
+            : null;
     }
 }

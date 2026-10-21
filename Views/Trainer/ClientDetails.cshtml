@@ -51,7 +51,7 @@
         <div class="value">
             @if (Model.CurrentBmi.HasValue)
             {
-                <partial name="_BmiPill" model="Model.CurrentBmi.Value" />
+                <partial name="_BmiPill" model="Model.BmiCategory ?? string.Empty" />
             }
             else { <span>-</span> }
         </div>
@@ -289,11 +289,12 @@
                                 @foreach (var m in Model.MetricsHistory)
                                 {
                                     var bmi = HealthMetric.CalculateBmi(m.WeightKg, Model.Client.HeightCm);
+                                    var bmiCategory = HealthMetric.GetBmiCategory(bmi);
                                     <tr>
                                         <td>@m.RecordedAt.ToString("MMM d, yyyy")</td>
                                         <td><strong>@m.WeightKg.ToString("F1") kg</strong></td>
-                                        <td><partial name="_BmiPill" model="bmi" /></td>
-                                        <td><span class="ht-pill info">@HealthMetric.GetBmiCategory(bmi)</span></td>
+                                        <td><partial name="_BmiPill" model="bmiCategory" /></td>
+                                        <td><span class="ht-pill info">@bmiCategory</span></td>
                                     </tr>
                                 }
                             </tbody>

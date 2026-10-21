@@ -18,7 +18,12 @@
 
         <div class="mb-3">
             <label asp-for="Password" class="form-label"></label>
-            <input asp-for="Password" class="form-control" autocomplete="current-password" />
+            <div class="position-relative">
+                <input asp-for="Password" class="form-control pe-5" autocomplete="current-password" />
+                <button type="button" id="togglePassword" class="btn position-absolute top-50 end-0 translate-middle-y border-0 bg-transparent px-3" aria-label="Show password" aria-controls="Password" aria-pressed="false" title="Show password">
+                    <i class="bi bi-eye" aria-hidden="true"></i>
+                </button>
+            </div>
             <span asp-validation-for="Password" class="text-danger"></span>
         </div>
 
@@ -37,4 +42,21 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const input = document.getElementById('Password');
+            const toggle = document.getElementById('togglePassword');
+            const icon = toggle.querySelector('i');
+            toggle.addEventListener('click', () => {
+                const visible = input.type === 'password';
+                input.type = visible ? 'text' : 'password';
+                const label = visible ? 'Hide password' : 'Show password';
+                toggle.setAttribute('aria-label', label);
+                toggle.setAttribute('aria-pressed', String(visible));
+                toggle.title = label;
+                icon.classList.toggle('bi-eye', !visible);
+                icon.classList.toggle('bi-eye-slash', visible);
+            });
+        })();
+    </script>
 }

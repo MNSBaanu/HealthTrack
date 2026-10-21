@@ -33,7 +33,12 @@ public class TrainerScheduleService : ITrainerScheduleService
 
         if (provider != null) return provider;
 
-        var trainer = await _context.Trainers.FirstAsync(t => t.Id == trainerId);
+        var trainer = await _context.Trainers.FirstOrDefaultAsync(t => t.Id == trainerId);
+        if (trainer == null)
+        {
+            throw new InvalidOperationException($"Trainer with ID {trainerId} not found in the database.");
+        }
+
         provider = new ConsultationProvider
         {
             PersonId = trainer.Id,

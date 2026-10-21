@@ -123,7 +123,7 @@
                                         <td>
                                             @if (client.CurrentBmi.HasValue)
                                             {
-                                                <partial name="_BmiPill" model="client.CurrentBmi.Value" />
+                                                <partial name="_BmiPill" model="client.BmiCategory ?? string.Empty" />
                                             }
                                             else
                                             {

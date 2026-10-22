@@ -867,12 +867,30 @@ namespace HealthTrack.Migrations
                     b.Property<double>("HeightCm")
                         .HasColumnType("float");
 
+                    b.Property<bool>("MealReminderEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("MealReminderHour")
+                        .HasColumnType("int");
+
                     b.Property<byte[]>("ProfilePhoto")
                         .HasColumnType("varbinary(max)");
 
                     b.Property<string>("ProfilePhotoContentType")
                         .HasMaxLength(32)
                         .HasColumnType("nvarchar(32)");
+
+                    b.Property<bool>("WeightReminderEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("WeightReminderHour")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("WorkoutReminderEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("WorkoutReminderHour")
+                        .HasColumnType("int");
 
                     b.HasDiscriminator().HasValue("Client");
                 });

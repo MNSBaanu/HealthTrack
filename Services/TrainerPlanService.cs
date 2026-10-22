@@ -192,4 +192,44 @@ public class TrainerPlanService : ITrainerPlanService
         await _context.SaveChangesAsync();
         return true;
     }
+
+    public async Task<bool> DeleteWorkoutPlanAsync(int planId, string trainerId)
+    {
+        var plan = await _context.WorkoutPlans
+            .Include(p => p.Items)
+            .FirstOrDefaultAsync(p => p.Id == planId && p.TrainerId == trainerId);
+
+        if (plan == null) return false;
+
+        var clientId = plan.ClientId;
+        var planTitle = plan.Title;
+
+        _context.WorkoutPlanItems.RemoveRange(plan.Items);
+        _context.WorkoutPlans.Remove(plan);
+        await _context.SaveChangesAsync();
+
+        await _notificationService.SendAsync(clientId, $"Your workout plan '{planTitle}' has been deleted by your Trainer.", NotificationType.Workout);
+
+        return true;
+    }
+
+    public async Task<bool> DeleteDietPlanAsync(int planId, string trainerId)
+    {
+        var plan = await _context.DietPlans
+            .Include(p => p.Meals)
+            .FirstOrDefaultAsync(p => p.Id == planId && p.TrainerId == trainerId);
+
+        if (plan == null) return false;
+
+        var clientId = plan.ClientId;
+        var planTitle = plan.Title;
+
+        _context.DietPlanMeals.RemoveRange(plan.Meals);
+        _context.DietPlans.Remove(plan);
+        await _context.SaveChangesAsync();
+
+        await _notificationService.SendAsync(clientId, $"Your diet plan '{planTitle}' has been deleted by your Trainer.", NotificationType.Meal);
+
+        return true;
+    }
 }

@@ -1,6 +1,8 @@
 using HealthTrack.Models;
 using HealthTrack.Models.Data;
 using HealthTrack.Models.ViewModels;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
 
 namespace HealthTrack.Services;
 
@@ -37,5 +39,66 @@ public class TrainerFeedbackService : ITrainerFeedbackService
             NotificationType.General);
 
         return feedback.Id;
+    }
+
+    public async Task<TrainerFeedbackFormViewModel?> GetFeedbackForEditAsync(string trainerId, int feedbackId)
+    {
+        var feedback = await _context.TrainerFeedbacks
+            .FirstOrDefaultAsync(f => f.Id == feedbackId && f.TrainerId == trainerId);
+
+        if (feedback == null) return null;
+
+        return new TrainerFeedbackFormViewModel
+        {
+            ClientId = feedback.ClientId,
+            ClientName = feedback.Client?.Name,
+            Title = feedback.Title,
+            Comments = feedback.Comments,
+            Category = feedback.Category,
+            AssignedClients = await GetAssignedClientsAsync(trainerId)
+        };
+    }
+
+    public async Task<bool> UpdateFeedbackAsync(string trainerId, int feedbackId, TrainerFeedbackFormViewModel model)
+    {
+        var feedback = await _context.TrainerFeedbacks
+            .FirstOrDefaultAsync(f => f.Id == feedbackId && f.TrainerId == trainerId);
+
+        if (feedback == null) return false;
+
+        feedback.Title = model.Title.Trim();
+        feedback.Comments = model.Comments.Trim();
+        feedback.Category = model.Category;
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> DeleteFeedbackAsync(string trainerId, int feedbackId)
+    {
+        var feedback = await _context.TrainerFeedbacks
+            .FirstOrDefaultAsync(f => f.Id == feedbackId && f.TrainerId == trainerId);
+
+        if (feedback == null) return false;
+
+        _context.TrainerFeedbacks.Remove(feedback);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    private async Task<List<SelectListItem>> GetAssignedClientsAsync(string trainerId)
+    {
+        var clients = await _context.ClientTrainerAssignments
+            .Where(a => a.TrainerId == trainerId)
+            .Include(a => a.Client)
+            .Select(a => a.Client)
+            .OrderBy(c => c.Name)
+            .ToListAsync();
+
+        return clients.Select(c => new SelectListItem
+        {
+            Value = c.Id,
+            Text = c.Name
+        }).ToList();
     }
 }

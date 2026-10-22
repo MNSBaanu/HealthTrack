@@ -130,6 +130,15 @@ namespace HealthTrack.Controllers
             return client == null ? NotFound() : View(client);
         }
 
+        public async Task<IActionResult> LoginHistory(string id)
+        {
+            var person = await UserManager.FindByIdAsync(id);
+            if (person == null) return NotFound();
+            ViewData["Person"] = person;
+            return View(await Context.LoginHistories.Where(l => l.PersonId == id)
+                .OrderByDescending(l => l.LoggedInAt).Take(100).ToListAsync());
+        }
+
         [HttpGet]
         public IActionResult CreateAdmin()
         {

@@ -27,6 +27,7 @@ namespace HealthTrack.Models.Data
         public DbSet<DietPlan> DietPlans { get; set; }
         public DbSet<DietPlanMeal> DietPlanMeals { get; set; }
         public DbSet<TrainerFeedback> TrainerFeedbacks { get; set; }
+        public DbSet<LoginHistory> LoginHistories { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -111,6 +112,8 @@ namespace HealthTrack.Models.Data
                 .HasForeignKey(f => f.ClientId).OnDelete(DeleteBehavior.Cascade);
             builder.Entity<TrainerFeedback>().Property(f => f.Category)
                 .HasConversion<string>().HasMaxLength(20);
+            builder.Entity<LoginHistory>().HasOne(l => l.Person).WithMany()
+                .HasForeignKey(l => l.PersonId).OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

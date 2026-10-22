@@ -81,6 +81,20 @@ namespace HealthTrack.Controllers
             }
 
             var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: true);
+            var user = await UserManager.FindByEmailAsync(model.Email);
+            if (user != null)
+            {
+                var agent = Request.Headers.UserAgent.ToString();
+                Context.LoginHistories.Add(new LoginHistory
+                {
+                    PersonId = user.Id,
+                    LoggedInAt = DateTime.Now,
+                    Succeeded = result.Succeeded,
+                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                    UserAgent = agent.Length > 300 ? agent[..300] : agent
+                });
+                await Context.SaveChangesAsync();
+            }
             if (result.IsLockedOut)
             {
                 _logger.LogWarning("Locked out account tried to sign in: {Email}", model.Email);
@@ -93,7 +107,6 @@ namespace HealthTrack.Controllers
                 return View(model);
             }
 
-            var user = await UserManager.FindByEmailAsync(model.Email);
             user!.LastLoginAt = DateTime.Now;
             await UserManager.UpdateAsync(user);
 

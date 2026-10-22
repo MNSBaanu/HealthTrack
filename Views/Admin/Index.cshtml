@@ -2,7 +2,8 @@
 @{
     ViewData["Title"] = "Admin console";
     var topSessions = Model.PopularActivities.FirstOrDefault()?.Sessions ?? 0;
-    var weeklyLogs = Model.WorkoutLogsThisWeek + Model.MealLogsThisWeek + Model.MetricsThisWeek;
+    var weeklyLogs = Model.WorkoutLogsThisWeek + Model.MealLogsThisWeek + Model.MetricsThisWeek
+        + Model.AppointmentsThisWeek + Model.NotificationsThisWeek + Model.TrainerPlansThisWeek + Model.FeedbackThisWeek;
 }
 
 <div class="ht-head">
@@ -83,12 +84,16 @@
     </div>
     <div class="col-lg-4">
         <section class="ht-card ink ht-hero-tile h-100">
-            <span class="ht-overline">Entries logged this week</span>
+            <span class="ht-overline">Activity this week</span>
             <div class="big">@weeklyLogs</div>
             <ul class="ht-facts mt-0">
                 <li><span><i class="bi bi-lightning-charge me-2"></i>Workouts</span><strong>@Model.WorkoutLogsThisWeek</strong></li>
                 <li><span><i class="bi bi-cup-hot me-2"></i>Meals</span><strong>@Model.MealLogsThisWeek</strong></li>
                 <li><span><i class="bi bi-rulers me-2"></i>Measurements</span><strong>@Model.MetricsThisWeek</strong></li>
+                <li><span><i class="bi bi-calendar-check me-2"></i>Appointments</span><strong>@Model.AppointmentsThisWeek</strong></li>
+                <li><span><i class="bi bi-bell me-2"></i>Notifications</span><strong>@Model.NotificationsThisWeek</strong></li>
+                <li><span><i class="bi bi-clipboard-check me-2"></i>Trainer plans</span><strong>@Model.TrainerPlansThisWeek</strong></li>
+                <li><span><i class="bi bi-chat-left-text me-2"></i>Feedback</span><strong>@Model.FeedbackThisWeek</strong></li>
             </ul>
         </section>
     </div>

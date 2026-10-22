@@ -30,6 +30,7 @@ namespace HealthTrack.Controllers
         {
             var now = DateTimeOffset.Now;
             var weekStart = DateTime.Today.AddDays(-6);
+            var weekStartUtc = weekStart.ToUniversalTime();
 
             var model = new AdminDashboardViewModel
             {
@@ -52,6 +53,11 @@ namespace HealthTrack.Controllers
                 LockedUsers = await Context.Users.CountAsync(u => u.LockoutEnd > now),
                 WorkoutLogsThisWeek = await Context.WorkoutLogs.CountAsync(w => w.LoggedAt >= weekStart),
                 MealLogsThisWeek = await Context.MealLogs.CountAsync(m => m.LoggedAt >= weekStart),
+                AppointmentsThisWeek = await Context.Appointments.CountAsync(a => a.RequestedAtUtc >= weekStartUtc),
+                NotificationsThisWeek = await Context.Notifications.CountAsync(n => n.CreatedAt >= weekStart),
+                TrainerPlansThisWeek = await Context.WorkoutPlans.CountAsync(p => p.CreatedAtUtc >= weekStartUtc)
+                    + await Context.DietPlans.CountAsync(p => p.CreatedAtUtc >= weekStartUtc),
+                FeedbackThisWeek = await Context.TrainerFeedbacks.CountAsync(f => f.CreatedAtUtc >= weekStartUtc),
                 MetricsThisWeek = await Context.HealthMetrics.CountAsync(m => m.RecordedAt >= weekStart),
                 PopularActivities = await GetPopularActivitiesAsync(5),
                 RecentUsers = await QueryUserSummaries()
@@ -72,6 +78,12 @@ namespace HealthTrack.Controllers
             var meals = await CountPerDayAsync(Context.MealLogs.Where(m => m.LoggedAt >= from).Select(m => m.LoggedAt));
             var metrics = await CountPerDayAsync(Context.HealthMetrics.Where(m => m.RecordedAt >= from).Select(m => m.RecordedAt));
             var registrations = await CountPerDayAsync(Context.Users.Where(u => u.CreatedAt >= from).Select(u => u.CreatedAt));
+            var fromUtc = from.ToUniversalTime();
+            var appointments = await CountPerDayAsync(Context.Appointments.Where(a => a.RequestedAtUtc >= fromUtc).Select(a => a.RequestedAtUtc));
+            var notifications = await CountPerDayAsync(Context.Notifications.Where(n => n.CreatedAt >= from).Select(n => n.CreatedAt));
+            var workoutPlans = await CountPerDayAsync(Context.WorkoutPlans.Where(p => p.CreatedAtUtc >= fromUtc).Select(p => p.CreatedAtUtc));
+            var dietPlans = await CountPerDayAsync(Context.DietPlans.Where(p => p.CreatedAtUtc >= fromUtc).Select(p => p.CreatedAtUtc));
+            var feedback = await CountPerDayAsync(Context.TrainerFeedbacks.Where(f => f.CreatedAtUtc >= fromUtc).Select(f => f.CreatedAtUtc));
 
             var dates = Enumerable.Range(0, days).Select(i => from.AddDays(i)).ToList();
             var model = new UsageDataViewModel
@@ -80,7 +92,11 @@ namespace HealthTrack.Controllers
                 Workouts = dates.Select(d => workouts.GetValueOrDefault(d)).ToList(),
                 Meals = dates.Select(d => meals.GetValueOrDefault(d)).ToList(),
                 Metrics = dates.Select(d => metrics.GetValueOrDefault(d)).ToList(),
-                Registrations = dates.Select(d => registrations.GetValueOrDefault(d)).ToList()
+                Registrations = dates.Select(d => registrations.GetValueOrDefault(d)).ToList(),
+                Appointments = dates.Select(d => appointments.GetValueOrDefault(d)).ToList(),
+                Notifications = dates.Select(d => notifications.GetValueOrDefault(d)).ToList(),
+                Plans = dates.Select(d => workoutPlans.GetValueOrDefault(d) + dietPlans.GetValueOrDefault(d)).ToList(),
+                Feedback = dates.Select(d => feedback.GetValueOrDefault(d)).ToList()
             };
             return Json(model);
         }

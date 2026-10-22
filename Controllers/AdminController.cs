@@ -350,9 +350,12 @@ namespace HealthTrack.Controllers
             {
                 ModelState.AddModelError(nameof(model.ScheduledFor), "Scheduled time must be in the future.");
             }
-            if (!string.IsNullOrEmpty(model.RecipientId) && !await Context.Clients.AnyAsync(u => u.Id == model.RecipientId))
+            var allTrainers = model.RecipientId == AllTrainersRecipient;
+            if (!string.IsNullOrEmpty(model.RecipientId) && !allTrainers
+                && !await Context.Clients.AnyAsync(u => u.Id == model.RecipientId)
+                && !await Context.Trainers.AnyAsync(u => u.Id == model.RecipientId))
             {
-                ModelState.AddModelError(nameof(model.RecipientId), "Choose a valid Client recipient.");
+                ModelState.AddModelError(nameof(model.RecipientId), "Choose a valid recipient.");
             }
             if (!ModelState.IsValid)
             {
@@ -363,6 +366,10 @@ namespace HealthTrack.Controllers
             if (string.IsNullOrEmpty(model.RecipientId))
             {
                 await _notificationService.SendToAllClientsAsync(model.Message.Trim(), model.Type, model.ScheduledFor);
+            }
+            else if (allTrainers)
+            {
+                await _notificationService.SendToAllTrainersAsync(model.Message.Trim(), model.Type, model.ScheduledFor);
             }
             else
             {
@@ -433,12 +440,21 @@ namespace HealthTrack.Controllers
                 .ToDictionaryAsync(d => d.Date, d => d.Total);
         }
 
+        private const string AllTrainersRecipient = "all-trainers";
+
         private async Task LoadRecipientsAsync()
         {
-            ViewData["Recipients"] = await Context.Clients
+            var clients = new SelectListGroup { Name = "Clients" };
+            var trainers = new SelectListGroup { Name = "Trainers" };
+            var recipients = await Context.Clients
                 .OrderBy(c => c.Name)
-                .Select(c => new SelectListItem { Value = c.Id, Text = c.Name + " (" + c.Email + ")" })
+                .Select(c => new SelectListItem { Value = c.Id, Text = c.Name + " (" + c.Email + ")", Group = clients })
                 .ToListAsync();
+            recipients.AddRange(await Context.Trainers
+                .OrderBy(t => t.Name)
+                .Select(t => new SelectListItem { Value = t.Id, Text = t.Name + " (" + t.Email + ")", Group = trainers })
+                .ToListAsync());
+            ViewData["Recipients"] = recipients;
         }
 
         public async Task<IActionResult> Providers()

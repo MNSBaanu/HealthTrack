@@ -57,14 +57,15 @@ namespace HealthTrack.Controllers
             var model = new ClientDashboardViewModel
             {
                 Client = client,
-                CurrentWorkoutPlans = await Context.WorkoutPlans.AsNoTracking().Include(p => p.Trainer)
-                    .Where(p => p.ClientId == clientId && p.IsActive && p.StartDate.Date <= planToday
-                        && (!p.EndDate.HasValue || p.EndDate.Value.Date >= planToday))
-                    .OrderByDescending(p => p.StartDate).ThenByDescending(p => p.Id).ToListAsync(),
-                CurrentDietPlans = await Context.DietPlans.AsNoTracking().Include(p => p.Trainer)
-                    .Where(p => p.ClientId == clientId && p.IsActive && p.StartDate.Date <= planToday
-                        && (!p.EndDate.HasValue || p.EndDate.Value.Date >= planToday))
-                    .OrderByDescending(p => p.StartDate).ThenByDescending(p => p.Id).ToListAsync(),
+                PlanToday = planToday,
+                AssignedWorkoutPlans = await Context.WorkoutPlans.AsNoTracking().Include(p => p.Trainer)
+                    .Where(p => p.ClientId == clientId)
+                    .OrderByDescending(p => p.IsActive && p.StartDate.Date <= planToday && (!p.EndDate.HasValue || p.EndDate.Value.Date >= planToday))
+                    .ThenByDescending(p => p.IsActive).ThenByDescending(p => p.StartDate).ThenByDescending(p => p.Id).ToListAsync(),
+                AssignedDietPlans = await Context.DietPlans.AsNoTracking().Include(p => p.Trainer)
+                    .Where(p => p.ClientId == clientId)
+                    .OrderByDescending(p => p.IsActive && p.StartDate.Date <= planToday && (!p.EndDate.HasValue || p.EndDate.Value.Date >= planToday))
+                    .ThenByDescending(p => p.IsActive).ThenByDescending(p => p.StartDate).ThenByDescending(p => p.Id).ToListAsync(),
                 UpcomingAppointments = upcoming.Select(_appointmentTime.ToViewModel).ToList(),
                 AppointmentTimeZone = _appointmentTime.Label,
                 LatestMetric = metrics.LastOrDefault(),

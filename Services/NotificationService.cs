@@ -23,7 +23,7 @@ namespace HealthTrack.Services
             _context.Notifications.Add(new Notification
             {
                 PersonId = personId,
-                Message = message,
+                Message = message.Length > 300 ? message[..300] : message,
                 Type = type,
                 ScheduledFor = scheduledFor
             });

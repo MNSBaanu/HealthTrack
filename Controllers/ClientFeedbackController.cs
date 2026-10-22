@@ -27,4 +27,27 @@ public class ClientFeedbackController : ClientBaseController
 
         return View(feedback);
     }
+
+    [HttpPost]
+    public async Task<IActionResult> Reply(int id, string reply)
+    {
+        reply = reply?.Trim() ?? string.Empty;
+        if (reply.Length == 0 || reply.Length > 1000)
+        {
+            TempData["Error"] = "Reply must be between 1 and 1000 characters.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        var feedback = await Context.TrainerFeedbacks.FirstOrDefaultAsync(f => f.Id == id && f.ClientId == CurrentUserId);
+        if (feedback == null)
+        {
+            return NotFound();
+        }
+
+        feedback.ClientReply = reply;
+        feedback.ClientRepliedAtUtc = DateTime.UtcNow;
+        await Context.SaveChangesAsync();
+        TempData["Success"] = "Reply sent.";
+        return RedirectToAction(nameof(Index));
+    }
 }

@@ -40,7 +40,7 @@ namespace HealthTrack.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([Bind("WeightKg,RecordedAt")] HealthMetric metric)
+        public async Task<IActionResult> Create([Bind("WeightKg,BodyFatPercent,RestingHeartRate,SystolicBp,DiastolicBp,Steps,SleepHours,RecordedAt")] HealthMetric metric)
         {
             metric.ClientId = CurrentUserId;
             ModelState.Remove(nameof(HealthMetric.ClientId));
@@ -65,7 +65,7 @@ namespace HealthTrack.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Edit(int id, [Bind("WeightKg,RecordedAt")] HealthMetric input)
+        public async Task<IActionResult> Edit(int id, [Bind("WeightKg,BodyFatPercent,RestingHeartRate,SystolicBp,DiastolicBp,Steps,SleepHours,RecordedAt")] HealthMetric input)
         {
             var metric = await FindOwnedAsync(id);
             if (metric == null)
@@ -82,6 +82,12 @@ namespace HealthTrack.Controllers
             }
 
             metric.WeightKg = input.WeightKg;
+            metric.BodyFatPercent = input.BodyFatPercent;
+            metric.RestingHeartRate = input.RestingHeartRate;
+            metric.SystolicBp = input.SystolicBp;
+            metric.DiastolicBp = input.DiastolicBp;
+            metric.Steps = input.Steps;
+            metric.SleepHours = input.SleepHours;
             metric.RecordedAt = input.RecordedAt;
             await Context.SaveChangesAsync();
             TempData["Success"] = "Measurement updated.";

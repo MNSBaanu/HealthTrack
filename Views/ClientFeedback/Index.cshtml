@@ -16,6 +16,20 @@
             @if (!item.IsReadByClient) { <span class="ht-pill saffron">New</span> }
             <p class="small text-muted mt-2 mb-1">@(item.Trainer?.Name ?? "Trainer unavailable") · @Time.ToLocal(item.CreatedAtUtc).ToString("d MMM yyyy, HH:mm")</p>
             <p class="mb-0" style="white-space: pre-line">@item.Comments</p>
+            @if (item.ClientReply != null)
+            {
+                <div class="mt-3 ps-3 border-start">
+                    <p class="small text-muted mb-1">Your reply · @Time.ToLocal(item.ClientRepliedAtUtc!.Value).ToString("d MMM yyyy, HH:mm")</p>
+                    <p class="mb-0" style="white-space: pre-line">@item.ClientReply</p>
+                </div>
+            }
+            else
+            {
+                <form asp-action="Reply" asp-route-id="@item.Id" method="post" class="mt-3">
+                    <textarea name="reply" class="form-control mb-2" rows="2" maxlength="1000" required placeholder="Reply to your Trainer" aria-label="Reply"></textarea>
+                    <button type="submit" class="btn btn-primary btn-sm">Send reply</button>
+                </form>
+            }
         </article>
     }
     </div>

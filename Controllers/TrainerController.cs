@@ -44,6 +44,7 @@ namespace HealthTrack.Controllers
                 .Include(c => c.MealLogs)
                 .Include(c => c.WorkoutPlans)
                 .Include(c => c.DietPlans)
+                .AsSplitQuery()
                 .ToListAsync();
 
             var clientSummaries = clients.Select(c =>
@@ -164,6 +165,7 @@ namespace HealthTrack.Controllers
                 .Include(c => c.HealthMetrics)
                 .Include(c => c.WorkoutPlans)
                 .Include(c => c.DietPlans)
+                .AsSplitQuery()
                 .OrderBy(c => c.Name)
                 .ToListAsync();
 
@@ -210,6 +212,7 @@ namespace HealthTrack.Controllers
                 .Include(c => c.WorkoutPlans.Where(p => p.TrainerId == trainerId)).ThenInclude(p => p.Items)
                 .Include(c => c.DietPlans.Where(p => p.TrainerId == trainerId)).ThenInclude(p => p.Meals)
                 .Include(c => c.Feedbacks.Where(f => f.TrainerId == trainerId).OrderByDescending(f => f.CreatedAtUtc))
+                .AsSplitQuery()
                 .FirstOrDefaultAsync(c => c.Id == id);
 
             if (client == null) return NotFound();

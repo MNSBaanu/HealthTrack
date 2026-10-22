@@ -29,6 +29,7 @@ namespace HealthTrack.Controllers
             var query = Context.WorkoutPlans
                 .Include(p => p.Client)
                 .Include(p => p.Items)
+                .AsSplitQuery()
                 .Where(p => p.TrainerId == trainerId);
 
             if (!string.IsNullOrWhiteSpace(clientId))
@@ -154,6 +155,7 @@ namespace HealthTrack.Controllers
             var query = Context.DietPlans
                 .Include(p => p.Client)
                 .Include(p => p.Meals)
+                .AsSplitQuery()
                 .Where(p => p.TrainerId == trainerId);
 
             if (!string.IsNullOrWhiteSpace(clientId))

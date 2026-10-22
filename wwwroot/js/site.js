@@ -15,3 +15,22 @@ document.addEventListener("input", function (event) {
         }
     }
 });
+
+// Keep the complete active pill visible when the navigation needs to scroll.
+const navigation = document.querySelector('.ht-tabs');
+const activeTab = navigation?.querySelector('.ht-tab.active');
+if (navigation && activeTab) {
+    const revealActiveTab = () => {
+        const navBounds = navigation.getBoundingClientRect();
+        const tabBounds = activeTab.getBoundingClientRect();
+        const inset = 4;
+        if (tabBounds.left < navBounds.left + inset) {
+            navigation.scrollLeft += tabBounds.left - navBounds.left - inset;
+        } else if (tabBounds.right > navBounds.right - inset) {
+            navigation.scrollLeft += tabBounds.right - navBounds.right + inset;
+        }
+    };
+    revealActiveTab();
+    document.fonts.ready.then(revealActiveTab);
+    new ResizeObserver(revealActiveTab).observe(navigation);
+}

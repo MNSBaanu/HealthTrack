@@ -1,0 +1,95 @@
+/* Date and time controls share the same palette as form dropdowns. */
+.ht-calendar-input {
+  padding-right: 2.75rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='%23a86f00' stroke-width='1.6' viewBox='0 0 24 24'%3E%3Crect x='3' y='5' width='18' height='16' rx='3'/%3E%3Cpath d='M7 3v4m10-4v4M3 11h18'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.9rem center;
+}
+
+.flatpickr-calendar {
+  background: var(--ht-surface);
+  border: 1px solid var(--ht-line-strong);
+  border-radius: var(--ht-radius);
+  box-shadow: var(--ht-shadow-lg);
+  color: var(--ht-ink);
+  font-family: var(--ht-font-body);
+  padding: 0.4rem;
+  box-sizing: content-box;
+  max-width: calc(100vw - 2rem);
+}
+
+.flatpickr-calendar::before, .flatpickr-calendar::after { display: none; }
+.flatpickr-months { padding-block: 0.3rem; }
+.flatpickr-months .flatpickr-month, .flatpickr-current-month .flatpickr-monthDropdown-months {
+  background: var(--ht-surface);
+  color: var(--ht-ink);
+  fill: var(--ht-ink);
+}
+.flatpickr-current-month { font-family: var(--ht-font-display); font-weight: 600; }
+.flatpickr-current-month .flatpickr-monthDropdown-months { border-radius: var(--ht-radius-sm); }
+@supports (appearance: base-select) {
+  .flatpickr-current-month .flatpickr-monthDropdown-months,
+  .flatpickr-current-month .flatpickr-monthDropdown-months::picker(select) { appearance: base-select; }
+  .flatpickr-current-month .flatpickr-monthDropdown-months::picker(select) {
+    background: var(--ht-surface); color: var(--ht-ink); border: 1px solid var(--ht-line-strong);
+    border-radius: var(--ht-radius-sm); box-shadow: var(--ht-shadow); padding: 0.3rem;
+  }
+  .flatpickr-monthDropdown-months option { padding: 0.3rem 0.6rem; border-radius: 0.3rem; }
+  .flatpickr-monthDropdown-months option:checked { background: var(--ht-saffron); color: var(--ht-ink); }
+  .flatpickr-monthDropdown-months option:hover { background: var(--ht-saffron-soft); }
+}
+.flatpickr-months .flatpickr-prev-month, .flatpickr-months .flatpickr-next-month {
+  color: var(--ht-ink);
+  fill: var(--ht-ink);
+  top: 0.5rem;
+}
+.flatpickr-months .flatpickr-prev-month:hover svg, .flatpickr-months .flatpickr-next-month:hover svg { fill: var(--ht-saffron-deep); }
+span.flatpickr-weekday { color: var(--ht-muted); font-size: 0.75rem; font-weight: 600; }
+.flatpickr-day { color: var(--ht-ink); border-radius: var(--ht-radius-sm); }
+.flatpickr-day.today { border-color: var(--ht-saffron-deep); }
+.flatpickr-day:hover, .flatpickr-day:focus, .flatpickr-day.today:hover, .flatpickr-day.today:focus {
+  background: var(--ht-saffron-soft);
+  border-color: var(--ht-saffron-soft);
+  color: var(--ht-ink);
+}
+.flatpickr-day.selected, .flatpickr-day.selected:hover, .flatpickr-day.selected:focus,
+.flatpickr-day.startRange, .flatpickr-day.endRange {
+  background: var(--ht-saffron);
+  border-color: var(--ht-saffron);
+  color: var(--ht-ink);
+  font-weight: 700;
+}
+.flatpickr-day.prevMonthDay, .flatpickr-day.nextMonthDay { color: var(--ht-muted); }
+.flatpickr-day.flatpickr-disabled, .flatpickr-day.flatpickr-disabled:hover { color: var(--ht-line-strong); background: transparent; }
+.flatpickr-calendar .flatpickr-time { border-color: var(--ht-line); }
+.flatpickr-time input, .flatpickr-time .flatpickr-am-pm, .flatpickr-time .flatpickr-time-separator { color: var(--ht-ink); }
+.flatpickr-time input:hover, .flatpickr-time input:focus, .flatpickr-time .flatpickr-am-pm:hover { background: var(--ht-saffron-soft); }
+.ht-calendar-footer { display: flex; justify-content: space-between; gap: 0.5rem; padding: 0.65rem 0.3rem 0.2rem; border-top: 1px solid var(--ht-line); }
+.flatpickr-calendar button:focus-visible, .flatpickr-day:focus-visible { outline: 2px solid var(--ht-saffron-deep); outline-offset: 2px; }
+
+/* Consistent supporting controls and states. */
+.form-check-input, input[type="range"], progress { accent-color: var(--ht-saffron-deep); }
+.form-check-input:checked { background-color: var(--ht-saffron-deep); border-color: var(--ht-saffron-deep); }
+.form-control:focus { border-color: var(--ht-saffron-deep); background-color: var(--ht-surface); }
+.form-control:disabled, .form-control[readonly] { background-color: var(--ht-paper-2); color: var(--ht-muted); }
+.form-control::file-selector-button { background-color: var(--ht-paper-2); color: var(--ht-ink); border-color: var(--ht-line-strong); }
+.form-control:hover:not(:disabled)::file-selector-button { background-color: var(--ht-saffron-soft); }
+.form-range::-webkit-slider-thumb { background-color: var(--ht-saffron-deep); }
+.form-range::-moz-range-thumb { background-color: var(--ht-saffron-deep); }
+.page-link { color: var(--ht-ink); background: var(--ht-surface); border-color: var(--ht-line); }
+.page-link:hover, .page-link:focus { color: var(--ht-ink); background: var(--ht-saffron-soft); border-color: var(--ht-line-strong); box-shadow: none; }
+.page-item.active .page-link { background: var(--ht-saffron); border-color: var(--ht-saffron); color: var(--ht-ink); }
+.page-item.disabled .page-link { background: var(--ht-paper-2); color: var(--ht-muted); border-color: var(--ht-line); }
+.table { --bs-table-bg: var(--ht-surface); --bs-table-color: var(--ht-text); --bs-table-border-color: var(--ht-line); --bs-table-hover-bg: var(--ht-paper); }
+.btn-line-danger { border: 1px solid var(--ht-line-strong); color: var(--ht-danger); }
+.btn-line-danger:hover, .btn-line-danger:focus-visible { background: var(--ht-danger-soft); border-color: var(--ht-danger); color: var(--ht-danger); }
+.ht-schedule-heading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+.ht-schedule-heading legend { flex: 1 1 12rem; width: auto; min-width: 0; margin: 0; }
+.ht-schedule-heading .btn { flex: 0 0 auto; white-space: nowrap; }
+#exercisesTable, #mealsTable { min-width: 50rem; }
+#exercisesTable .form-control, #exercisesTable .form-select,
+#mealsTable .form-control, #mealsTable .form-select { min-width: 4.5rem; }
+#exercisesTable td, #mealsTable td { padding: 0.6rem; }
+#exercisesTable input::placeholder, #mealsTable input::placeholder { font-size: 0.8rem; }
+
+#exercisesTable .form-select, #mealsTable .form-select { white-space: nowrap; min-width: 8rem; }

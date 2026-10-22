@@ -1,5 +1,8 @@
+@inject HealthTrack.Services.AppointmentTime FutureDateTime
+@inject TimeProvider FutureClock
 @model SendNotificationViewModel
 @{
+    ViewData["FormPage"] = "standard";
     ViewData["Title"] = "Broadcast";
     var recipients = ViewData["Recipients"] as List<SelectListItem> ?? new List<SelectListItem>();
 }
@@ -40,7 +43,7 @@
                         </div>
                         <div class="col-md-7">
                             <label asp-for="ScheduledFor" class="form-label">Deliver at <span class="text-lowercase fw-normal">(optional)</span></label>
-                            <input asp-for="ScheduledFor" asp-format="{0:yyyy-MM-ddTHH:mm}" type="datetime-local" class="form-control" min="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" />
+                            <input asp-for="ScheduledFor" asp-format="{0:yyyy-MM-ddTHH:mm}" type="datetime-local" class="form-control" data-not-past="true" data-future-zone="@FutureDateTime.Label" min="@(FutureDateTime.ToLocal(FutureClock.GetUtcNow().UtcDateTime).AddMinutes(1).ToString("yyyy-MM-ddTHH:mm"))" />
                             <div class="form-text">Leave empty to send it straight away.</div>
                             <span asp-validation-for="ScheduledFor" class="text-danger"></span>
                         </div>

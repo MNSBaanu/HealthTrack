@@ -1,3 +1,5 @@
+@inject HealthTrack.Services.AppointmentTime FutureDateTime
+@inject TimeProvider FutureClock
 @model TrainerScheduleViewModel
 @{
     ViewData["Title"] = "Consultation schedule";
@@ -22,13 +24,13 @@
                     <p class="small text-muted mb-3">Publish consultation hours when clients can book 1-on-1 consultations with you.</p>
 
                     <div class="mb-3">
-                        <label asp-for="NewSlotForm.StartLocal" class="form-label">Start Date & Time</label>
-                        <input asp-for="NewSlotForm.StartLocal" class="form-control" type="datetime-local" required />
+                        <label asp-for="NewSlotForm.StartLocal" data-not-past="true" data-future-zone="@FutureDateTime.Label" min="@(FutureDateTime.ToLocal(FutureClock.GetUtcNow().UtcDateTime).AddMinutes(1).ToString("yyyy-MM-ddTHH:mm"))" class="form-label">Start Date & Time</label>
+                        <input asp-for="NewSlotForm.StartLocal" data-not-past="true" data-future-zone="@FutureDateTime.Label" min="@(FutureDateTime.ToLocal(FutureClock.GetUtcNow().UtcDateTime).AddMinutes(1).ToString("yyyy-MM-ddTHH:mm"))" class="form-control" type="datetime-local" required />
                     </div>
 
                     <div class="mb-3">
-                        <label asp-for="NewSlotForm.EndLocal" class="form-label">End Date & Time</label>
-                        <input asp-for="NewSlotForm.EndLocal" class="form-control" type="datetime-local" required />
+                        <label asp-for="NewSlotForm.EndLocal" data-date-after="#NewSlotForm_StartLocal" data-not-past="true" data-future-zone="@FutureDateTime.Label" min="@(FutureDateTime.ToLocal(FutureClock.GetUtcNow().UtcDateTime).AddMinutes(1).ToString("yyyy-MM-ddTHH:mm"))" class="form-label">End Date & Time</label>
+                        <input asp-for="NewSlotForm.EndLocal" data-date-after="#NewSlotForm_StartLocal" data-not-past="true" data-future-zone="@FutureDateTime.Label" min="@(FutureDateTime.ToLocal(FutureClock.GetUtcNow().UtcDateTime).AddMinutes(1).ToString("yyyy-MM-ddTHH:mm"))" class="form-control" type="datetime-local" required />
                     </div>
 
                     <button type="submit" class="btn btn-primary w-100">

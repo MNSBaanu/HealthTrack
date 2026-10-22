@@ -49,7 +49,7 @@ public class AppointmentsController : ClientBaseController
     }
 
     [HttpGet]
-    public async Task<IActionResult> Book(int? providerId) => View(await LoadPage(new BookingForm(), providerId));
+    public async Task<IActionResult> Book(int? providerId, ConsultationProviderKind? kind) => View(await LoadPage(new BookingForm(), providerId, kind));
 
     [HttpPost]
     public async Task<IActionResult> Book(BookingForm form)
@@ -64,7 +64,7 @@ public class AppointmentsController : ClientBaseController
             }
             ModelState.AddModelError(nameof(form.SlotId), result.Error!);
         }
-        return View(await LoadPage(form, null));
+        return View(await LoadPage(form, null, null));
     }
 
     [HttpPost]
@@ -154,22 +154,23 @@ public class AppointmentsController : ClientBaseController
         return model;
     }
 
-    private async Task<BookingPageViewModel> LoadPage(BookingForm form, int? providerId)
+    private async Task<BookingPageViewModel> LoadPage(BookingForm form, int? providerId, ConsultationProviderKind? kind)
     {
         var now = _clock.GetUtcNow().UtcDateTime;
         var clientId = CurrentUserId;
         var slots = await Context.AvailabilitySlots.AsNoTracking().Include(s => s.Provider)
             .Where(s => s.Provider.IsActive && s.IsAvailable && s.StartUtc > now && s.EndUtc > s.StartUtc)
             .Where(s => providerId == null || s.ProviderId == providerId)
+            .Where(s => kind == null || s.Provider.Kind == kind)
             .Where(s => !Context.Appointments.Any(a => a.Status != AppointmentStatus.Cancelled
                 && (a.Slot.ProviderId == s.ProviderId || a.ClientId == clientId)
                 && a.Slot.StartUtc < s.EndUtc && a.Slot.EndUtc > s.StartUtc))
             .OrderBy(s => s.StartUtc).ToListAsync();
         return new BookingPageViewModel
         {
-            SlotId = form.SlotId, Notes = form.Notes, ProviderId = providerId, TimeZoneLabel = _time.Label,
+            SlotId = form.SlotId, Notes = form.Notes, ProviderId = providerId, Kind = kind, TimeZoneLabel = _time.Label,
             Providers = await Context.ConsultationProviders.AsNoTracking().Where(p => p.IsActive)
-                .OrderBy(p => p.Name).ToListAsync(),
+                .OrderBy(p => p.Kind).ThenBy(p => p.Name).ToListAsync(),
             Slots = slots.Select(s => new AvailableSlotViewModel(s.Id, s.Provider.Name,
                 _time.ToLocal(s.StartUtc), _time.ToLocal(s.EndUtc))).ToList()
         };

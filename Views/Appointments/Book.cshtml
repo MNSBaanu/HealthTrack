@@ -14,17 +14,28 @@ else
                 <div class="ht-card-head"><h2>Providers</h2></div>
                 <div class="ht-card-body">
                     <form method="get" asp-action="Book" class="mb-4">
+                        <label class="form-label" for="kind">Provider type</label>
+                        <select id="kind" name="kind" class="form-select mb-2">
+                            <option value="">All types</option>
+                            <option value="@ConsultationProviderKind.Trainer" selected="@(Model.Kind == ConsultationProviderKind.Trainer)">Trainers</option>
+                            <option value="@ConsultationProviderKind.HealthcareProfessional" selected="@(Model.Kind == ConsultationProviderKind.HealthcareProfessional)">Healthcare professionals</option>
+                        </select>
                         <label class="form-label" for="providerId">Filter by provider</label>
                         <select id="providerId" name="providerId" class="form-select mb-2">
                             <option value="">All providers</option>
-                            @foreach (var provider in Model.Providers)
+                            @foreach (var group in Model.Providers.Where(p => Model.Kind == null || p.Kind == Model.Kind).GroupBy(p => p.Kind))
                             {
-                                <option value="@provider.Id" selected="@(Model.ProviderId == provider.Id)">@provider.Name</option>
+                                <optgroup label="@(group.Key == ConsultationProviderKind.Trainer ? "Trainers" : "Healthcare professionals")">
+                                    @foreach (var provider in group)
+                                    {
+                                        <option value="@provider.Id" selected="@(Model.ProviderId == provider.Id)">@provider.Name@(string.IsNullOrWhiteSpace(provider.Specialty) ? "" : $" – {provider.Specialty}")</option>
+                                    }
+                                </optgroup>
                             }
                         </select>
                         <button type="submit" class="btn btn-line">Show available times</button>
                     </form>
-                    @foreach (var provider in Model.Providers.Where(p => Model.ProviderId == null || p.Id == Model.ProviderId))
+                    @foreach (var provider in Model.Providers.Where(p => (Model.ProviderId == null || p.Id == Model.ProviderId) && (Model.Kind == null || p.Kind == Model.Kind)))
                     {
                         <div class="mb-3">
                             <strong>@provider.Name</strong>

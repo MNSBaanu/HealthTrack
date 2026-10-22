@@ -272,5 +272,66 @@ namespace HealthTrack.Controllers
             TempData["Success"] = "Feedback sent successfully to the client.";
             return RedirectToAction(nameof(ClientDetails), new { id = model.ClientId });
         }
+
+        [HttpGet]
+        public async Task<IActionResult> EditFeedback(int id)
+        {
+            var trainerId = CurrentUserId;
+            var model = await _feedbackService.GetFeedbackForEditAsync(trainerId, id);
+
+            if (model == null) return NotFound();
+
+            return View(model);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> EditFeedback(int id, TrainerFeedbackFormViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var trainerId = CurrentUserId;
+            var success = await _feedbackService.UpdateFeedbackAsync(trainerId, id, model);
+
+            if (!success)
+            {
+                TempData["Error"] = "Feedback not found or you don't have permission to edit it.";
+                return RedirectToAction(nameof(Clients));
+            }
+
+            TempData["Success"] = "Feedback updated successfully.";
+
+            // Get the client ID to redirect back to client details
+            var feedback = await Context.TrainerFeedbacks.FirstOrDefaultAsync(f => f.Id == id);
+            return RedirectToAction(nameof(ClientDetails), new { id = feedback?.ClientId });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteFeedback(int id)
+        {
+            var trainerId = CurrentUserId;
+            var feedback = await Context.TrainerFeedbacks
+                .FirstOrDefaultAsync(f => f.Id == id && f.TrainerId == trainerId);
+
+            if (feedback == null)
+            {
+                TempData["Error"] = "Feedback not found or you don't have permission to delete it.";
+                return RedirectToAction(nameof(Clients));
+            }
+
+            var clientId = feedback.ClientId;
+            var success = await _feedbackService.DeleteFeedbackAsync(trainerId, id);
+
+            if (!success)
+            {
+                TempData["Error"] = "Failed to delete feedback.";
+                return RedirectToAction(nameof(ClientDetails), new { id = clientId });
+            }
+
+            TempData["Success"] = "Feedback deleted successfully.";
+            return RedirectToAction(nameof(ClientDetails), new { id = clientId });
+        }
     }
 }

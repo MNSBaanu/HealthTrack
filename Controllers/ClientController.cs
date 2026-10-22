@@ -219,7 +219,7 @@ namespace HealthTrack.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Export(string format = "csv")
+        public async Task<IActionResult> Export(string format = "csv", bool all = false)
         {
             var clientId = CurrentUserId;
             var client = await Context.Clients
@@ -242,11 +242,37 @@ namespace HealthTrack.Controllers
                         .Select(m => new object?[] { m.LoggedAt, m.MealType, m.Calories, m.FoodItems }))
             };
 
-            var fileName = $"HealthTrack_Progress_{DateTime.Now:yyyyMMdd}";
-            _logger.LogInformation("Client {ClientId} exported progress as {Format}", clientId, format);
+            if (all)
+            {
+                var appointments = await Context.Appointments.AsNoTracking()
+                    .Where(a => a.ClientId == clientId)
+                    .Select(a => new { a.Slot.StartUtc, Provider = a.Slot.Provider.Name, a.Status, a.Notes })
+                    .OrderBy(a => a.StartUtc).ToListAsync();
+                var feedback = await Context.TrainerFeedbacks.AsNoTracking()
+                    .Where(f => f.ClientId == clientId)
+                    .Select(f => new { f.CreatedAtUtc, Trainer = f.Trainer!.Name, f.Category, f.Title, f.Comments, f.ClientReply })
+                    .OrderBy(f => f.CreatedAtUtc).ToListAsync();
+                var notifications = await Context.Notifications.AsNoTracking()
+                    .Where(n => n.PersonId == clientId)
+                    .OrderBy(n => n.CreatedAt).ToListAsync();
+                sections.InsertRange(0, new[]
+                {
+                    new ReportSection("Profile", new[] { "Name", "Email", "Date of Birth", "Height (cm)", "Fitness Goal" },
+                        new[] { new object?[] { client.Name, client.Email, client.DateOfBirth, client.HeightCm, client.FitnessGoal } })
+                });
+                sections.Add(new ReportSection("Appointments", new[] { "Start", "Provider", "Status", "Notes" },
+                    appointments.Select(a => new object?[] { _appointmentTime.ToLocal(a.StartUtc), a.Provider, a.Status, a.Notes })));
+                sections.Add(new ReportSection("Trainer Feedback", new[] { "Date", "Trainer", "Category", "Title", "Comments", "Your Reply" },
+                    feedback.Select(f => new object?[] { f.CreatedAtUtc, f.Trainer, f.Category, f.Title, f.Comments, f.ClientReply })));
+                sections.Add(new ReportSection("Notifications", new[] { "Date", "Type", "Message" },
+                    notifications.Select(n => new object?[] { n.CreatedAt, n.Type, n.Message })));
+            }
+
+            var fileName = $"{(all ? "HealthTrack_MyData" : "HealthTrack_Progress")}_{DateTime.Now:yyyyMMdd}";
+            _logger.LogInformation("Client {ClientId} exported {Scope} as {Format}", clientId, all ? "all data" : "progress", format);
             if (format.Equals("pdf", StringComparison.OrdinalIgnoreCase))
             {
-                return File(_exportService.ToPdf($"Progress Report - {client.Name}", sections), "application/pdf", fileName + ".pdf");
+                return File(_exportService.ToPdf($"{(all ? "My Data" : "Progress Report")} - {client.Name}", sections), "application/pdf", fileName + ".pdf");
             }
             return File(_exportService.ToCsv(sections), "text/csv", fileName + ".csv");
         }

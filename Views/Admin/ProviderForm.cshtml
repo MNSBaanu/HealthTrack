@@ -1,0 +1,38 @@
+@model ProviderForm
+@{
+    var isEdit = Model.Id.HasValue;
+    ViewData["Title"] = isEdit ? "Edit healthcare professional" : "Add healthcare professional";
+}
+<a class="ht-back" asp-action="Providers"><i class="bi bi-arrow-left"></i>Healthcare professionals</a>
+<div class="ht-head"><div><h1 class="ht-title">@ViewData["Title"]</h1></div></div>
+<div class="row g-3">
+    <div class="col-lg-8 col-xl-7">
+        <section class="ht-card">
+            <div class="ht-card-body">
+                <form asp-action="@(isEdit ? "EditProvider" : "CreateProvider")" asp-route-id="@Model.Id" novalidate>
+                    <div asp-validation-summary="ModelOnly" class="ht-flash error" role="alert"></div>
+                    <fieldset class="ht-fieldset mb-4">
+                        <legend>Details</legend>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="Name" class="form-label"></label>
+                                <input asp-for="Name" class="form-control" />
+                                <span asp-validation-for="Name" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Specialty" class="form-label"></label>
+                                <input asp-for="Specialty" class="form-control" placeholder="e.g. Physiotherapist" />
+                                <span asp-validation-for="Specialty" class="text-danger small"></span>
+                            </div>
+                        </div>
+                    </fieldset>
+                    <div class="ht-form-actions">
+                        <a class="btn btn-line" asp-action="Providers">Cancel</a>
+                        <button type="submit" class="btn btn-primary">@(isEdit ? "Save changes" : "Add professional")</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </div>
+</div>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

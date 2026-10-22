@@ -19,6 +19,8 @@ namespace HealthTrack.Models.Data
         public DbSet<WorkoutLog> WorkoutLogs { get; set; }
         public DbSet<MealLog> MealLogs { get; set; }
         public DbSet<Notification> Notifications { get; set; }
+        public DbSet<ChatQuestion> ChatQuestions { get; set; }
+        public DbSet<AuditLog> AuditLogs { get; set; }
         public DbSet<ConsultationProvider> ConsultationProviders { get; set; }
         public DbSet<AvailabilitySlot> AvailabilitySlots { get; set; }
         public DbSet<Appointment> Appointments { get; set; }
@@ -27,6 +29,8 @@ namespace HealthTrack.Models.Data
         public DbSet<DietPlan> DietPlans { get; set; }
         public DbSet<DietPlanMeal> DietPlanMeals { get; set; }
         public DbSet<TrainerFeedback> TrainerFeedbacks { get; set; }
+        public DbSet<LoginHistory> LoginHistories { get; set; }
+        public DbSet<TrainerAssignmentHistory> TrainerAssignmentHistories { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -94,6 +98,8 @@ namespace HealthTrack.Models.Data
 
             builder.Entity<WorkoutPlanItem>().HasOne(i => i.WorkoutPlan).WithMany(p => p.Items)
                 .HasForeignKey(i => i.WorkoutPlanId).OnDelete(DeleteBehavior.Cascade);
+            builder.Entity<WorkoutLog>().HasOne(l => l.WorkoutPlanItem).WithMany()
+                .HasForeignKey(l => l.WorkoutPlanItemId).OnDelete(DeleteBehavior.ClientSetNull);
 
             builder.Entity<DietPlan>().HasOne(p => p.Trainer).WithMany(t => t.DietPlans)
                 .HasForeignKey(p => p.TrainerId).OnDelete(DeleteBehavior.Restrict);
@@ -111,6 +117,14 @@ namespace HealthTrack.Models.Data
                 .HasForeignKey(f => f.ClientId).OnDelete(DeleteBehavior.Cascade);
             builder.Entity<TrainerFeedback>().Property(f => f.Category)
                 .HasConversion<string>().HasMaxLength(20);
+
+            builder.Entity<LoginHistory>().HasOne(l => l.Person).WithMany()
+                .HasForeignKey(l => l.PersonId).OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<TrainerAssignmentHistory>().HasOne(h => h.Client).WithMany()
+                .HasForeignKey(h => h.ClientId).OnDelete(DeleteBehavior.Cascade);
+            builder.Entity<TrainerAssignmentHistory>().HasOne(h => h.Trainer).WithMany()
+                .HasForeignKey(h => h.TrainerId).OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

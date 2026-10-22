@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using HealthTrack.Models;
 using HealthTrack.Models.Data;
 using HealthTrack.Models.ViewModels;
@@ -16,24 +17,21 @@ namespace HealthTrack.Controllers
         private readonly ILogger<AdminController> _logger;
         private readonly INotificationService _notificationService;
         private readonly IExportService _exportService;
-        private readonly AppointmentTime _reportTime;
-        private readonly TimeProvider _clock;
 
         public AdminController(ILogger<AdminController> logger, HealthTrackDbContext context, UserManager<Person> userManager,
-            INotificationService notificationService, IExportService exportService, AppointmentTime reportTime, TimeProvider clock)
+            INotificationService notificationService, IExportService exportService)
             : base(context, userManager)
         {
             _logger = logger;
             _notificationService = notificationService;
             _exportService = exportService;
-            _reportTime = reportTime;
-            _clock = clock;
         }
 
         public async Task<IActionResult> Index()
         {
             var now = DateTimeOffset.Now;
             var weekStart = DateTime.Today.AddDays(-6);
+            var weekStartUtc = weekStart.ToUniversalTime();
 
             var model = new AdminDashboardViewModel
             {
@@ -56,6 +54,11 @@ namespace HealthTrack.Controllers
                 LockedUsers = await Context.Users.CountAsync(u => u.LockoutEnd > now),
                 WorkoutLogsThisWeek = await Context.WorkoutLogs.CountAsync(w => w.LoggedAt >= weekStart),
                 MealLogsThisWeek = await Context.MealLogs.CountAsync(m => m.LoggedAt >= weekStart),
+                AppointmentsThisWeek = await Context.Appointments.CountAsync(a => a.RequestedAtUtc >= weekStartUtc),
+                NotificationsThisWeek = await Context.Notifications.CountAsync(n => n.CreatedAt >= weekStart),
+                TrainerPlansThisWeek = await Context.WorkoutPlans.CountAsync(p => p.CreatedAtUtc >= weekStartUtc)
+                    + await Context.DietPlans.CountAsync(p => p.CreatedAtUtc >= weekStartUtc),
+                FeedbackThisWeek = await Context.TrainerFeedbacks.CountAsync(f => f.CreatedAtUtc >= weekStartUtc),
                 MetricsThisWeek = await Context.HealthMetrics.CountAsync(m => m.RecordedAt >= weekStart),
                 PopularActivities = await GetPopularActivitiesAsync(5),
                 RecentUsers = await QueryUserSummaries()
@@ -76,6 +79,12 @@ namespace HealthTrack.Controllers
             var meals = await CountPerDayAsync(Context.MealLogs.Where(m => m.LoggedAt >= from).Select(m => m.LoggedAt));
             var metrics = await CountPerDayAsync(Context.HealthMetrics.Where(m => m.RecordedAt >= from).Select(m => m.RecordedAt));
             var registrations = await CountPerDayAsync(Context.Users.Where(u => u.CreatedAt >= from).Select(u => u.CreatedAt));
+            var fromUtc = from.ToUniversalTime();
+            var appointments = await CountPerDayAsync(Context.Appointments.Where(a => a.RequestedAtUtc >= fromUtc).Select(a => a.RequestedAtUtc));
+            var notifications = await CountPerDayAsync(Context.Notifications.Where(n => n.CreatedAt >= from).Select(n => n.CreatedAt));
+            var workoutPlans = await CountPerDayAsync(Context.WorkoutPlans.Where(p => p.CreatedAtUtc >= fromUtc).Select(p => p.CreatedAtUtc));
+            var dietPlans = await CountPerDayAsync(Context.DietPlans.Where(p => p.CreatedAtUtc >= fromUtc).Select(p => p.CreatedAtUtc));
+            var feedback = await CountPerDayAsync(Context.TrainerFeedbacks.Where(f => f.CreatedAtUtc >= fromUtc).Select(f => f.CreatedAtUtc));
 
             var dates = Enumerable.Range(0, days).Select(i => from.AddDays(i)).ToList();
             var model = new UsageDataViewModel
@@ -84,7 +93,11 @@ namespace HealthTrack.Controllers
                 Workouts = dates.Select(d => workouts.GetValueOrDefault(d)).ToList(),
                 Meals = dates.Select(d => meals.GetValueOrDefault(d)).ToList(),
                 Metrics = dates.Select(d => metrics.GetValueOrDefault(d)).ToList(),
-                Registrations = dates.Select(d => registrations.GetValueOrDefault(d)).ToList()
+                Registrations = dates.Select(d => registrations.GetValueOrDefault(d)).ToList(),
+                Appointments = dates.Select(d => appointments.GetValueOrDefault(d)).ToList(),
+                Notifications = dates.Select(d => notifications.GetValueOrDefault(d)).ToList(),
+                Plans = dates.Select(d => workoutPlans.GetValueOrDefault(d) + dietPlans.GetValueOrDefault(d)).ToList(),
+                Feedback = dates.Select(d => feedback.GetValueOrDefault(d)).ToList()
             };
             return Json(model);
         }
@@ -115,7 +128,18 @@ namespace HealthTrack.Controllers
                 .Include(c => c.TrainerAssignment).ThenInclude(a => a!.Trainer)
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(c => c.Id == id);
-            return client == null ? NotFound() : View(client);
+            if (client == null) return NotFound();
+            await AuditAsync("Viewed", "ClientDetails", id);
+            return View(client);
+        }
+
+        public async Task<IActionResult> LoginHistory(string id)
+        {
+            var person = await UserManager.FindByIdAsync(id);
+            if (person == null) return NotFound();
+            ViewData["Person"] = person;
+            return View(await Context.LoginHistories.Where(l => l.PersonId == id)
+                .OrderByDescending(l => l.LoggedInAt).Take(100).ToListAsync());
         }
 
         [HttpGet]
@@ -267,26 +291,26 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Users));
         }
 
-        public async Task<IActionResult> Reports()
+        public async Task<IActionResult> Reports(DateTime? from, DateTime? to)
         {
-            return View(await GetAdminReportAsync());
+            ViewData["PopularActivities"] = await GetPopularActivitiesAsync(10);
+            return View(await GetClientPerformanceAsync());
         }
 
         [HttpGet]
-        public async Task<IActionResult> ExportReport(string format = "csv")
+        public async Task<IActionResult> ExportReport(string format = "csv", DateTime? from = null, DateTime? to = null)
         {
-            var report = await GetAdminReportAsync();
-            var performance = report.Clients;
-            var activities = report.PersonalActivities;
+            var performance = await GetClientPerformanceAsync();
+            var activities = await GetPopularActivitiesAsync(10);
 
             var sections = new List<ReportSection>
             {
                 new ReportSection("Client Performance",
-                    new[] { "Name", "Email", "Start Weight (kg)", "Current Weight (kg)", "Change (kg)", "BMI", "Workouts", "Minutes", "Calories Burned", "Meal Logs", "Last Login" },
+                    new[] { "Name", "Email", "Start Weight (kg)", "Current Weight (kg)", "Change (kg)", "BMI", "Workouts", "Minutes", "Calories Burned", "Meal Logs", "Weight Logs", "Appointments", "Active Days", "Last Login" },
                     performance.Select(p => new object?[]
                     {
                         p.Name, p.Email, p.StartWeightKg, p.CurrentWeightKg, p.WeightChangeKg, p.CurrentBmi,
-                        p.WorkoutCount, p.TotalMinutes, p.TotalCaloriesBurned, p.MealLogCount, p.LastLoginAt
+                        p.WorkoutCount, p.TotalMinutes, p.TotalCaloriesBurned, p.MealLogCount, p.WeightLogCount, p.AppointmentCount, p.ActiveDays, p.LastLoginAt
                     })),
                 new ReportSection("Assigned Workout Plan Summary",
                     new[] { "Metric", "Value" },
@@ -314,6 +338,12 @@ namespace HealthTrack.Controllers
                 new ReportSection("Personal Workout Activities",
                     new[] { "Activity", "Sessions", "Clients", "Total Minutes" },
                     activities.Select(a => new object?[] { a.Activity, a.Sessions, a.ClientCount, a.TotalMinutes })),
+                new ReportSection("Popular Plan Exercises",
+                    new[] { "Exercise", "Plans", "Clients", "Completions" },
+                    planExercises.Select(e => new object?[] { e.Exercise, e.PlanCount, e.ClientCount, e.Completions })),
+                new ReportSection("Top Trainer Plans",
+                    new[] { "Plan", "Trainer", "Client", "Exercises", "Completions" },
+                    topPlans.Select(p => new object?[] { p.Title, p.Trainer, p.Client, p.ItemCount, p.Completions })),
                 new ReportSection("Engagement",
                     new[] { "Metric", "Value" },
                     new[]
@@ -321,17 +351,49 @@ namespace HealthTrack.Controllers
                         new object?[] { "Total clients", performance.Count },
                         new object?[] { "Clients active in last 7 days", performance.Count(p => p.LastLoginAt >= DateTime.Today.AddDays(-6)) },
                         new object?[] { "Clients with at least one workout", performance.Count(p => p.WorkoutCount > 0) },
-                        new object?[] { "Average workouts per client", performance.Count == 0 ? 0 : Math.Round(performance.Average(p => p.WorkoutCount), 1) }
+                        new object?[] { "Average workouts per client", performance.Count == 0 ? 0 : Math.Round(performance.Average(p => p.WorkoutCount), 1) },
+                        new object?[] { "Clients who logged a meal", performance.Count(p => p.MealLogCount > 0) },
+                        new object?[] { "Clients who logged their weight", performance.Count(p => p.WeightLogCount > 0) },
+                        new object?[] { "Appointments requested", performance.Sum(p => p.AppointmentCount) },
+                        new object?[] { "Average active days per client", performance.Count == 0 ? 0 : Math.Round(performance.Average(p => p.ActiveDays), 1) }
                     })
             };
 
             var fileName = $"HealthTrack_Report_{DateTime.Now:yyyyMMdd}";
             _logger.LogInformation("Admin {AdminId} exported report as {Format}", CurrentUserId, format);
+            await AuditAsync("Exported", "ClientPerformanceReport", null, format);
             if (format.Equals("pdf", StringComparison.OrdinalIgnoreCase))
             {
                 return File(_exportService.ToPdf("HealthTrack - Client Performance Report", sections), "application/pdf", fileName + ".pdf");
             }
             return File(_exportService.ToCsv(sections), "text/csv", fileName + ".csv");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> AuditLog(string? actor, string? action, DateTime? from, DateTime? to)
+        {
+            if (from > to) (from, to) = (to, from);
+            ViewData["Actor"] = actor;
+            ViewData["Action"] = action;
+            ViewData["From"] = from;
+            ViewData["To"] = to;
+            var logs = Context.AuditLogs.AsNoTracking().AsQueryable();
+            if (!string.IsNullOrWhiteSpace(actor)) logs = logs.Where(l => l.ActorName.Contains(actor.Trim()));
+            if (!string.IsNullOrWhiteSpace(action)) logs = logs.Where(l => l.Action == action);
+            if (from.HasValue) logs = logs.Where(l => l.CreatedAtUtc >= from.Value.Date.ToUniversalTime());
+            if (to.HasValue) logs = logs.Where(l => l.CreatedAtUtc < to.Value.Date.AddDays(1).ToUniversalTime());
+            var entries = await logs.OrderByDescending(l => l.CreatedAtUtc).Take(300).ToListAsync();
+            var subjectIds = entries.Where(l => l.SubjectClientId != null).Select(l => l.SubjectClientId!).Distinct().ToList();
+            ViewData["SubjectNames"] = await Context.Clients.Where(c => subjectIds.Contains(c.Id))
+                .ToDictionaryAsync(c => c.Id, c => c.Name);
+            return View(entries);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ChatQuestions()
+        {
+            return View(await Context.ChatQuestions.AsNoTracking()
+                .OrderByDescending(q => q.CreatedAtUtc).Take(500).ToListAsync());
         }
 
         [HttpGet]
@@ -348,9 +410,12 @@ namespace HealthTrack.Controllers
             {
                 ModelState.AddModelError(nameof(model.ScheduledFor), "Scheduled time must be in the future.");
             }
-            if (!string.IsNullOrEmpty(model.RecipientId) && !await Context.Clients.AnyAsync(u => u.Id == model.RecipientId))
+            var allTrainers = model.RecipientId == AllTrainersRecipient;
+            if (!string.IsNullOrEmpty(model.RecipientId) && !allTrainers
+                && !await Context.Clients.AnyAsync(u => u.Id == model.RecipientId)
+                && !await Context.Trainers.AnyAsync(u => u.Id == model.RecipientId))
             {
-                ModelState.AddModelError(nameof(model.RecipientId), "Choose a valid Client recipient.");
+                ModelState.AddModelError(nameof(model.RecipientId), "Choose a valid recipient.");
             }
             if (!ModelState.IsValid)
             {
@@ -361,6 +426,10 @@ namespace HealthTrack.Controllers
             if (string.IsNullOrEmpty(model.RecipientId))
             {
                 await _notificationService.SendToAllClientsAsync(model.Message.Trim(), model.Type, model.ScheduledFor);
+            }
+            else if (allTrainers)
+            {
+                await _notificationService.SendToAllTrainersAsync(model.Message.Trim(), model.Type, model.ScheduledFor);
             }
             else
             {
@@ -408,9 +477,12 @@ namespace HealthTrack.Controllers
             };
         }
 
-        private Task<List<ActivityStatViewModel>> GetPopularActivitiesAsync(int count)
+        private Task<List<ActivityStatViewModel>> GetPopularActivitiesAsync(int count, DateTime? from = null, DateTime? to = null)
         {
+            var start = from?.Date;
+            var end = to?.Date.AddDays(1);
             return Context.WorkoutLogs
+                .Where(w => (start == null || w.LoggedAt >= start) && (end == null || w.LoggedAt < end))
                 .GroupBy(w => w.Activity)
                 .Select(g => new ActivityStatViewModel
                 {
@@ -424,25 +496,102 @@ namespace HealthTrack.Controllers
                 .ToListAsync();
         }
 
-        private Task<List<ClientPerformanceViewModel>> GetClientPerformanceAsync()
+        private async Task<(List<PlanExerciseStatViewModel> Exercises, List<PlanStatViewModel> Plans)> GetPlanRoutinesAsync(int count, DateTime? from, DateTime? to)
         {
-            return Context.Clients
+            var start = from?.Date;
+            var end = to?.Date.AddDays(1);
+            var completions = await Context.WorkoutLogs
+                .Where(w => w.WorkoutPlanItemId != null
+                    && (start == null || w.LoggedAt >= start) && (end == null || w.LoggedAt < end))
+                .GroupBy(w => w.WorkoutPlanItemId!.Value)
+                .Select(g => new { ItemId = g.Key, Total = g.Count() })
+                .ToDictionaryAsync(x => x.ItemId, x => x.Total);
+            var items = await Context.WorkoutPlanItems.AsNoTracking()
+                .Select(i => new
+                {
+                    i.Id,
+                    i.ExerciseName,
+                    i.WorkoutPlanId,
+                    i.WorkoutPlan!.Title,
+                    i.WorkoutPlan.ClientId,
+                    ClientName = i.WorkoutPlan.Client!.Name,
+                    TrainerName = i.WorkoutPlan.Trainer!.Name
+                })
+                .ToListAsync();
+
+            var exercises = items
+                .GroupBy(i => i.ExerciseName.Trim(), StringComparer.OrdinalIgnoreCase)
+                .Select(g => new PlanExerciseStatViewModel
+                {
+                    Exercise = g.Key,
+                    PlanCount = g.Select(i => i.WorkoutPlanId).Distinct().Count(),
+                    ClientCount = g.Select(i => i.ClientId).Distinct().Count(),
+                    Completions = g.Sum(i => completions.GetValueOrDefault(i.Id))
+                })
+                .OrderByDescending(e => e.Completions).ThenByDescending(e => e.PlanCount).ThenBy(e => e.Exercise)
+                .Take(count).ToList();
+            var plans = items
+                .GroupBy(i => i.WorkoutPlanId)
+                .Select(g => new PlanStatViewModel
+                {
+                    Title = g.First().Title,
+                    Trainer = g.First().TrainerName,
+                    Client = g.First().ClientName,
+                    ItemCount = g.Count(),
+                    Completions = g.Sum(i => completions.GetValueOrDefault(i.Id))
+                })
+                .OrderByDescending(p => p.Completions).ThenBy(p => p.Title)
+                .Take(count).ToList();
+            return (exercises, plans);
+        }
+
+        private async Task<List<ClientPerformanceViewModel>> GetClientPerformanceAsync(DateTime? from = null, DateTime? to = null)
+        {
+            var start = from?.Date;
+            var end = to?.Date.AddDays(1);
+            var startUtc = start?.ToUniversalTime();
+            var endUtc = end?.ToUniversalTime();
+            Expression<Func<WorkoutLog, bool>> workoutInRange = w => (start == null || w.LoggedAt >= start) && (end == null || w.LoggedAt < end);
+            Expression<Func<MealLog, bool>> mealInRange = m => (start == null || m.LoggedAt >= start) && (end == null || m.LoggedAt < end);
+            Expression<Func<HealthMetric, bool>> metricInRange = m => (start == null || m.RecordedAt >= start) && (end == null || m.RecordedAt < end);
+
+            var clients = await Context.Clients
                 .Select(c => new ClientPerformanceViewModel
                 {
                     ClientId = c.Id,
                     Name = c.Name,
                     Email = c.Email ?? string.Empty,
                     HeightCm = c.HeightCm,
-                    StartWeightKg = c.HealthMetrics.OrderBy(m => m.RecordedAt).Select(m => (double?)m.WeightKg).FirstOrDefault(),
-                    CurrentWeightKg = c.HealthMetrics.OrderByDescending(m => m.RecordedAt).Select(m => (double?)m.WeightKg).FirstOrDefault(),
-                    WorkoutCount = c.WorkoutLogs.Count(),
-                    TotalMinutes = c.WorkoutLogs.Sum(w => w.DurationMinutes),
-                    TotalCaloriesBurned = c.WorkoutLogs.Sum(w => w.CaloriesBurned),
-                    MealLogCount = c.MealLogs.Count(),
+                    StartWeightKg = c.HealthMetrics.AsQueryable().Where(metricInRange).OrderBy(m => m.RecordedAt).Select(m => (double?)m.WeightKg).FirstOrDefault(),
+                    CurrentWeightKg = c.HealthMetrics.AsQueryable().Where(metricInRange).OrderByDescending(m => m.RecordedAt).Select(m => (double?)m.WeightKg).FirstOrDefault(),
+                    WeightLogCount = c.HealthMetrics.AsQueryable().Count(metricInRange),
+                    WorkoutCount = c.WorkoutLogs.AsQueryable().Count(workoutInRange),
+                    TotalMinutes = c.WorkoutLogs.AsQueryable().Where(workoutInRange).Sum(w => w.DurationMinutes),
+                    TotalCaloriesBurned = c.WorkoutLogs.AsQueryable().Where(workoutInRange).Sum(w => w.CaloriesBurned),
+                    MealLogCount = c.MealLogs.AsQueryable().Count(mealInRange),
                     LastLoginAt = c.LastLoginAt
                 })
                 .OrderBy(c => c.Name)
                 .ToListAsync();
+
+            var appointments = await Context.Appointments
+                .Where(a => (startUtc == null || a.RequestedAtUtc >= startUtc) && (endUtc == null || a.RequestedAtUtc < endUtc))
+                .GroupBy(a => a.ClientId)
+                .Select(g => new { ClientId = g.Key, Total = g.Count() })
+                .ToDictionaryAsync(a => a.ClientId, a => a.Total);
+            var activeDays = (await Context.WorkoutLogs.Where(workoutInRange).Select(w => new { w.ClientId, w.LoggedAt.Date }).Distinct().ToListAsync())
+                .Concat(await Context.MealLogs.Where(mealInRange).Select(m => new { m.ClientId, m.LoggedAt.Date }).Distinct().ToListAsync())
+                .Concat(await Context.HealthMetrics.Where(metricInRange).Select(m => new { m.ClientId, m.RecordedAt.Date }).Distinct().ToListAsync())
+                .Distinct()
+                .GroupBy(d => d.ClientId)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            foreach (var client in clients)
+            {
+                client.AppointmentCount = appointments.GetValueOrDefault(client.ClientId);
+                client.ActiveDays = activeDays.GetValueOrDefault(client.ClientId);
+            }
+            return clients;
         }
 
         private static async Task<Dictionary<DateTime, int>> CountPerDayAsync(IQueryable<DateTime> dates)
@@ -453,12 +602,168 @@ namespace HealthTrack.Controllers
                 .ToDictionaryAsync(d => d.Date, d => d.Total);
         }
 
+        private const string AllTrainersRecipient = "all-trainers";
+
         private async Task LoadRecipientsAsync()
         {
-            ViewData["Recipients"] = await Context.Clients
+            var clients = new SelectListGroup { Name = "Clients" };
+            var trainers = new SelectListGroup { Name = "Trainers" };
+            var recipients = await Context.Clients
                 .OrderBy(c => c.Name)
-                .Select(c => new SelectListItem { Value = c.Id, Text = c.Name + " (" + c.Email + ")" })
+                .Select(c => new SelectListItem { Value = c.Id, Text = c.Name + " (" + c.Email + ")", Group = clients })
                 .ToListAsync();
+            recipients.AddRange(await Context.Trainers
+                .OrderBy(t => t.Name)
+                .Select(t => new SelectListItem { Value = t.Id, Text = t.Name + " (" + t.Email + ")", Group = trainers })
+                .ToListAsync());
+            ViewData["Recipients"] = recipients;
+        }
+
+        public async Task<IActionResult> Providers()
+        {
+            var providers = await Context.ConsultationProviders.AsNoTracking()
+                .Where(p => p.Kind == ConsultationProviderKind.HealthcareProfessional)
+                .OrderByDescending(p => p.IsActive).ThenBy(p => p.Name)
+                .ToListAsync();
+            return View(providers);
+        }
+
+        [HttpGet]
+        public IActionResult CreateProvider() => View("ProviderForm", new ProviderForm());
+
+        [HttpPost]
+        public async Task<IActionResult> CreateProvider(ProviderForm model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View("ProviderForm", model);
+            }
+
+            Context.ConsultationProviders.Add(new ConsultationProvider
+            {
+                Name = model.Name.Trim(),
+                Specialty = string.IsNullOrWhiteSpace(model.Specialty) ? null : model.Specialty.Trim(),
+                Kind = ConsultationProviderKind.HealthcareProfessional,
+                IsActive = true
+            });
+            await Context.SaveChangesAsync();
+            _logger.LogInformation("Admin {AdminId} created healthcare professional {Name}", CurrentUserId, model.Name);
+            TempData["Success"] = $"{model.Name.Trim()} has been added.";
+            return RedirectToAction(nameof(Providers));
+        }
+
+        private Task<ConsultationProvider?> FindProfessionalAsync(int id) =>
+            Context.ConsultationProviders.FirstOrDefaultAsync(p => p.Id == id && p.Kind == ConsultationProviderKind.HealthcareProfessional);
+
+        [HttpGet]
+        public async Task<IActionResult> EditProvider(int id)
+        {
+            var provider = await FindProfessionalAsync(id);
+            if (provider == null)
+            {
+                return NotFound();
+            }
+
+            return View("ProviderForm", new ProviderForm { Id = provider.Id, Name = provider.Name, Specialty = provider.Specialty });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> EditProvider(int id, ProviderForm model)
+        {
+            var provider = await FindProfessionalAsync(id);
+            if (provider == null)
+            {
+                return NotFound();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                model.Id = id;
+                return View("ProviderForm", model);
+            }
+
+            provider.Name = model.Name.Trim();
+            provider.Specialty = string.IsNullOrWhiteSpace(model.Specialty) ? null : model.Specialty.Trim();
+            await Context.SaveChangesAsync();
+            TempData["Success"] = $"{provider.Name} has been updated.";
+            return RedirectToAction(nameof(Providers));
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ToggleProvider(int id)
+        {
+            var provider = await FindProfessionalAsync(id);
+            if (provider == null)
+            {
+                return NotFound();
+            }
+
+            provider.IsActive = !provider.IsActive;
+            await Context.SaveChangesAsync();
+            _logger.LogInformation("Admin {AdminId} {Action} provider {ProviderId}", CurrentUserId, provider.IsActive ? "activated" : "deactivated", id);
+            TempData["Success"] = $"{provider.Name} has been {(provider.IsActive ? "turned on" : "turned off")}.";
+            return RedirectToAction(nameof(Providers));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ProviderSlots(int id)
+        {
+            var provider = await FindProfessionalAsync(id);
+            return provider == null ? NotFound() : View(await LoadProviderSlotsAsync(provider, new AddAvailabilitySlotForm()));
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AddProviderSlot(int id, [Bind(Prefix = "Form")] AddAvailabilitySlotForm form)
+        {
+            var provider = await FindProfessionalAsync(id);
+            if (provider == null)
+            {
+                return NotFound();
+            }
+
+            if (ModelState.IsValid)
+            {
+                var nowUtc = _clock.GetUtcNow().UtcDateTime;
+                var startUtc = _time.ToUtc(form.StartLocal);
+                var endUtc = _time.ToUtc(form.EndLocal);
+                if (form.EndLocal <= form.StartLocal)
+                {
+                    ModelState.AddModelError(string.Empty, "Slot end time must be after start time.");
+                }
+                else if (startUtc <= nowUtc)
+                {
+                    ModelState.AddModelError(string.Empty, "Slot start time must be in the future.");
+                }
+                else if (await Context.AvailabilitySlots.AnyAsync(s => s.ProviderId == provider.Id && s.StartUtc < endUtc && s.EndUtc > startUtc))
+                {
+                    ModelState.AddModelError(string.Empty, "This slot overlaps an existing slot.");
+                }
+                else
+                {
+                    Context.AvailabilitySlots.Add(new AvailabilitySlot { ProviderId = provider.Id, StartUtc = startUtc, EndUtc = endUtc, IsAvailable = true });
+                    await Context.SaveChangesAsync();
+                    TempData["Success"] = "Availability slot added.";
+                    return RedirectToAction(nameof(ProviderSlots), new { id });
+                }
+            }
+
+            return View(nameof(ProviderSlots), await LoadProviderSlotsAsync(provider, form));
+        }
+
+        private async Task<ProviderSlotsViewModel> LoadProviderSlotsAsync(ConsultationProvider provider, AddAvailabilitySlotForm form)
+        {
+            var nowUtc = _clock.GetUtcNow().UtcDateTime;
+            var slots = await Context.AvailabilitySlots.AsNoTracking()
+                .Where(s => s.ProviderId == provider.Id && s.EndUtc > nowUtc)
+                .OrderBy(s => s.StartUtc)
+                .ToListAsync();
+            return new ProviderSlotsViewModel
+            {
+                Provider = provider,
+                Form = form,
+                TimeZoneLabel = _time.Label,
+                Slots = slots.Select(s => new AvailableSlotViewModel(s.Id, provider.Name, _time.ToLocal(s.StartUtc), _time.ToLocal(s.EndUtc))).ToList()
+            };
         }
     }
 }

@@ -1,0 +1,53 @@
+@model List<ChatQuestion>
+@{
+    ViewData["Title"] = "Chat questions";
+    var grouped = Model
+        .GroupBy(q => q.Question.Trim().ToLowerInvariant())
+        .Select(g => new { Question = g.First().Question, Count = g.Count(), Roles = string.Join(", ", g.Select(q => q.Role).Distinct()), Last = g.Max(q => q.CreatedAtUtc), Ai = g.Any(q => q.AiAnswered) })
+        .OrderByDescending(g => g.Count).ThenByDescending(g => g.Last)
+        .ToList();
+}
+
+<div class="ht-head">
+    <div>
+        <h1 class="ht-title">Unanswered chat questions</h1>
+    </div>
+    <div class="ht-head-actions">
+        <a class="btn btn-line" asp-action="Reports"><i class="bi bi-arrow-left"></i>Reports</a>
+    </div>
+</div>
+
+<section class="ht-card">
+    @if (grouped.Any())
+    {
+        <div class="table-responsive">
+            <table class="ht-table">
+                <thead>
+                    <tr>
+                        <th>Question</th>
+                        <th>Asked</th>
+                        <th>By</th>
+                        <th>Last asked</th>
+                        <th>AI reply</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in grouped)
+                    {
+                        <tr>
+                            <td>@item.Question</td>
+                            <td class="num">@item.Count</td>
+                            <td>@item.Roles</td>
+                            <td class="text-nowrap">@item.Last.ToLocalTime().ToString("d MMM yyyy HH:mm")</td>
+                            <td>@(item.Ai ? "Yes" : "No")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="ht-card-body text-muted">No questions have missed the chat topics yet. Showing the latest 500 when there are some.</div>
+    }
+</section>

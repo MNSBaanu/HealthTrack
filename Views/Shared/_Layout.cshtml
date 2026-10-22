@@ -30,6 +30,7 @@
                         <a class="@Tab("WorkoutLogs")" asp-controller="WorkoutLogs" asp-action="Index"><i class="bi bi-lightning-charge"></i>Workouts</a>
                         <a class="@Tab("MealLogs")" asp-controller="MealLogs" asp-action="Index"><i class="bi bi-cup-hot"></i>Meals</a>
                         <a class="@Tab("Appointments")" asp-controller="Appointments" asp-action="Index"><i class="bi bi-calendar-check"></i>Appointments</a>
+                        <a class="@Tab("ClientFeedback")" asp-controller="ClientFeedback" asp-action="Index"><i class="bi bi-chat-left-text"></i>Feedback</a>
                     }
                     @if (isTrainer)
                     {
@@ -44,6 +45,7 @@
                     {
                         <a class="@Tab("Admin", "Index")" asp-controller="Admin" asp-action="Index"><i class="bi bi-grid-1x2"></i>Console</a>
                         <a class="@Tab("Admin", "Users", "ClientDetails", "CreateAdmin", "CreateTrainer")" asp-controller="Admin" asp-action="Users"><i class="bi bi-people"></i>Users</a>
+                        <a class="@Tab("Admin", "Providers", "CreateProvider", "EditProvider", "ProviderSlots", "AddProviderSlot")" asp-controller="Admin" asp-action="Providers"><i class="bi bi-hospital"></i>Providers</a>
                         <a class="@Tab("Assignments")" asp-controller="Assignments" asp-action="Index"><i class="bi bi-person-check"></i>Assignments</a>
                         <a class="@Tab("Admin", "Reports")" asp-controller="Admin" asp-action="Reports"><i class="bi bi-journal-text"></i>Reports</a>
                         <a class="@Tab("Admin", "SendNotification")" asp-controller="Admin" asp-action="SendNotification"><i class="bi bi-megaphone"></i>Broadcast</a>

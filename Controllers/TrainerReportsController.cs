@@ -92,6 +92,7 @@ namespace HealthTrack.Controllers
                     })
             };
 
+            await AuditAsync("Exported", "TrainerClientReport", null, format);
             var fileName = $"Trainer_Report_{trainer.Name.Replace(" ", "_")}_{DateTime.Now:yyyyMMdd}";
 
             if (format.Equals("pdf", StringComparison.OrdinalIgnoreCase))

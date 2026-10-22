@@ -18,6 +18,7 @@ public class ClientWorkoutPlanViewModel
 {
     public WorkoutPlan Plan { get; set; } = null!;
     public DateTime Today { get; set; }
+    public HashSet<int> DoneTodayItemIds { get; set; } = new();
 }
 
 public class ClientDietPlanViewModel

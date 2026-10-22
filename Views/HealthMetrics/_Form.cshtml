@@ -15,4 +15,46 @@
         <input asp-for="RecordedAt" asp-format="{0:yyyy-MM-ddTHH:mm}" class="form-control" max="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" />
         <span asp-validation-for="RecordedAt" class="text-danger"></span>
     </div>
+    <div class="col-md-6">
+        <label asp-for="BodyFatPercent" class="form-label">Body fat (optional)</label>
+        <div class="ht-input-unit">
+            <input asp-for="BodyFatPercent" class="form-control" step="0.1" placeholder="20.0" />
+            <span class="unit">%</span>
+        </div>
+        <span asp-validation-for="BodyFatPercent" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="RestingHeartRate" class="form-label">Resting heart rate (optional)</label>
+        <div class="ht-input-unit">
+            <input asp-for="RestingHeartRate" class="form-control" placeholder="70" />
+            <span class="unit">bpm</span>
+        </div>
+        <span asp-validation-for="RestingHeartRate" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="SystolicBp" class="form-label">Blood pressure (optional)</label>
+        <div class="d-flex gap-2 align-items-center">
+            <input asp-for="SystolicBp" class="form-control" placeholder="120" aria-label="Systolic" />
+            <span>/</span>
+            <div class="ht-input-unit flex-grow-1">
+                <input asp-for="DiastolicBp" class="form-control" placeholder="80" aria-label="Diastolic" />
+                <span class="unit">mmHg</span>
+            </div>
+        </div>
+        <span asp-validation-for="SystolicBp" class="text-danger"></span>
+        <span asp-validation-for="DiastolicBp" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="Steps" class="form-label">Steps (optional)</label>
+        <input asp-for="Steps" class="form-control" placeholder="8000" />
+        <span asp-validation-for="Steps" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="SleepHours" class="form-label">Sleep (optional)</label>
+        <div class="ht-input-unit">
+            <input asp-for="SleepHours" class="form-control" step="0.5" placeholder="7.5" />
+            <span class="unit">hrs</span>
+        </div>
+        <span asp-validation-for="SleepHours" class="text-danger"></span>
+    </div>
 </div>

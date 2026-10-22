@@ -19,6 +19,10 @@ namespace HealthTrack.Controllers
 
         protected string CurrentUserId => UserManager.GetUserId(User)!;
 
+        protected Task AuditAsync(string action, string entity, string? subjectClientId = null, string? detail = null) =>
+            HttpContext.RequestServices.GetRequiredService<HealthTrack.Services.IAuditService>()
+                .RecordAsync(User, action, entity, subjectClientId, detail);
+
         protected void ValidateNotInFuture(DateTime date, string fieldName)
         {
             if (date > DateTime.Now)

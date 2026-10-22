@@ -20,7 +20,8 @@
                         <div class="col-md-7">
                             <label asp-for="RecipientId" class="form-label"></label>
                             <select asp-for="RecipientId" asp-items="recipients" class="form-select">
-                                <option value="">Everyone &middot; all clients (@recipients.Count)</option>
+                                <option value="">Everyone &middot; all clients (@recipients.Count(r => r.Group?.Name == "Clients"))</option>
+                                <option value="all-trainers">Everyone &middot; all trainers (@recipients.Count(r => r.Group?.Name == "Trainers"))</option>
                             </select>
                             <span asp-validation-for="RecipientId" class="text-danger"></span>
                         </div>

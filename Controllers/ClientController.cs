@@ -102,6 +102,12 @@ namespace HealthTrack.Controllers
                 DateOfBirth = client.DateOfBirth,
                 HeightCm = client.HeightCm,
                 FitnessGoal = client.FitnessGoal,
+                WorkoutReminderEnabled = client.WorkoutReminderEnabled,
+                WorkoutReminderHour = client.WorkoutReminderHour,
+                MealReminderEnabled = client.MealReminderEnabled,
+                MealReminderHour = client.MealReminderHour,
+                WeightReminderEnabled = client.WeightReminderEnabled,
+                WeightReminderHour = client.WeightReminderHour,
                 HasPhoto = client.ProfilePhoto != null
             };
             return View(model);
@@ -140,6 +146,12 @@ namespace HealthTrack.Controllers
             client.DateOfBirth = model.DateOfBirth!.Value;
             client.HeightCm = model.HeightCm!.Value;
             client.FitnessGoal = model.FitnessGoal;
+            client.WorkoutReminderEnabled = model.WorkoutReminderEnabled;
+            client.WorkoutReminderHour = model.WorkoutReminderHour;
+            client.MealReminderEnabled = model.MealReminderEnabled;
+            client.MealReminderHour = model.MealReminderHour;
+            client.WeightReminderEnabled = model.WeightReminderEnabled;
+            client.WeightReminderHour = model.WeightReminderHour;
             if (photo != null)
             {
                 client.ProfilePhoto = photo;

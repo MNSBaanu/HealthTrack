@@ -64,13 +64,17 @@ namespace HealthTrack.Services
 
         public async Task GenerateDailyRemindersAsync(string clientId)
         {
+            var client = await _context.Clients.AsNoTracking().FirstOrDefaultAsync(c => c.Id == clientId);
+            if (client == null) return;
             var today = DateTime.Today;
+            var hour = _clock.GetLocalNow().Hour;
             var remindedToday = await _context.Notifications
                 .Where(n => n.PersonId == clientId && n.CreatedAt >= today)
                 .Select(n => n.Type)
                 .ToListAsync();
 
-            if (!remindedToday.Contains(NotificationType.Workout)
+            if (client.WorkoutReminderEnabled && hour >= client.WorkoutReminderHour
+                && !remindedToday.Contains(NotificationType.Workout)
                 && !await _context.WorkoutLogs.AnyAsync(w => w.ClientId == clientId && w.LoggedAt >= today))
             {
                 _context.Notifications.Add(new Notification
@@ -81,7 +85,8 @@ namespace HealthTrack.Services
                 });
             }
 
-            if (!remindedToday.Contains(NotificationType.Meal)
+            if (client.MealReminderEnabled && hour >= client.MealReminderHour
+                && !remindedToday.Contains(NotificationType.Meal)
                 && !await _context.MealLogs.AnyAsync(m => m.ClientId == clientId && m.LoggedAt >= today))
             {
                 _context.Notifications.Add(new Notification
@@ -95,7 +100,8 @@ namespace HealthTrack.Services
             var lastMetric = await _context.HealthMetrics
                 .Where(m => m.ClientId == clientId)
                 .MaxAsync(m => (DateTime?)m.RecordedAt);
-            if (!remindedToday.Contains(NotificationType.General)
+            if (client.WeightReminderEnabled && hour >= client.WeightReminderHour
+                && !remindedToday.Contains(NotificationType.General)
                 && (lastMetric == null || lastMetric < today.AddDays(-7)))
             {
                 _context.Notifications.Add(new Notification

@@ -4,17 +4,13 @@ using Microsoft.EntityFrameworkCore;
 namespace HealthTrack.Services;
 
 public class DailyReminderWorker(IServiceScopeFactory scopes,
-    ILogger<DailyReminderWorker> logger, TimeProvider clock) : BackgroundService
+    ILogger<DailyReminderWorker> logger) : BackgroundService
 {
-    private const int ReminderHour = 8;
-
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         using var timer = new PeriodicTimer(TimeSpan.FromMinutes(15));
         do
         {
-            if (clock.GetLocalNow().Hour < ReminderHour)
-                continue;
             try
             {
                 using var scope = scopes.CreateScope();

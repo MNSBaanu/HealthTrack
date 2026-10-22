@@ -24,6 +24,24 @@ namespace HealthTrack.Models.ViewModels
         [Display(Name = "Fitness Goal")]
         public string? FitnessGoal { get; set; }
 
+        [Display(Name = "Workout reminder")]
+        public bool WorkoutReminderEnabled { get; set; }
+
+        [Range(0, 23)]
+        public int WorkoutReminderHour { get; set; }
+
+        [Display(Name = "Meal reminder")]
+        public bool MealReminderEnabled { get; set; }
+
+        [Range(0, 23)]
+        public int MealReminderHour { get; set; }
+
+        [Display(Name = "Weight check-in reminder")]
+        public bool WeightReminderEnabled { get; set; }
+
+        [Range(0, 23)]
+        public int WeightReminderHour { get; set; }
+
         [Display(Name = "Profile photo")]
         public IFormFile? Photo { get; set; }
 

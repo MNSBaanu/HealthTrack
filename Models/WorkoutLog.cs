@@ -23,5 +23,9 @@ namespace HealthTrack.Models
         public int CaloriesBurned { get; set; }
 
         public DateTime LoggedAt { get; set; } = DateTime.Now;
+
+        public int? WorkoutPlanItemId { get; set; }
+
+        public WorkoutPlanItem? WorkoutPlanItem { get; set; }
     }
 }

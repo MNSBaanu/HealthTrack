@@ -220,6 +220,9 @@ namespace HealthTrack.Migrations
                     b.Property<int?>("ApproximateCalories")
                         .HasColumnType("int");
 
+                    b.Property<int?>("Day")
+                        .HasColumnType("int");
+
                     b.Property<int>("DietPlanId")
                         .HasColumnType("int");
 
@@ -236,6 +239,9 @@ namespace HealthTrack.Migrations
                     b.Property<string>("Notes")
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
+
+                    b.Property<TimeOnly?>("Time")
+                        .HasColumnType("time");
 
                     b.HasKey("Id");
 

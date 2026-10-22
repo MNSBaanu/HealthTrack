@@ -6,6 +6,11 @@
     var weekStart = DateTime.Today.AddDays(-6);
     var activeClients = Model.Count(c => c.LastLoginAt >= weekStart);
     var clientsWithWorkouts = Model.Count(c => c.WorkoutCount > 0);
+    var from = ViewData["From"] as DateTime?;
+    var to = ViewData["To"] as DateTime?;
+    var mealLoggers = Model.Count(c => c.MealLogCount > 0);
+    var weightLoggers = Model.Count(c => c.WeightLogCount > 0);
+    var averageActiveDays = Model.Count == 0 ? 0 : Model.Average(c => c.ActiveDays);
     var averageWorkouts = Model.Count == 0 ? 0 : Model.Average(c => c.WorkoutCount);
 }
 
@@ -14,10 +19,22 @@
         <h1 class="ht-title">Client performance</h1>
     </div>
     <div class="ht-head-actions">
-        <a class="btn btn-line" asp-action="ExportReport" asp-route-format="csv"><i class="bi bi-filetype-csv"></i>Export CSV</a>
-        <a class="btn btn-primary" asp-action="ExportReport" asp-route-format="pdf"><i class="bi bi-file-earmark-pdf"></i>Export PDF</a>
+        <a class="btn btn-line" asp-action="ExportReport" asp-route-format="csv" asp-route-from="@from" asp-route-to="@to"><i class="bi bi-filetype-csv"></i>Export CSV</a>
+        <a class="btn btn-primary" asp-action="ExportReport" asp-route-format="pdf" asp-route-from="@from" asp-route-to="@to"><i class="bi bi-file-earmark-pdf"></i>Export PDF</a>
     </div>
 </div>
+
+<form asp-action="Reports" method="get" class="ht-card ht-filter mb-3">
+    <label class="form-label mb-0" for="report-from">From</label>
+    <input id="report-from" type="date" name="from" value="@from?.ToString("yyyy-MM-dd")" class="form-control" />
+    <label class="form-label mb-0" for="report-to">To</label>
+    <input id="report-to" type="date" name="to" value="@to?.ToString("yyyy-MM-dd")" class="form-control" />
+    <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i>Apply</button>
+    @if (from.HasValue || to.HasValue)
+    {
+        <a class="btn btn-line" asp-action="Reports">Clear</a>
+    }
+</form>
 
 <div class="ht-ledger">
     <div>
@@ -39,7 +56,28 @@
     </div>
 </div>
 
-<section class="ht-card mb-3">
+<div class="ht-ledger mt-3">
+    <div>
+        <div class="ht-overline">Logged meals</div>
+        <div class="value">@mealLoggers</div>
+        <div class="hint">@(Model.Count == 0 ? 0 : mealLoggers * 100 / Model.Count)% of clients</div>
+    </div>
+    <div>
+        <div class="ht-overline">Logged weight</div>
+        <div class="value">@weightLoggers</div>
+        <div class="hint">@(Model.Count == 0 ? 0 : weightLoggers * 100 / Model.Count)% of clients</div>
+    </div>
+    <div>
+        <div class="ht-overline">Appointments</div>
+        <div class="value">@Model.Sum(c => c.AppointmentCount)</div>
+    </div>
+    <div>
+        <div class="ht-overline">Avg. active days</div>
+        <div class="value">@averageActiveDays.ToString("0.#")<small>per client</small></div>
+    </div>
+</div>
+
+<section class="ht-card my-3">
     <div class="ht-card-head">
         <h2>Performance by client</h2>
         <span class="ht-overline">Sorted by name</span>
@@ -58,6 +96,9 @@
                         <th>Workouts</th>
                         <th>Burned</th>
                         <th>Meals</th>
+                        <th>Weigh-ins</th>
+                        <th>Appts</th>
+                        <th>Active days</th>
                         <th>Last active</th>
                         <th></th>
                     </tr>
@@ -91,6 +132,9 @@
                             <td class="num">@client.WorkoutCount <span class="sub">@client.TotalMinutes min</span></td>
                             <td class="num">@client.TotalCaloriesBurned.ToString("N0") <small>kcal</small></td>
                             <td class="num">@client.MealLogCount</td>
+                            <td class="num">@client.WeightLogCount</td>
+                            <td class="num">@client.AppointmentCount</td>
+                            <td class="num">@client.ActiveDays</td>
                             <td class="text-nowrap">@(client.LastLoginAt?.ToString("d MMM yyyy") ?? "Never")</td>
                             <td><a class="btn-icon" asp-action="ClientDetails" asp-route-id="@client.ClientId" title="View client" aria-label="View @client.Name"><i class="bi bi-arrow-right"></i></a></td>
                         </tr>

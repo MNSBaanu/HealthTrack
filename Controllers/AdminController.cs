@@ -356,6 +356,13 @@ namespace HealthTrack.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> ChatQuestions()
+        {
+            return View(await Context.ChatQuestions.AsNoTracking()
+                .OrderByDescending(q => q.CreatedAtUtc).Take(500).ToListAsync());
+        }
+
+        [HttpGet]
         public async Task<IActionResult> SendNotification()
         {
             await LoadRecipientsAsync();

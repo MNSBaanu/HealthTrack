@@ -91,6 +91,35 @@ namespace HealthTrack.Migrations
                         });
                 });
 
+            modelBuilder.Entity("HealthTrack.Models.ChatQuestion", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("AiAnswered")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Question")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ChatQuestions");
+                });
+
             modelBuilder.Entity("HealthTrack.Models.ClientTrainerAssignment", b =>
                 {
                     b.Property<string>("ClientId")

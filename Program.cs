@@ -49,9 +49,14 @@ builder.Services.ConfigureApplicationCookie(options =>
         }
     };
 });
+builder.Services.AddAntiforgery(options => options.HeaderName = "RequestVerificationToken");
+builder.Services.AddHttpClient<ChatAiClient>(client => client.Timeout = TimeSpan.FromSeconds(15));
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("chat", httpContext => RateLimitPartition.GetFixedWindowLimiter(
+        httpContext.User.Identity?.Name ?? httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 20, Window = TimeSpan.FromMinutes(1) }));
     options.AddPolicy("auth", httpContext => RateLimitPartition.GetFixedWindowLimiter(
         httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1) }));

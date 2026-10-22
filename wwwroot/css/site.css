@@ -430,7 +430,7 @@ a:hover {
 
 .ht-masthead-inner {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto minmax(0, 1fr);
   grid-template-areas: "brand actions" "tabs tabs";
   align-items: center;
   column-gap: 1.5rem;
@@ -450,11 +450,12 @@ a:hover {
 }
 
 .ht-tabs {
+  min-width: 0;
   grid-area: tabs;
   display: flex;
   gap: 0.25rem;
   overflow-x: auto;
-  padding: 0.75rem 0;
+  padding: 0.75rem 0.25rem;
   scrollbar-width: none;
 }
 
@@ -462,21 +463,26 @@ a:hover {
   display: none;
 }
 
-@media (min-width: 992px) {
+@media (min-width: 1400px) {
   .ht-masthead-inner {
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     grid-template-areas: "brand tabs actions";
     padding: 0;
     min-height: 72px;
   }
 
   .ht-tabs {
-    justify-content: center;
-    padding: 0;
+    justify-content: safe center;
+    padding: 0 0.25rem;
+  }
+
+  .ht-tabs .ht-tab {
+    padding-inline: 0.75rem;
   }
 }
 
 .ht-tab {
+  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -1579,4 +1585,148 @@ a:hover {
 
 .ht-auth-main > .ht-wordmark {
   align-self: center;
+}
+/* Shared dropdown theme: form pickers, account menus and export menus. */
+.form-select {
+  padding-right: 2.75rem;
+  background-position: right 0.95rem center;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-select:hover:not(:disabled) {
+  border-color: var(--ht-saffron-deep);
+}
+
+.form-select:focus {
+  border-color: var(--ht-saffron-deep);
+  box-shadow: 0 0 0 3px var(--ht-saffron-soft);
+}
+
+.form-select:disabled {
+  color: var(--ht-muted);
+  background-color: var(--ht-paper-2);
+}
+
+.form-select option, .form-select optgroup {
+  color: var(--ht-ink);
+  background-color: var(--ht-surface);
+}
+
+.dropdown-menu {
+  --bs-dropdown-bg: var(--ht-surface);
+  --bs-dropdown-color: var(--ht-text);
+  --bs-dropdown-border-color: var(--ht-line);
+  --bs-dropdown-link-color: var(--ht-text);
+  --bs-dropdown-link-hover-bg: var(--ht-saffron-soft);
+  --bs-dropdown-link-hover-color: var(--ht-ink);
+  --bs-dropdown-link-active-bg: var(--ht-saffron);
+  --bs-dropdown-link-active-color: var(--ht-ink);
+  --bs-dropdown-divider-bg: var(--ht-line);
+  border-radius: var(--ht-radius);
+  box-shadow: var(--ht-shadow-lg);
+  padding: 0.5rem;
+  max-width: calc(100vw - 1.5rem);
+}
+
+.dropdown-menu .dropdown-item {
+  border-radius: var(--ht-radius-sm);
+  padding: 0.6rem 0.8rem;
+  font-size: 0.9rem;
+}
+
+.dropdown-menu .dropdown-item:hover,
+.dropdown-menu .dropdown-item:focus-visible {
+  color: var(--ht-ink);
+  background-color: var(--ht-saffron-soft);
+  outline: none;
+}
+
+.dropdown-menu .dropdown-item.active,
+.dropdown-menu .dropdown-item:active {
+  color: var(--ht-ink);
+  background-color: var(--ht-saffron);
+}
+
+.dropdown-menu .dropdown-item.text-danger:hover,
+.dropdown-menu .dropdown-item.text-danger:focus-visible {
+  background-color: var(--ht-danger-soft);
+}
+
+/* Use the browser's accessible picker with fully themed options where supported. */
+@supports (appearance: base-select) {
+  select.form-select:not([multiple]):not([size]),
+  select.form-select:not([multiple]):not([size])::picker(select) {
+    appearance: base-select;
+  }
+
+  select.form-select:not([multiple]):not([size]) {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background-image: none;
+    padding-right: 0.95rem;
+    text-align: start;
+  }
+
+  select.form-select::picker-icon {
+    color: var(--ht-saffron-deep);
+    margin-inline-start: auto;
+    transition: rotate 0.15s ease;
+  }
+
+  select.form-select:open::picker-icon {
+    rotate: 180deg;
+  }
+
+  select.form-select::picker(select) {
+    margin-block: 0.4rem;
+    padding: 0.4rem;
+    border: 1px solid var(--ht-line-strong);
+    border-radius: var(--ht-radius);
+    background: var(--ht-surface);
+    color: var(--ht-ink);
+    box-shadow: var(--ht-shadow-lg);
+    max-block-size: min(20rem, 60dvh);
+    overflow-y: auto;
+    scrollbar-color: var(--ht-line-strong) var(--ht-surface);
+    font-family: var(--ht-font-body);
+  }
+
+  select.form-select option {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.65rem 0.8rem;
+    border-radius: var(--ht-radius-sm);
+    font-size: 0.9rem;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  select.form-select option:checked {
+    background: var(--ht-saffron);
+    color: var(--ht-ink);
+    font-weight: 600;
+  }
+
+  select.form-select option:hover,
+  select.form-select option:focus-visible {
+    background: var(--ht-saffron-soft);
+    color: var(--ht-ink);
+    outline: 1px solid var(--ht-saffron-deep);
+    outline-offset: -1px;
+  }
+
+  select.form-select option::checkmark {
+    color: var(--ht-ink);
+  }
+
+  select.form-select option:disabled {
+    color: var(--ht-muted);
+    background: var(--ht-paper-2);
+  }
+
+  select.form-select optgroup {
+    font-weight: 600;
+  }
 }

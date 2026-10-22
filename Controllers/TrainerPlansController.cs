@@ -11,14 +11,27 @@ namespace HealthTrack.Controllers
     public class TrainerPlansController : TrainerBaseController
     {
         private readonly ITrainerPlanService _planService;
+        private readonly AppointmentTime _time;
+        private readonly TimeProvider _clock;
 
         public TrainerPlansController(
             HealthTrackDbContext context,
             UserManager<Person> userManager,
-            ITrainerPlanService planService)
+            ITrainerPlanService planService, AppointmentTime time, TimeProvider clock)
             : base(context, userManager)
         {
             _planService = planService;
+            _time = time;
+            _clock = clock;
+        }
+
+        private void ValidateNewPlanDates(DateTime startDate, DateTime? endDate)
+        {
+            var today = _time.ToLocal(_clock.GetUtcNow().UtcDateTime).Date;
+            if (startDate.Date < today)
+                ModelState.AddModelError("StartDate", "Start date cannot be in the past.");
+            if (endDate.HasValue && endDate.Value.Date < startDate.Date)
+                ModelState.AddModelError("EndDate", "End date cannot be before the start date.");
         }
 
         // ================= WORKOUT PLANS =================
@@ -54,13 +67,8 @@ namespace HealthTrack.Controllers
             {
                 ClientId = clientId ?? string.Empty,
                 AssignedClients = await _planService.GetAssignedClientSelectListAsync(trainerId),
-                StartDate = DateTime.Today,
-                Items = new List<WorkoutPlanItemInputModel>
-                {
-                    new() { DayOfWeek = DayOfWeek.Monday, ExerciseName = "Warmup & Core Exercises", Sets = 3, Reps = 12 },
-                    new() { DayOfWeek = DayOfWeek.Wednesday, ExerciseName = "Resistance Training", Sets = 4, Reps = 10 },
-                    new() { DayOfWeek = DayOfWeek.Friday, ExerciseName = "Cardio Intervals", DurationMinutes = 30 }
-                }
+                StartDate = default,
+                Items = new List<WorkoutPlanItemInputModel> { new() }
             };
 
             return View(model);
@@ -69,6 +77,7 @@ namespace HealthTrack.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateWorkoutPlan(WorkoutPlanFormViewModel model)
         {
+            ValidateNewPlanDates(model.StartDate, model.EndDate);
             var trainerId = CurrentUserId;
             if (!await _planService.IsClientAssignedToTrainerAsync(trainerId, model.ClientId))
             {
@@ -179,18 +188,9 @@ namespace HealthTrack.Controllers
             {
                 ClientId = clientId ?? string.Empty,
                 AssignedClients = await _planService.GetAssignedClientSelectListAsync(trainerId),
-                StartDate = DateTime.Today,
-                DailyCalorieTarget = 2200,
-                TargetProteinGrams = 150,
-                TargetCarbsGrams = 220,
-                TargetFatGrams = 65,
-                Meals = new List<DietPlanMealInputModel>
-                {
-                    new() { MealType = MealType.Breakfast, FoodRecommendations = "Oatmeal with sliced banana, protein shake", ApproximateCalories = 500 },
-                    new() { MealType = MealType.Lunch, FoodRecommendations = "Grilled chicken breast, brown rice, mixed greens", ApproximateCalories = 750 },
-                    new() { MealType = MealType.Dinner, FoodRecommendations = "Baked salmon, sweet potato, steamed broccoli", ApproximateCalories = 650 },
-                    new() { MealType = MealType.Snack, FoodRecommendations = "Greek yogurt with a handful of almonds", ApproximateCalories = 300 }
-                }
+                StartDate = default,
+                DailyCalorieTarget = 0,
+                Meals = new List<DietPlanMealInputModel> { new() { MealType = (MealType)(-1) } }
             };
 
             return View(model);
@@ -199,6 +199,7 @@ namespace HealthTrack.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateDietPlan(DietPlanFormViewModel model)
         {
+            ValidateNewPlanDates(model.StartDate, model.EndDate);
             var trainerId = CurrentUserId;
             if (!await _planService.IsClientAssignedToTrainerAsync(trainerId, model.ClientId))
             {

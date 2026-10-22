@@ -1,3 +1,5 @@
+@inject HealthTrack.Services.AppointmentTime FutureDateTime
+@inject TimeProvider FutureClock
 @model ProviderSlotsViewModel
 @{
     ViewData["FormPage"] = "standard"; ViewData["Title"] = $"{Model.Provider.Name} availability"; }
@@ -12,12 +14,12 @@
                     <div asp-validation-summary="ModelOnly" class="ht-flash error" role="alert"></div>
                     <div class="mb-3">
                         <label asp-for="Form.StartLocal" class="form-label">Start</label>
-                        <input asp-for="Form.StartLocal" type="datetime-local" class="form-control" />
+                        <input asp-for="Form.StartLocal" data-not-past="true" data-future-zone="@FutureDateTime.Label" min="@(FutureDateTime.ToLocal(FutureClock.GetUtcNow().UtcDateTime).AddMinutes(1).ToString("yyyy-MM-ddTHH:mm"))" type="datetime-local" class="form-control" />
                         <span asp-validation-for="Form.StartLocal" class="text-danger small"></span>
                     </div>
                     <div class="mb-3">
                         <label asp-for="Form.EndLocal" class="form-label">End</label>
-                        <input asp-for="Form.EndLocal" type="datetime-local" class="form-control" />
+                        <input asp-for="Form.EndLocal" data-date-after="#Form_StartLocal" data-not-past="true" data-future-zone="@FutureDateTime.Label" min="@(FutureDateTime.ToLocal(FutureClock.GetUtcNow().UtcDateTime).AddMinutes(1).ToString("yyyy-MM-ddTHH:mm"))" type="datetime-local" class="form-control" />
                         <span asp-validation-for="Form.EndLocal" class="text-danger small"></span>
                     </div>
                     <div class="ht-form-actions">

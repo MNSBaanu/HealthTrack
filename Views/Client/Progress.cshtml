@@ -19,6 +19,9 @@
             <ul class="dropdown-menu dropdown-menu-end ht-menu">
                 <li><a class="dropdown-item" asp-controller="Client" asp-action="Export" asp-route-format="pdf"><i class="bi bi-file-earmark-pdf me-2"></i>PDF report</a></li>
                 <li><a class="dropdown-item" asp-controller="Client" asp-action="Export" asp-route-format="csv"><i class="bi bi-filetype-csv me-2"></i>CSV spreadsheet</a></li>
+                <li><hr class="dropdown-divider" /></li>
+                <li><a class="dropdown-item" asp-controller="Client" asp-action="Export" asp-route-format="csv" asp-route-all="true"><i class="bi bi-person-down me-2"></i>All my data (CSV)</a></li>
+                <li><a class="dropdown-item" asp-controller="Client" asp-action="Export" asp-route-format="pdf" asp-route-all="true"><i class="bi bi-file-earmark-person me-2"></i>All my data (PDF)</a></li>
             </ul>
         </div>
     </div>

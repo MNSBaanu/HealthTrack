@@ -8,6 +8,7 @@ public class DietPlanMealInputModel
     public int Id { get; set; }
 
     [Required]
+    [EnumDataType(typeof(MealType), ErrorMessage = "Choose a meal type.")]
     public MealType MealType { get; set; }
 
     [Required]

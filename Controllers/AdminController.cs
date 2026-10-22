@@ -132,7 +132,9 @@ namespace HealthTrack.Controllers
                 .Include(c => c.TrainerAssignment).ThenInclude(a => a!.Trainer)
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(c => c.Id == id);
-            return client == null ? NotFound() : View(client);
+            if (client == null) return NotFound();
+            await AuditAsync("Viewed", "ClientDetails", id);
+            return View(client);
         }
 
         public async Task<IActionResult> LoginHistory(string id)
@@ -348,11 +350,32 @@ namespace HealthTrack.Controllers
 
             var fileName = $"HealthTrack_Report_{DateTime.Now:yyyyMMdd}";
             _logger.LogInformation("Admin {AdminId} exported report as {Format}", CurrentUserId, format);
+            await AuditAsync("Exported", "ClientPerformanceReport", null, format);
             if (format.Equals("pdf", StringComparison.OrdinalIgnoreCase))
             {
                 return File(_exportService.ToPdf("HealthTrack - Client Performance Report", sections), "application/pdf", fileName + ".pdf");
             }
             return File(_exportService.ToCsv(sections), "text/csv", fileName + ".csv");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> AuditLog(string? actor, string? action, DateTime? from, DateTime? to)
+        {
+            if (from > to) (from, to) = (to, from);
+            ViewData["Actor"] = actor;
+            ViewData["Action"] = action;
+            ViewData["From"] = from;
+            ViewData["To"] = to;
+            var logs = Context.AuditLogs.AsNoTracking().AsQueryable();
+            if (!string.IsNullOrWhiteSpace(actor)) logs = logs.Where(l => l.ActorName.Contains(actor.Trim()));
+            if (!string.IsNullOrWhiteSpace(action)) logs = logs.Where(l => l.Action == action);
+            if (from.HasValue) logs = logs.Where(l => l.CreatedAtUtc >= from.Value.Date.ToUniversalTime());
+            if (to.HasValue) logs = logs.Where(l => l.CreatedAtUtc < to.Value.Date.AddDays(1).ToUniversalTime());
+            var entries = await logs.OrderByDescending(l => l.CreatedAtUtc).Take(300).ToListAsync();
+            var subjectIds = entries.Where(l => l.SubjectClientId != null).Select(l => l.SubjectClientId!).Distinct().ToList();
+            ViewData["SubjectNames"] = await Context.Clients.Where(c => subjectIds.Contains(c.Id))
+                .ToDictionaryAsync(c => c.Id, c => c.Name);
+            return View(entries);
         }
 
         [HttpGet]

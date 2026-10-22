@@ -20,6 +20,7 @@ namespace HealthTrack.Models.Data
         public DbSet<MealLog> MealLogs { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<ChatQuestion> ChatQuestions { get; set; }
+        public DbSet<AuditLog> AuditLogs { get; set; }
         public DbSet<ConsultationProvider> ConsultationProviders { get; set; }
         public DbSet<AvailabilitySlot> AvailabilitySlots { get; set; }
         public DbSet<Appointment> Appointments { get; set; }

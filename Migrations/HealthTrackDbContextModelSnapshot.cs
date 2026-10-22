@@ -252,12 +252,30 @@ namespace HealthTrack.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MetricId"));
 
+                    b.Property<double?>("BodyFatPercent")
+                        .HasColumnType("float");
+
                     b.Property<string>("ClientId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<int?>("DiastolicBp")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("RecordedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<int?>("RestingHeartRate")
+                        .HasColumnType("int");
+
+                    b.Property<double?>("SleepHours")
+                        .HasColumnType("float");
+
+                    b.Property<int?>("Steps")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("SystolicBp")
+                        .HasColumnType("int");
 
                     b.Property<double>("WeightKg")
                         .HasColumnType("float");
@@ -458,6 +476,13 @@ namespace HealthTrack.Migrations
                     b.Property<string>("ClientId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("ClientRepliedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ClientReply")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<string>("Comments")
                         .IsRequired()

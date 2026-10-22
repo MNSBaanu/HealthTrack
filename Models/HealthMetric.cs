@@ -16,6 +16,24 @@ namespace HealthTrack.Models
         [Range(1, 500)]
         public double WeightKg { get; set; }
 
+        [Range(1, 75)]
+        public double? BodyFatPercent { get; set; }
+
+        [Range(20, 250)]
+        public int? RestingHeartRate { get; set; }
+
+        [Range(50, 260)]
+        public int? SystolicBp { get; set; }
+
+        [Range(30, 160)]
+        public int? DiastolicBp { get; set; }
+
+        [Range(0, 100000)]
+        public int? Steps { get; set; }
+
+        [Range(0, 24)]
+        public double? SleepHours { get; set; }
+
         public DateTime RecordedAt { get; set; } = DateTime.Now;
 
         [NotMapped]

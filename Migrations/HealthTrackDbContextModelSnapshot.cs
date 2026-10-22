@@ -499,6 +499,37 @@ namespace HealthTrack.Migrations
                     b.UseTphMappingStrategy();
                 });
 
+            modelBuilder.Entity("HealthTrack.Models.TrainerAssignmentHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("AssignedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ClientId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("EndedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TrainerId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClientId");
+
+                    b.HasIndex("TrainerId");
+
+                    b.ToTable("TrainerAssignmentHistories");
+                });
+
             modelBuilder.Entity("HealthTrack.Models.TrainerFeedback", b =>
                 {
                     b.Property<int>("Id")
@@ -986,6 +1017,25 @@ namespace HealthTrack.Migrations
                     b.Navigation("Appointment");
 
                     b.Navigation("Person");
+                });
+
+            modelBuilder.Entity("HealthTrack.Models.TrainerAssignmentHistory", b =>
+                {
+                    b.HasOne("HealthTrack.Models.Client", "Client")
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("HealthTrack.Models.Trainer", "Trainer")
+                        .WithMany()
+                        .HasForeignKey("TrainerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Client");
+
+                    b.Navigation("Trainer");
                 });
 
             modelBuilder.Entity("HealthTrack.Models.TrainerFeedback", b =>

@@ -406,7 +406,7 @@ namespace HealthTrack.Controllers
         [HttpPost]
         public async Task<IActionResult> SendNotification(SendNotificationViewModel model)
         {
-            if (model.ScheduledFor.HasValue && model.ScheduledFor < DateTime.Now)
+            if (model.ScheduledFor.HasValue && model.ScheduledFor <= _time.ToLocal(_clock.GetUtcNow().UtcDateTime))
             {
                 ModelState.AddModelError(nameof(model.ScheduledFor), "Scheduled time must be in the future.");
             }

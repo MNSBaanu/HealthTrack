@@ -7,8 +7,8 @@
     var latest = Model.LatestMetric;
     var bmi = latest?.Bmi;
     var bmiPosition = bmi.HasValue ? Math.Clamp((bmi.Value - 15) / 20 * 100, 2, 98) : 0;
-    var noWorkouts = new EmptyStateViewModel("bi-lightning-charge", "Your journal is empty", "Log your first workout to start building your training history.", "Log a workout", "WorkoutLogs");
-    var noMeals = new EmptyStateViewModel("bi-cup-hot", "No meals yet", "Log your first meal to start tracking what you eat.", "Log a meal", "MealLogs");
+    var noWorkouts = new EmptyStateViewModel("bi-lightning-charge", "Your journal is empty", "Log your first workout to start building your training history.");
+    var noMeals = new EmptyStateViewModel("bi-cup-hot", "No meals yet", "Log your first meal to start tracking what you eat.");
 }
 
 <div class="ht-head">
@@ -108,8 +108,6 @@
                     <section class="ht-card">
                         <div class="ht-card-body d-flex flex-wrap align-items-center gap-3">
                             <span class="text-muted flex-grow-1">Get started by logging your first workout or meal to see your weekly totals.</span>
-                            <a class="btn btn-line" asp-controller="MealLogs" asp-action="Create">Log a meal</a>
-                            <a class="btn btn-primary" asp-controller="WorkoutLogs" asp-action="Create">Log a workout</a>
                         </div>
                     </section>
                 </div>

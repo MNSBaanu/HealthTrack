@@ -67,7 +67,7 @@
     </header>
 
     <main class="ht-page" role="main">
-        <div class="container-xl">
+        <div class="container-xl @(ViewData["FormPage"] is string formWidth ? "ht-form-page " + (formWidth == "wide" ? "ht-form-page-wide" : "") : "")">
             @if (TempData["Success"] is string success)
             {
                 <div class="ht-flash success alert fade show" role="status">
@@ -100,6 +100,8 @@
         <link rel="stylesheet" href="~/css/chatbot.css" asp-append-version="true" />
         <script src="~/js/chatbot.js" asp-append-version="true"></script>
     }
+    <script src="~/lib/flatpickr/flatpickr.min.js" asp-append-version="true"></script>
+    <script src="~/js/themed-controls.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

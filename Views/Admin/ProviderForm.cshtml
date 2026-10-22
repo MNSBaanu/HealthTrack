@@ -1,5 +1,6 @@
 @model ProviderForm
 @{
+    ViewData["FormPage"] = "standard";
     var isEdit = Model.Id.HasValue;
     ViewData["Title"] = isEdit ? "Edit healthcare professional" : "Add healthcare professional";
 }

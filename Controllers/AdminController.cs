@@ -16,14 +16,18 @@ namespace HealthTrack.Controllers
         private readonly ILogger<AdminController> _logger;
         private readonly INotificationService _notificationService;
         private readonly IExportService _exportService;
+        private readonly AppointmentTime _time;
+        private readonly TimeProvider _clock;
 
         public AdminController(ILogger<AdminController> logger, HealthTrackDbContext context, UserManager<Person> userManager,
-            INotificationService notificationService, IExportService exportService)
+            INotificationService notificationService, IExportService exportService, AppointmentTime time, TimeProvider clock)
             : base(context, userManager)
         {
             _logger = logger;
             _notificationService = notificationService;
             _exportService = exportService;
+            _time = time;
+            _clock = clock;
         }
 
         public async Task<IActionResult> Index()
@@ -435,6 +439,153 @@ namespace HealthTrack.Controllers
                 .OrderBy(c => c.Name)
                 .Select(c => new SelectListItem { Value = c.Id, Text = c.Name + " (" + c.Email + ")" })
                 .ToListAsync();
+        }
+
+        public async Task<IActionResult> Providers()
+        {
+            var providers = await Context.ConsultationProviders.AsNoTracking()
+                .Where(p => p.Kind == ConsultationProviderKind.HealthcareProfessional)
+                .OrderByDescending(p => p.IsActive).ThenBy(p => p.Name)
+                .ToListAsync();
+            return View(providers);
+        }
+
+        [HttpGet]
+        public IActionResult CreateProvider() => View("ProviderForm", new ProviderForm());
+
+        [HttpPost]
+        public async Task<IActionResult> CreateProvider(ProviderForm model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View("ProviderForm", model);
+            }
+
+            Context.ConsultationProviders.Add(new ConsultationProvider
+            {
+                Name = model.Name.Trim(),
+                Specialty = string.IsNullOrWhiteSpace(model.Specialty) ? null : model.Specialty.Trim(),
+                Kind = ConsultationProviderKind.HealthcareProfessional,
+                IsActive = true
+            });
+            await Context.SaveChangesAsync();
+            _logger.LogInformation("Admin {AdminId} created healthcare professional {Name}", CurrentUserId, model.Name);
+            TempData["Success"] = $"{model.Name.Trim()} has been added.";
+            return RedirectToAction(nameof(Providers));
+        }
+
+        private Task<ConsultationProvider?> FindProfessionalAsync(int id) =>
+            Context.ConsultationProviders.FirstOrDefaultAsync(p => p.Id == id && p.Kind == ConsultationProviderKind.HealthcareProfessional);
+
+        [HttpGet]
+        public async Task<IActionResult> EditProvider(int id)
+        {
+            var provider = await FindProfessionalAsync(id);
+            if (provider == null)
+            {
+                return NotFound();
+            }
+
+            return View("ProviderForm", new ProviderForm { Id = provider.Id, Name = provider.Name, Specialty = provider.Specialty });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> EditProvider(int id, ProviderForm model)
+        {
+            var provider = await FindProfessionalAsync(id);
+            if (provider == null)
+            {
+                return NotFound();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                model.Id = id;
+                return View("ProviderForm", model);
+            }
+
+            provider.Name = model.Name.Trim();
+            provider.Specialty = string.IsNullOrWhiteSpace(model.Specialty) ? null : model.Specialty.Trim();
+            await Context.SaveChangesAsync();
+            TempData["Success"] = $"{provider.Name} has been updated.";
+            return RedirectToAction(nameof(Providers));
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ToggleProvider(int id)
+        {
+            var provider = await FindProfessionalAsync(id);
+            if (provider == null)
+            {
+                return NotFound();
+            }
+
+            provider.IsActive = !provider.IsActive;
+            await Context.SaveChangesAsync();
+            _logger.LogInformation("Admin {AdminId} {Action} provider {ProviderId}", CurrentUserId, provider.IsActive ? "activated" : "deactivated", id);
+            TempData["Success"] = $"{provider.Name} has been {(provider.IsActive ? "turned on" : "turned off")}.";
+            return RedirectToAction(nameof(Providers));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ProviderSlots(int id)
+        {
+            var provider = await FindProfessionalAsync(id);
+            return provider == null ? NotFound() : View(await LoadProviderSlotsAsync(provider, new AddAvailabilitySlotForm()));
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AddProviderSlot(int id, [Bind(Prefix = "Form")] AddAvailabilitySlotForm form)
+        {
+            var provider = await FindProfessionalAsync(id);
+            if (provider == null)
+            {
+                return NotFound();
+            }
+
+            if (ModelState.IsValid)
+            {
+                var nowUtc = _clock.GetUtcNow().UtcDateTime;
+                var startUtc = _time.ToUtc(form.StartLocal);
+                var endUtc = _time.ToUtc(form.EndLocal);
+                if (form.EndLocal <= form.StartLocal)
+                {
+                    ModelState.AddModelError(string.Empty, "Slot end time must be after start time.");
+                }
+                else if (startUtc <= nowUtc)
+                {
+                    ModelState.AddModelError(string.Empty, "Slot start time must be in the future.");
+                }
+                else if (await Context.AvailabilitySlots.AnyAsync(s => s.ProviderId == provider.Id && s.StartUtc < endUtc && s.EndUtc > startUtc))
+                {
+                    ModelState.AddModelError(string.Empty, "This slot overlaps an existing slot.");
+                }
+                else
+                {
+                    Context.AvailabilitySlots.Add(new AvailabilitySlot { ProviderId = provider.Id, StartUtc = startUtc, EndUtc = endUtc, IsAvailable = true });
+                    await Context.SaveChangesAsync();
+                    TempData["Success"] = "Availability slot added.";
+                    return RedirectToAction(nameof(ProviderSlots), new { id });
+                }
+            }
+
+            return View(nameof(ProviderSlots), await LoadProviderSlotsAsync(provider, form));
+        }
+
+        private async Task<ProviderSlotsViewModel> LoadProviderSlotsAsync(ConsultationProvider provider, AddAvailabilitySlotForm form)
+        {
+            var nowUtc = _clock.GetUtcNow().UtcDateTime;
+            var slots = await Context.AvailabilitySlots.AsNoTracking()
+                .Where(s => s.ProviderId == provider.Id && s.EndUtc > nowUtc)
+                .OrderBy(s => s.StartUtc)
+                .ToListAsync();
+            return new ProviderSlotsViewModel
+            {
+                Provider = provider,
+                Form = form,
+                TimeZoneLabel = _time.Label,
+                Slots = slots.Select(s => new AvailableSlotViewModel(s.Id, provider.Name, _time.ToLocal(s.StartUtc), _time.ToLocal(s.EndUtc))).ToList()
+            };
         }
     }
 }

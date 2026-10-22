@@ -43,6 +43,19 @@ namespace HealthTrack.Services
             await _context.SaveChangesAsync();
         }
 
+        public async Task SendToAllTrainersAsync(string message, NotificationType type, DateTime? scheduledFor = null)
+        {
+            var trainerIds = await _context.Trainers.Select(t => t.Id).ToListAsync();
+            _context.Notifications.AddRange(trainerIds.Select(id => new Notification
+            {
+                PersonId = id,
+                Message = message,
+                Type = type,
+                ScheduledFor = scheduledFor
+            }));
+            await _context.SaveChangesAsync();
+        }
+
         public async Task<List<Notification>> GetVisibleAsync(string personId, bool unreadOnly)
         {
             await GenerateAppointmentRemindersAsync(personId);

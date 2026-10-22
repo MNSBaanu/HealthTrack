@@ -39,6 +39,9 @@ namespace HealthTrack.Controllers
 
         public IActionResult Privacy()
         {
+            var configuration = HttpContext.RequestServices.GetRequiredService<IConfiguration>();
+            ViewData["ContactEmail"] = configuration["Privacy:ContactEmail"] ?? configuration["AdminAccount:Email"];
+            ViewData["RetentionMonths"] = configuration.GetValue<int>("Retention:InactiveClientMonths");
             return View();
         }
 

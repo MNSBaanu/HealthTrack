@@ -16,6 +16,21 @@ namespace HealthTrack.Models
         [StringLength(32)]
         public string? ProfilePhotoContentType { get; set; }
 
+        public bool WorkoutReminderEnabled { get; set; } = true;
+
+        [Range(0, 23)]
+        public int WorkoutReminderHour { get; set; } = 8;
+
+        public bool MealReminderEnabled { get; set; } = true;
+
+        [Range(0, 23)]
+        public int MealReminderHour { get; set; } = 8;
+
+        public bool WeightReminderEnabled { get; set; } = true;
+
+        [Range(0, 23)]
+        public int WeightReminderHour { get; set; } = 8;
+
         public ICollection<HealthMetric> HealthMetrics { get; set; } = new List<HealthMetric>();
 
         public ICollection<WorkoutLog> WorkoutLogs { get; set; } = new List<WorkoutLog>();

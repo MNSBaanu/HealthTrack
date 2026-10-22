@@ -1,6 +1,7 @@
 @model ProfileViewModel
 @{
     ViewData["Title"] = "My profile";
+    var hours = Enumerable.Range(0, 24).Select(h => new SelectListItem($"{h:00}:00", h.ToString())).ToList();
 }
 
 <div class="ht-head">
@@ -79,9 +80,38 @@
                         </div>
                     </fieldset>
 
+                    <fieldset class="ht-fieldset">
+                        <legend>Daily reminders</legend>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="form-check form-switch">
+                                    <input asp-for="WorkoutReminderEnabled" class="form-check-input" />
+                                    <label asp-for="WorkoutReminderEnabled" class="form-check-label">Workout reminder</label>
+                                </div>
+                                <select asp-for="WorkoutReminderHour" class="form-select mt-2" aria-label="Workout reminder time" asp-items="hours"></select>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check form-switch">
+                                    <input asp-for="MealReminderEnabled" class="form-check-input" />
+                                    <label asp-for="MealReminderEnabled" class="form-check-label">Meal reminder</label>
+                                </div>
+                                <select asp-for="MealReminderHour" class="form-select mt-2" aria-label="Meal reminder time" asp-items="hours"></select>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check form-switch">
+                                    <input asp-for="WeightReminderEnabled" class="form-check-input" />
+                                    <label asp-for="WeightReminderEnabled" class="form-check-label">Weight check-in</label>
+                                </div>
+                                <select asp-for="WeightReminderHour" class="form-select mt-2" aria-label="Weight check-in time" asp-items="hours"></select>
+                            </div>
+                        </div>
+                        <div class="form-text">Reminders appear from the chosen time if you haven't logged yet.</div>
+                    </fieldset>
+
                     <div class="ht-form-actions">
                         <button type="submit" class="btn btn-primary"><i class="bi bi-check2"></i>Save changes</button>
                         <a class="btn btn-line" asp-controller="Client" asp-action="Index">Cancel</a>
+                        <a class="btn btn-line text-danger ms-auto" asp-controller="Client" asp-action="DeleteAccount"><i class="bi bi-trash"></i>Delete my account</a>
                     </div>
                 </form>
             </div>

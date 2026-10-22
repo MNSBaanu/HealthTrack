@@ -12,4 +12,34 @@
         <dt class="col-sm-4">Status</dt><dd class="col-sm-8">@Model.Status</dd>
         <dt class="col-sm-4">Your notes</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Notes) ? "No notes provided." : Model.Notes)</dd>
     </dl>
+    @if (Model.Status == AppointmentStatus.Pending)
+    {
+        <div class="ht-form-actions mt-3">
+            <a class="btn btn-primary" asp-action="Reschedule" asp-route-id="@Model.Id"><i class="bi bi-calendar-event me-1"></i>Reschedule</a>
+            <form asp-action="Cancel" asp-route-id="@Model.Id" method="post" class="d-inline" onsubmit="return confirm('Cancel this appointment?');">
+                <button type="submit" class="btn btn-line">Cancel appointment</button>
+            </form>
+        </div>
+    }
+    else if (Model.Status == AppointmentStatus.Approved)
+    {
+        <hr />
+        <form asp-action="RequestChange" asp-route-id="@Model.Id" method="post">
+            <p class="text-muted small">This appointment is approved. Send a request to your trainer to cancel or reschedule it.</p>
+            <div class="mb-3">
+                <label class="form-label" for="requestType">Request</label>
+                <select class="form-select" id="requestType" name="requestType">
+                    <option value="Reschedule">Reschedule</option>
+                    <option value="Cancel">Cancel</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="message">Message (optional)</label>
+                <textarea class="form-control" id="message" name="message" rows="3" maxlength="500"></textarea>
+            </div>
+            <div class="ht-form-actions">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-send me-1"></i>Send request</button>
+            </div>
+        </form>
+    }
 </div></section></div></div>

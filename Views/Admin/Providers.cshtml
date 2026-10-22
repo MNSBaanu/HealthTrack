@@ -1,0 +1,42 @@
+@model List<ConsultationProvider>
+@{ ViewData["Title"] = "Healthcare professionals"; }
+<div class="ht-head">
+    <div><h1 class="ht-title">Healthcare professionals</h1></div>
+    <div class="ht-head-actions">
+        <a class="btn btn-primary" asp-action="CreateProvider"><i class="bi bi-plus-lg"></i>Add professional</a>
+    </div>
+</div>
+@if (!Model.Any())
+{
+    <div class="ht-empty"><div class="ht-glyph saffron"><i class="bi bi-hospital"></i></div><p>No healthcare professionals have been added yet.</p></div>
+}
+else
+{
+    <section class="ht-card">
+        <div class="table-responsive">
+            <table class="ht-table">
+                <thead><tr><th>Name</th><th>Specialty</th><th>Status</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var p in Model)
+                    {
+                        <tr>
+                            <td>@p.Name</td>
+                            <td>@(p.Specialty ?? "—")</td>
+                            <td><span class="ht-pill">@(p.IsActive ? "Active" : "Turned off")</span></td>
+                            <td>
+                                <div class="ht-row-actions">
+                                    <a class="btn-icon" asp-action="ProviderSlots" asp-route-id="@p.Id" title="Availability"><i class="bi bi-calendar-plus"></i></a>
+                                    <a class="btn-icon" asp-action="EditProvider" asp-route-id="@p.Id" title="Edit"><i class="bi bi-pencil"></i></a>
+                                    <form method="post" asp-action="ToggleProvider" asp-route-id="@p.Id" data-confirm="@(p.IsActive ? $"Turn off {p.Name}? Clients will no longer see them when booking." : $"Turn on {p.Name}?")">
+                                        <button type="submit" class="btn-icon @(p.IsActive ? "danger" : "")" title="@(p.IsActive ? "Turn off" : "Turn on")"><i class="bi @(p.IsActive ? "bi-toggle-on" : "bi-toggle-off")"></i></button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="ht-table-foot">@Model.Count professional(s)</div>
+    </section>
+}

@@ -158,6 +158,10 @@
                             { label: "Workouts", data: data.workouts, backgroundColor: palette.ink, borderRadius: 4, maxBarThickness: 26 },
                             { label: "Meals", data: data.meals, backgroundColor: palette.saffron, borderRadius: 4, maxBarThickness: 26 },
                             { label: "Measurements", data: data.metrics, backgroundColor: palette.slate, borderRadius: 4, maxBarThickness: 26 },
+                            { label: "Appointments", data: data.appointments, backgroundColor: palette.muted, borderRadius: 4, maxBarThickness: 26 },
+                            { label: "Notifications", data: data.notifications, backgroundColor: palette.line, borderRadius: 4, maxBarThickness: 26 },
+                            { label: "Trainer plans", data: data.plans, backgroundColor: "#5b8a72", borderRadius: 4, maxBarThickness: 26 },
+                            { label: "Feedback", data: data.feedback, backgroundColor: "#8e6c9e", borderRadius: 4, maxBarThickness: 26 },
                             { label: "New members", data: data.registrations, type: "line", borderColor: palette.clay, backgroundColor: palette.clay, tension: 0.35, pointRadius: 3, stack: "registrations" }
                         ]
                     },

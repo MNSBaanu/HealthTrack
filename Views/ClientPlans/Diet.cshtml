@@ -14,12 +14,12 @@
     @if (!string.IsNullOrWhiteSpace(plan.Description)) { <p style="white-space: pre-line">@plan.Description</p> }
 </div></section>
 <section class="ht-card"><div class="ht-card-head"><h2>Meals and daily schedule</h2></div><div class="ht-card-body">
-    <p class="small text-muted">Meals are organised by meal type. Exact meal times are not specified in this plan.</p>
     @if (!plan.Meals.Any()) { <p class="text-muted">No meal items have been added to this plan yet.</p> }
-    @foreach (var meal in plan.Meals.OrderBy(m => m.MealType).ThenBy(m => m.Id))
+    @foreach (var meal in plan.Meals.OrderBy(m => m.Day.HasValue).ThenBy(m => ((int?)m.Day + 6) % 7).ThenBy(m => m.Time ?? TimeOnly.MaxValue).ThenBy(m => m.MealType).ThenBy(m => m.Id))
     {
         <article class="border-bottom py-3">
             <h3 class="h5">@meal.MealType</h3>
+            <p class="small text-muted mb-2">@(meal.Day?.ToString() ?? "Every day") · @(meal.Time?.ToString("HH:mm") ?? "Any time")</p>
             <p style="white-space: pre-line">@meal.FoodRecommendations</p>
             @if (meal.ApproximateCalories.HasValue) { <p class="small">Estimated calories: @meal.ApproximateCalories kcal</p> }
             @if (!string.IsNullOrWhiteSpace(meal.Notes)) { <p class="text-muted mb-0" style="white-space: pre-line">@meal.Notes</p> }

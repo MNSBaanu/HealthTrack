@@ -11,6 +11,10 @@ public class DietPlanMeal
 
     public MealType MealType { get; set; }
 
+    public DayOfWeek? Day { get; set; }
+
+    public TimeOnly? Time { get; set; }
+
     [Required]
     [StringLength(300)]
     public string FoodRecommendations { get; set; } = string.Empty;

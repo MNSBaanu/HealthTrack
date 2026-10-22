@@ -2,6 +2,7 @@ using HealthTrack.Models;
 using HealthTrack.Models.Data;
 using HealthTrack.Models.ViewModels;
 using HealthTrack.Services;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -67,7 +68,9 @@ namespace HealthTrack.Controllers
                 UpcomingAppointments = upcoming.Select(_appointmentTime.ToViewModel).ToList(),
                 AppointmentTimeZone = _appointmentTime.Label,
                 LatestMetric = metrics.LastOrDefault(),
-                WeightChangeKg = metrics.Count > 1 ? Math.Round(metrics[^1].WeightKg - metrics[0].WeightKg, 1) : null,
+                WeightChangeKg = metrics.Count > 0 ? Math.Round(metrics[^1].WeightKg - metrics[0].WeightKg, 1) : null,
+                StartingWeightKg = metrics.FirstOrDefault()?.WeightKg,
+                MetricCount = metrics.Count,
                 WorkoutsThisWeek = weekWorkouts.Count,
                 MinutesThisWeek = weekWorkouts.Sum(w => w.DurationMinutes),
                 CaloriesBurnedThisWeek = weekWorkouts.Sum(w => w.CaloriesBurned),
@@ -100,6 +103,12 @@ namespace HealthTrack.Controllers
                 DateOfBirth = client.DateOfBirth,
                 HeightCm = client.HeightCm,
                 FitnessGoal = client.FitnessGoal,
+                WorkoutReminderEnabled = client.WorkoutReminderEnabled,
+                WorkoutReminderHour = client.WorkoutReminderHour,
+                MealReminderEnabled = client.MealReminderEnabled,
+                MealReminderHour = client.MealReminderHour,
+                WeightReminderEnabled = client.WeightReminderEnabled,
+                WeightReminderHour = client.WeightReminderHour,
                 HasPhoto = client.ProfilePhoto != null
             };
             return View(model);
@@ -138,6 +147,12 @@ namespace HealthTrack.Controllers
             client.DateOfBirth = model.DateOfBirth!.Value;
             client.HeightCm = model.HeightCm!.Value;
             client.FitnessGoal = model.FitnessGoal;
+            client.WorkoutReminderEnabled = model.WorkoutReminderEnabled;
+            client.WorkoutReminderHour = model.WorkoutReminderHour;
+            client.MealReminderEnabled = model.MealReminderEnabled;
+            client.MealReminderHour = model.MealReminderHour;
+            client.WeightReminderEnabled = model.WeightReminderEnabled;
+            client.WeightReminderHour = model.WeightReminderHour;
             if (photo != null)
             {
                 client.ProfilePhoto = photo;
@@ -205,7 +220,45 @@ namespace HealthTrack.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Export(string format = "csv")
+        public IActionResult DeleteAccount()
+        {
+            return View(new DeleteAccountViewModel());
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteAccount(DeleteAccountViewModel model)
+        {
+            if (!ModelState.IsValid) return View(model);
+
+            var user = await UserManager.GetUserAsync(User);
+            if (user == null) return Challenge();
+            if (!await UserManager.CheckPasswordAsync(user, model.Password))
+            {
+                ModelState.AddModelError(nameof(model.Password), "Incorrect password.");
+                return View(model);
+            }
+
+            IdentityResult result;
+            try { result = await UserManager.DeleteAsync(user); }
+            catch (DbUpdateException exception)
+            {
+                _logger.LogError(exception, "Client {ClientId} could not delete their account", user.Id);
+                result = IdentityResult.Failed();
+            }
+            if (!result.Succeeded)
+            {
+                ModelState.AddModelError(string.Empty, "Your account could not be deleted. Please try again.");
+                return View(model);
+            }
+
+            await HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);
+            _logger.LogInformation("Client {ClientId} deleted their own account", user.Id);
+            TempData["Success"] = "Your account and data have been deleted.";
+            return RedirectToAction("Index", "Home");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Export(string format = "csv", bool all = false)
         {
             var clientId = CurrentUserId;
             var client = await Context.Clients
@@ -228,11 +281,38 @@ namespace HealthTrack.Controllers
                         .Select(m => new object?[] { m.LoggedAt, m.MealType, m.Calories, m.FoodItems }))
             };
 
-            var fileName = $"HealthTrack_Progress_{DateTime.Now:yyyyMMdd}";
-            _logger.LogInformation("Client {ClientId} exported progress as {Format}", clientId, format);
+            if (all)
+            {
+                var appointments = await Context.Appointments.AsNoTracking()
+                    .Where(a => a.ClientId == clientId)
+                    .Select(a => new { a.Slot.StartUtc, Provider = a.Slot.Provider.Name, a.Status, a.Notes })
+                    .OrderBy(a => a.StartUtc).ToListAsync();
+                var feedback = await Context.TrainerFeedbacks.AsNoTracking()
+                    .Where(f => f.ClientId == clientId)
+                    .Select(f => new { f.CreatedAtUtc, Trainer = f.Trainer!.Name, f.Category, f.Title, f.Comments, f.ClientReply })
+                    .OrderBy(f => f.CreatedAtUtc).ToListAsync();
+                var notifications = await Context.Notifications.AsNoTracking()
+                    .Where(n => n.PersonId == clientId)
+                    .OrderBy(n => n.CreatedAt).ToListAsync();
+                sections.InsertRange(0, new[]
+                {
+                    new ReportSection("Profile", new[] { "Name", "Email", "Date of Birth", "Height (cm)", "Fitness Goal" },
+                        new[] { new object?[] { client.Name, client.Email, client.DateOfBirth, client.HeightCm, client.FitnessGoal } })
+                });
+                sections.Add(new ReportSection("Appointments", new[] { "Start", "Provider", "Status", "Notes" },
+                    appointments.Select(a => new object?[] { _appointmentTime.ToLocal(a.StartUtc), a.Provider, a.Status, a.Notes })));
+                sections.Add(new ReportSection("Trainer Feedback", new[] { "Date", "Trainer", "Category", "Title", "Comments", "Your Reply" },
+                    feedback.Select(f => new object?[] { f.CreatedAtUtc, f.Trainer, f.Category, f.Title, f.Comments, f.ClientReply })));
+                sections.Add(new ReportSection("Notifications", new[] { "Date", "Type", "Message" },
+                    notifications.Select(n => new object?[] { n.CreatedAt, n.Type, n.Message })));
+            }
+
+            var fileName = $"{(all ? "HealthTrack_MyData" : "HealthTrack_Progress")}_{DateTime.Now:yyyyMMdd}";
+            _logger.LogInformation("Client {ClientId} exported {Scope} as {Format}", clientId, all ? "all data" : "progress", format);
+            await AuditAsync("Exported", all ? "AllMyData" : "ProgressReport", clientId, format);
             if (format.Equals("pdf", StringComparison.OrdinalIgnoreCase))
             {
-                return File(_exportService.ToPdf($"Progress Report - {client.Name}", sections), "application/pdf", fileName + ".pdf");
+                return File(_exportService.ToPdf($"{(all ? "My Data" : "Progress Report")} - {client.Name}", sections), "application/pdf", fileName + ".pdf");
             }
             return File(_exportService.ToCsv(sections), "text/csv", fileName + ".csv");
         }

@@ -1,0 +1,53 @@
+@model ProviderSlotsViewModel
+@{ ViewData["Title"] = $"{Model.Provider.Name} availability"; }
+<a class="ht-back" asp-action="Providers"><i class="bi bi-arrow-left"></i>Healthcare professionals</a>
+<div class="ht-head"><div><h1 class="ht-title">@Model.Provider.Name</h1><p class="text-muted mb-0">@(Model.Provider.Specialty ?? "Healthcare professional") · Times in @Model.TimeZoneLabel</p></div></div>
+<div class="row g-3">
+    <div class="col-lg-5">
+        <section class="ht-card">
+            <div class="ht-card-head"><h2>Add a slot</h2></div>
+            <div class="ht-card-body">
+                <form asp-action="AddProviderSlot" asp-route-id="@Model.Provider.Id" novalidate>
+                    <div asp-validation-summary="ModelOnly" class="ht-flash error" role="alert"></div>
+                    <div class="mb-3">
+                        <label asp-for="Form.StartLocal" class="form-label">Start</label>
+                        <input asp-for="Form.StartLocal" type="datetime-local" class="form-control" />
+                        <span asp-validation-for="Form.StartLocal" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Form.EndLocal" class="form-label">End</label>
+                        <input asp-for="Form.EndLocal" type="datetime-local" class="form-control" />
+                        <span asp-validation-for="Form.EndLocal" class="text-danger small"></span>
+                    </div>
+                    <div class="ht-form-actions">
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-plus-lg"></i>Add slot</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </div>
+    <div class="col-lg-7">
+        <section class="ht-card">
+            <div class="ht-card-head"><h2>Upcoming slots</h2></div>
+            @if (!Model.Slots.Any())
+            {
+                <div class="ht-card-body"><p class="text-muted mb-0">No upcoming slots.</p></div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="ht-table">
+                        <thead><tr><th>Date</th><th>Time</th></tr></thead>
+                        <tbody>
+                            @foreach (var s in Model.Slots)
+                            {
+                                <tr><td>@s.Start.ToString("ddd d MMM yyyy")</td><td>@s.Start.ToString("HH:mm") – @s.End.ToString("HH:mm")</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </section>
+    </div>
+</div>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

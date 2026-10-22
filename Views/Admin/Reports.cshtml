@@ -14,10 +14,24 @@
         <h1 class="ht-title">Client performance</h1>
     </div>
     <div class="ht-head-actions">
-        <a class="btn btn-line" asp-action="ExportReport" asp-route-format="csv"><i class="bi bi-filetype-csv"></i>Export CSV</a>
-        <a class="btn btn-primary" asp-action="ExportReport" asp-route-format="pdf"><i class="bi bi-file-earmark-pdf"></i>Export PDF</a>
+        <a class="btn btn-line" asp-action="AuditLog"><i class="bi bi-shield-check"></i>Audit log</a>
+        <a class="btn btn-line" asp-action="ChatQuestions"><i class="bi bi-chat-dots"></i>Chat questions</a>
+        <a class="btn btn-line" asp-action="ExportReport" asp-route-format="csv" asp-route-from="@from" asp-route-to="@to"><i class="bi bi-filetype-csv"></i>Export CSV</a>
+        <a class="btn btn-primary" asp-action="ExportReport" asp-route-format="pdf" asp-route-from="@from" asp-route-to="@to"><i class="bi bi-file-earmark-pdf"></i>Export PDF</a>
     </div>
 </div>
+
+<form asp-action="Reports" method="get" class="ht-card ht-filter mb-3">
+    <label class="form-label mb-0" for="report-from">From</label>
+    <input id="report-from" type="date" name="from" value="@from?.ToString("yyyy-MM-dd")" class="form-control" />
+    <label class="form-label mb-0" for="report-to">To</label>
+    <input id="report-to" type="date" name="to" value="@to?.ToString("yyyy-MM-dd")" class="form-control" />
+    <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i>Apply</button>
+    @if (from.HasValue || to.HasValue)
+    {
+        <a class="btn btn-line" asp-action="Reports">Clear</a>
+    }
+</form>
 
 <div class="ht-ledger">
     <div>
@@ -91,6 +105,9 @@
                         <th>Workouts</th>
                         <th>Burned</th>
                         <th>Meals</th>
+                        <th>Weigh-ins</th>
+                        <th>Appts</th>
+                        <th>Active days</th>
                         <th>Last active</th>
                         <th></th>
                     </tr>
@@ -124,6 +141,9 @@
                             <td class="num">@client.WorkoutCount <span class="sub">@client.TotalMinutes min</span></td>
                             <td class="num">@client.TotalCaloriesBurned.ToString("N0") <small>kcal</small></td>
                             <td class="num">@client.MealLogCount</td>
+                            <td class="num">@client.WeightLogCount</td>
+                            <td class="num">@client.AppointmentCount</td>
+                            <td class="num">@client.ActiveDays</td>
                             <td class="text-nowrap">@(client.LastLoginAt?.ToString("d MMM yyyy") ?? "Never")</td>
                             <td><a class="btn-icon" asp-action="ClientDetails" asp-route-id="@client.ClientId" title="View client" aria-label="View @client.Name"><i class="bi bi-arrow-right"></i></a></td>
                         </tr>
@@ -165,4 +185,72 @@
             <p class="text-muted mb-0">No workouts have been logged yet.</p>
         }
     </div>
+</section>
+
+<section class="ht-card mt-3">
+    <div class="ht-card-head">
+        <h2>Popular plan exercises</h2>
+        <span class="ht-overline">Top 10 by completions</span>
+    </div>
+    <div class="ht-card-body">
+        @if (planExercises.Any())
+        {
+            <ol class="ht-bars-list">
+                @foreach (var exercise in planExercises)
+                {
+                    var width = topExerciseCompletions == 0 ? 0 : exercise.Completions * 100.0 / topExerciseCompletions;
+                    <li>
+                        <div class="row-top">
+                            <strong>@exercise.Exercise</strong>
+                            <span class="text-muted">@exercise.Completions completed &middot; @(exercise.PlanCount == 1 ? "1 plan" : $"{exercise.PlanCount} plans") &middot; @(exercise.ClientCount == 1 ? "1 client" : $"{exercise.ClientCount} clients")</span>
+                        </div>
+                        <div class="ht-bar"><span style="width: @width.ToString("0.#", CultureInfo.InvariantCulture)%"></span></div>
+                    </li>
+                }
+            </ol>
+        }
+        else
+        {
+            <p class="text-muted mb-0">No trainer workout plans have been created yet.</p>
+        }
+    </div>
+</section>
+
+<section class="ht-card mt-3">
+    <div class="ht-card-head">
+        <h2>Top trainer plans</h2>
+        <span class="ht-overline">Top 10 by completions</span>
+    </div>
+    @if (topPlans.Any())
+    {
+        <div class="table-responsive">
+            <table class="ht-table">
+                <thead>
+                    <tr>
+                        <th>Plan</th>
+                        <th>Trainer</th>
+                        <th>Client</th>
+                        <th>Exercises</th>
+                        <th>Completed</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var plan in topPlans)
+                    {
+                        <tr>
+                            <td>@plan.Title</td>
+                            <td>@plan.Trainer</td>
+                            <td>@plan.Client</td>
+                            <td class="num">@plan.ItemCount</td>
+                            <td class="num">@plan.Completions</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="ht-card-body text-muted">No trainer workout plans have been created yet.</div>
+    }
 </section>

@@ -253,12 +253,33 @@ namespace HealthTrack.Controllers
         public async Task<IActionResult> SendFeedback(TrainerFeedbackFormViewModel model)
         {
             var trainerId = CurrentUserId;
+            
+            // Check if this client exists first
+            var clientExists = await Context.Clients.AnyAsync(c => c.Id == model.ClientId);
+            if (!clientExists)
+            {
+                TempData["Error"] = "Client not found.";
+                return RedirectToAction(nameof(Clients));
+            }
+            
+            // Check assignment with detailed error handling
             var isAssigned = await Context.ClientTrainerAssignments
                 .AnyAsync(a => a.TrainerId == trainerId && a.ClientId == model.ClientId);
 
             if (!isAssigned)
             {
-                TempData["Error"] = "Client is not assigned to you.";
+                // Check if there's an assignment at all for this client
+                var anyAssignment = await Context.ClientTrainerAssignments
+                    .FirstOrDefaultAsync(a => a.ClientId == model.ClientId);
+                
+                if (anyAssignment != null && anyAssignment.TrainerId != trainerId)
+                {
+                    TempData["Error"] = "This client is assigned to a different trainer.";
+                }
+                else
+                {
+                    TempData["Error"] = "Client is not assigned to you.";
+                }
                 return RedirectToAction(nameof(Clients));
             }
 

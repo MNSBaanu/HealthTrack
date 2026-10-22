@@ -126,6 +126,35 @@ namespace HealthTrack.Controllers
         }
 
         [HttpGet]
+        [Authorize]
+        public IActionResult ChangePassword()
+        {
+            return View(new ChangePasswordViewModel());
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+        {
+            if (!ModelState.IsValid) return View(model);
+
+            var user = await UserManager.GetUserAsync(User);
+            if (user == null) return RedirectToAction(nameof(Login));
+
+            var result = await UserManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
+            if (!result.Succeeded)
+            {
+                foreach (var error in result.Errors) ModelState.AddModelError(string.Empty, error.Description);
+                return View(model);
+            }
+
+            await _signInManager.RefreshSignInAsync(user);
+            _logger.LogInformation("User {UserId} changed their password", user.Id);
+            TempData["Success"] = "Password changed.";
+            return RedirectToAction(nameof(ChangePassword));
+        }
+
+        [HttpGet]
         public IActionResult AccessDenied()
         {
             return View();

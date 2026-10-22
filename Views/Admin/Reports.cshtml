@@ -2,6 +2,9 @@
 @{
     ViewData["Title"] = "Reports";
     var activities = ViewData["PopularActivities"] as List<ActivityStatViewModel> ?? new List<ActivityStatViewModel>();
+    var planExercises = ViewData["PlanExercises"] as List<PlanExerciseStatViewModel> ?? new List<PlanExerciseStatViewModel>();
+    var topPlans = ViewData["TopPlans"] as List<PlanStatViewModel> ?? new List<PlanStatViewModel>();
+    var topExerciseCompletions = planExercises.FirstOrDefault()?.Completions ?? 0;
     var topSessions = activities.FirstOrDefault()?.Sessions ?? 0;
     var weekStart = DateTime.Today.AddDays(-6);
     var activeClients = Model.Count(c => c.LastLoginAt >= weekStart);
@@ -176,4 +179,72 @@
             <p class="text-muted mb-0">No workouts have been logged yet.</p>
         }
     </div>
+</section>
+
+<section class="ht-card mt-3">
+    <div class="ht-card-head">
+        <h2>Popular plan exercises</h2>
+        <span class="ht-overline">Top 10 by completions</span>
+    </div>
+    <div class="ht-card-body">
+        @if (planExercises.Any())
+        {
+            <ol class="ht-bars-list">
+                @foreach (var exercise in planExercises)
+                {
+                    var width = topExerciseCompletions == 0 ? 0 : exercise.Completions * 100.0 / topExerciseCompletions;
+                    <li>
+                        <div class="row-top">
+                            <strong>@exercise.Exercise</strong>
+                            <span class="text-muted">@exercise.Completions completed &middot; @(exercise.PlanCount == 1 ? "1 plan" : $"{exercise.PlanCount} plans") &middot; @(exercise.ClientCount == 1 ? "1 client" : $"{exercise.ClientCount} clients")</span>
+                        </div>
+                        <div class="ht-bar"><span style="width: @width.ToString("0.#", CultureInfo.InvariantCulture)%"></span></div>
+                    </li>
+                }
+            </ol>
+        }
+        else
+        {
+            <p class="text-muted mb-0">No trainer workout plans have been created yet.</p>
+        }
+    </div>
+</section>
+
+<section class="ht-card mt-3">
+    <div class="ht-card-head">
+        <h2>Top trainer plans</h2>
+        <span class="ht-overline">Top 10 by completions</span>
+    </div>
+    @if (topPlans.Any())
+    {
+        <div class="table-responsive">
+            <table class="ht-table">
+                <thead>
+                    <tr>
+                        <th>Plan</th>
+                        <th>Trainer</th>
+                        <th>Client</th>
+                        <th>Exercises</th>
+                        <th>Completed</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var plan in topPlans)
+                    {
+                        <tr>
+                            <td>@plan.Title</td>
+                            <td>@plan.Trainer</td>
+                            <td>@plan.Client</td>
+                            <td class="num">@plan.ItemCount</td>
+                            <td class="num">@plan.Completions</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="ht-card-body text-muted">No trainer workout plans have been created yet.</div>
+    }
 </section>

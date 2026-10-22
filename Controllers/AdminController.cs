@@ -299,6 +299,9 @@ namespace HealthTrack.Controllers
             ViewData["From"] = from;
             ViewData["To"] = to;
             ViewData["PopularActivities"] = await GetPopularActivitiesAsync(10, from, to);
+            var (planExercises, topPlans) = await GetPlanRoutinesAsync(10, from, to);
+            ViewData["PlanExercises"] = planExercises;
+            ViewData["TopPlans"] = topPlans;
             return View(await GetClientPerformanceAsync(from, to));
         }
 
@@ -308,6 +311,7 @@ namespace HealthTrack.Controllers
             if (from > to) (from, to) = (to, from);
             var performance = await GetClientPerformanceAsync(from, to);
             var activities = await GetPopularActivitiesAsync(10, from, to);
+            var (planExercises, topPlans) = await GetPlanRoutinesAsync(10, from, to);
 
             var sections = new List<ReportSection>
             {
@@ -321,6 +325,12 @@ namespace HealthTrack.Controllers
                 new ReportSection("Popular Routines",
                     new[] { "Activity", "Sessions", "Clients", "Total Minutes" },
                     activities.Select(a => new object?[] { a.Activity, a.Sessions, a.ClientCount, a.TotalMinutes })),
+                new ReportSection("Popular Plan Exercises",
+                    new[] { "Exercise", "Plans", "Clients", "Completions" },
+                    planExercises.Select(e => new object?[] { e.Exercise, e.PlanCount, e.ClientCount, e.Completions })),
+                new ReportSection("Top Trainer Plans",
+                    new[] { "Plan", "Trainer", "Client", "Exercises", "Completions" },
+                    topPlans.Select(p => new object?[] { p.Title, p.Trainer, p.Client, p.ItemCount, p.Completions })),
                 new ReportSection("Engagement",
                     new[] { "Metric", "Value" },
                     new[]
@@ -421,6 +431,55 @@ namespace HealthTrack.Controllers
                 .OrderByDescending(a => a.Sessions)
                 .Take(count)
                 .ToListAsync();
+        }
+
+        private async Task<(List<PlanExerciseStatViewModel> Exercises, List<PlanStatViewModel> Plans)> GetPlanRoutinesAsync(int count, DateTime? from, DateTime? to)
+        {
+            var start = from?.Date;
+            var end = to?.Date.AddDays(1);
+            var completions = await Context.WorkoutLogs
+                .Where(w => w.WorkoutPlanItemId != null
+                    && (start == null || w.LoggedAt >= start) && (end == null || w.LoggedAt < end))
+                .GroupBy(w => w.WorkoutPlanItemId!.Value)
+                .Select(g => new { ItemId = g.Key, Total = g.Count() })
+                .ToDictionaryAsync(x => x.ItemId, x => x.Total);
+            var items = await Context.WorkoutPlanItems.AsNoTracking()
+                .Select(i => new
+                {
+                    i.Id,
+                    i.ExerciseName,
+                    i.WorkoutPlanId,
+                    i.WorkoutPlan!.Title,
+                    i.WorkoutPlan.ClientId,
+                    ClientName = i.WorkoutPlan.Client!.Name,
+                    TrainerName = i.WorkoutPlan.Trainer!.Name
+                })
+                .ToListAsync();
+
+            var exercises = items
+                .GroupBy(i => i.ExerciseName.Trim(), StringComparer.OrdinalIgnoreCase)
+                .Select(g => new PlanExerciseStatViewModel
+                {
+                    Exercise = g.Key,
+                    PlanCount = g.Select(i => i.WorkoutPlanId).Distinct().Count(),
+                    ClientCount = g.Select(i => i.ClientId).Distinct().Count(),
+                    Completions = g.Sum(i => completions.GetValueOrDefault(i.Id))
+                })
+                .OrderByDescending(e => e.Completions).ThenByDescending(e => e.PlanCount).ThenBy(e => e.Exercise)
+                .Take(count).ToList();
+            var plans = items
+                .GroupBy(i => i.WorkoutPlanId)
+                .Select(g => new PlanStatViewModel
+                {
+                    Title = g.First().Title,
+                    Trainer = g.First().TrainerName,
+                    Client = g.First().ClientName,
+                    ItemCount = g.Count(),
+                    Completions = g.Sum(i => completions.GetValueOrDefault(i.Id))
+                })
+                .OrderByDescending(p => p.Completions).ThenBy(p => p.Title)
+                .Take(count).ToList();
+            return (exercises, plans);
         }
 
         private async Task<List<ClientPerformanceViewModel>> GetClientPerformanceAsync(DateTime? from = null, DateTime? to = null)

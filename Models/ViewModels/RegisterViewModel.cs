@@ -41,5 +41,9 @@ namespace HealthTrack.Models.ViewModels
         [Compare(nameof(Password), ErrorMessage = "Passwords do not match.")]
         [Display(Name = "Confirm Password")]
         public string ConfirmPassword { get; set; } = string.Empty;
+
+        [Range(typeof(bool), "true", "true", ErrorMessage = "You must accept the privacy policy to create an account.")]
+        [Display(Name = "Privacy policy")]
+        public bool AcceptPrivacy { get; set; }
     }
 }

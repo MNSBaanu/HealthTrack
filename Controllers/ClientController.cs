@@ -2,6 +2,7 @@ using HealthTrack.Models;
 using HealthTrack.Models.Data;
 using HealthTrack.Models.ViewModels;
 using HealthTrack.Services;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -216,6 +217,44 @@ namespace HealthTrack.Controllers
                     .ToListAsync()
             };
             return Json(model);
+        }
+
+        [HttpGet]
+        public IActionResult DeleteAccount()
+        {
+            return View(new DeleteAccountViewModel());
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteAccount(DeleteAccountViewModel model)
+        {
+            if (!ModelState.IsValid) return View(model);
+
+            var user = await UserManager.GetUserAsync(User);
+            if (user == null) return Challenge();
+            if (!await UserManager.CheckPasswordAsync(user, model.Password))
+            {
+                ModelState.AddModelError(nameof(model.Password), "Incorrect password.");
+                return View(model);
+            }
+
+            IdentityResult result;
+            try { result = await UserManager.DeleteAsync(user); }
+            catch (DbUpdateException exception)
+            {
+                _logger.LogError(exception, "Client {ClientId} could not delete their account", user.Id);
+                result = IdentityResult.Failed();
+            }
+            if (!result.Succeeded)
+            {
+                ModelState.AddModelError(string.Empty, "Your account could not be deleted. Please try again.");
+                return View(model);
+            }
+
+            await HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);
+            _logger.LogInformation("Client {ClientId} deleted their own account", user.Id);
+            TempData["Success"] = "Your account and data have been deleted.";
+            return RedirectToAction("Index", "Home");
         }
 
         [HttpGet]

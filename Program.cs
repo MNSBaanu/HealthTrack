@@ -53,6 +53,7 @@ builder.Services.AddScoped<ITrainerPlanService, TrainerPlanService>();
 builder.Services.AddScoped<ITrainerFeedbackService, TrainerFeedbackService>();
 builder.Services.AddScoped<ITrainerScheduleService, TrainerScheduleService>();
 builder.Services.AddHostedService<AppointmentReminderWorker>();
+builder.Services.AddHostedService<DailyReminderWorker>();
 
 var app = builder.Build();
 

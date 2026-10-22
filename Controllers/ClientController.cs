@@ -309,6 +309,7 @@ namespace HealthTrack.Controllers
 
             var fileName = $"{(all ? "HealthTrack_MyData" : "HealthTrack_Progress")}_{DateTime.Now:yyyyMMdd}";
             _logger.LogInformation("Client {ClientId} exported {Scope} as {Format}", clientId, all ? "all data" : "progress", format);
+            await AuditAsync("Exported", all ? "AllMyData" : "ProgressReport", clientId, format);
             if (format.Equals("pdf", StringComparison.OrdinalIgnoreCase))
             {
                 return File(_exportService.ToPdf($"{(all ? "My Data" : "Progress Report")} - {client.Name}", sections), "application/pdf", fileName + ".pdf");

@@ -203,6 +203,7 @@ namespace HealthTrack.Controllers
                 return RedirectToAction(nameof(Clients));
             }
 
+            await AuditAsync("Viewed", "ClientDetails", id);
             var client = await Context.Clients
                 .Include(c => c.HealthMetrics.OrderByDescending(m => m.RecordedAt))
                 .Include(c => c.WorkoutLogs.OrderByDescending(w => w.LoggedAt))

@@ -16,8 +16,12 @@ QuestPDF.Settings.License = LicenseType.Community;
 // Add services to the container.
 builder.Services.AddControllersWithViews(options =>
     options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute()));
-builder.Services.AddDbContext<HealthTrackDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton<AuditSaveChangesInterceptor>();
+builder.Services.AddScoped<IAuditService, AuditService>();
+builder.Services.AddDbContext<HealthTrackDbContext>((services, options) => options
+    .UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
+    .AddInterceptors(services.GetRequiredService<AuditSaveChangesInterceptor>()));
 builder.Services.AddIdentity<Person, IdentityRole>(options =>
     {
         options.User.RequireUniqueEmail = true;

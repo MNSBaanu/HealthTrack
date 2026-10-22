@@ -72,6 +72,9 @@ public class TrainerPlanService : ITrainerPlanService
                 .Include(p => p.Items)
                 .FirstAsync(p => p.Id == model.Id && p.TrainerId == trainerId);
 
+            var itemIds = plan.Items.Select(i => i.Id).ToList();
+            await _context.WorkoutLogs.Where(l => l.WorkoutPlanItemId != null && itemIds.Contains(l.WorkoutPlanItemId.Value))
+                .ExecuteUpdateAsync(s => s.SetProperty(l => l.WorkoutPlanItemId, (int?)null));
             _context.WorkoutPlanItems.RemoveRange(plan.Items);
         }
 

@@ -42,7 +42,13 @@ public class ClientPlansController : ClientBaseController
         var plan = await Context.WorkoutPlans.AsNoTracking().Include(p => p.Trainer).Include(p => p.Items)
             .FirstOrDefaultAsync(p => p.Id == id && p.ClientId == CurrentUserId);
         if (plan == null) return NotFound();
-        return View(new ClientWorkoutPlanViewModel { Plan = plan, Today = Today });
+        var itemIds = plan.Items.Select(i => i.Id).ToList();
+        var today = Today;
+        var doneToday = await Context.WorkoutLogs.AsNoTracking()
+            .Where(l => l.ClientId == CurrentUserId && l.WorkoutPlanItemId != null && itemIds.Contains(l.WorkoutPlanItemId.Value)
+                && l.LoggedAt >= today && l.LoggedAt < today.AddDays(1))
+            .Select(l => l.WorkoutPlanItemId!.Value).ToListAsync();
+        return View(new ClientWorkoutPlanViewModel { Plan = plan, Today = today, DoneTodayItemIds = doneToday.ToHashSet() });
     }
 
     [HttpGet]

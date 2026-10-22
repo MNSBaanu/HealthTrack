@@ -96,6 +96,8 @@ namespace HealthTrack.Models.Data
 
             builder.Entity<WorkoutPlanItem>().HasOne(i => i.WorkoutPlan).WithMany(p => p.Items)
                 .HasForeignKey(i => i.WorkoutPlanId).OnDelete(DeleteBehavior.Cascade);
+            builder.Entity<WorkoutLog>().HasOne(l => l.WorkoutPlanItem).WithMany()
+                .HasForeignKey(l => l.WorkoutPlanItemId).OnDelete(DeleteBehavior.ClientSetNull);
 
             builder.Entity<DietPlan>().HasOne(p => p.Trainer).WithMany(t => t.DietPlans)
                 .HasForeignKey(p => p.TrainerId).OnDelete(DeleteBehavior.Restrict);
@@ -113,8 +115,10 @@ namespace HealthTrack.Models.Data
                 .HasForeignKey(f => f.ClientId).OnDelete(DeleteBehavior.Cascade);
             builder.Entity<TrainerFeedback>().Property(f => f.Category)
                 .HasConversion<string>().HasMaxLength(20);
+
             builder.Entity<LoginHistory>().HasOne(l => l.Person).WithMany()
                 .HasForeignKey(l => l.PersonId).OnDelete(DeleteBehavior.Cascade);
+
             builder.Entity<TrainerAssignmentHistory>().HasOne(h => h.Client).WithMany()
                 .HasForeignKey(h => h.ClientId).OnDelete(DeleteBehavior.Cascade);
             builder.Entity<TrainerAssignmentHistory>().HasOne(h => h.Trainer).WithMany()

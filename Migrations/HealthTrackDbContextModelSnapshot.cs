@@ -609,9 +609,14 @@ namespace HealthTrack.Migrations
                     b.Property<DateTime>("LoggedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("WorkoutPlanItemId")
+                        .HasColumnType("int");
+
                     b.HasKey("WorkoutLogId");
 
                     b.HasIndex("ClientId");
+
+                    b.HasIndex("WorkoutPlanItemId");
 
                     b.ToTable("WorkoutLogs");
                 });
@@ -1065,7 +1070,13 @@ namespace HealthTrack.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("HealthTrack.Models.WorkoutPlanItem", "WorkoutPlanItem")
+                        .WithMany()
+                        .HasForeignKey("WorkoutPlanItemId");
+
                     b.Navigation("Client");
+
+                    b.Navigation("WorkoutPlanItem");
                 });
 
             modelBuilder.Entity("HealthTrack.Models.WorkoutPlan", b =>

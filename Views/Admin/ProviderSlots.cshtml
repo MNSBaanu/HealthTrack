@@ -1,5 +1,6 @@
 @model ProviderSlotsViewModel
-@{ ViewData["Title"] = $"{Model.Provider.Name} availability"; }
+@{
+    ViewData["FormPage"] = "standard"; ViewData["Title"] = $"{Model.Provider.Name} availability"; }
 <a class="ht-back" asp-action="Providers"><i class="bi bi-arrow-left"></i>Healthcare professionals</a>
 <div class="ht-head"><div><h1 class="ht-title">@Model.Provider.Name</h1><p class="text-muted mb-0">@(Model.Provider.Specialty ?? "Healthcare professional") · Times in @Model.TimeZoneLabel</p></div></div>
 <div class="row g-3">

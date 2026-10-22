@@ -1,5 +1,6 @@
 @model SendNotificationViewModel
 @{
+    ViewData["FormPage"] = "standard";
     ViewData["Title"] = "Broadcast";
     var recipients = ViewData["Recipients"] as List<SelectListItem> ?? new List<SelectListItem>();
 }

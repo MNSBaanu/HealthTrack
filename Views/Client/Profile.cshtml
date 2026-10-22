@@ -1,5 +1,6 @@
 @model ProfileViewModel
 @{
+    ViewData["FormPage"] = "standard";
     ViewData["Title"] = "My profile";
     var hours = Enumerable.Range(0, 24).Select(h => new SelectListItem($"{h:00}:00", h.ToString())).ToList();
 }

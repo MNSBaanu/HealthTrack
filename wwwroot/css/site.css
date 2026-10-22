@@ -1314,7 +1314,7 @@ a:hover {
 
 @media (min-width: 992px) {
   .ht-auth {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1560,4 +1560,23 @@ a:hover {
 #togglePassword:focus-visible {
   outline: 2px solid var(--ht-ink);
   outline-offset: -4px;
+}
+/* Center dedicated form pages and keep their headings aligned with the cards. */
+.ht-page > .container-xl.ht-form-page {
+  max-width: 52rem;
+  margin-inline: auto;
+}
+
+.ht-page > .container-xl.ht-form-page-wide {
+  max-width: 64rem;
+}
+
+.ht-form-page > .row > [class*="col-"] {
+  flex: 0 0 100%;
+  width: 100%;
+  max-width: 100%;
+}
+
+.ht-auth-main > .ht-wordmark {
+  align-self: center;
 }

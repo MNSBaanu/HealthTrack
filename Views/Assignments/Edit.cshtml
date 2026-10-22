@@ -1,5 +1,6 @@
 @model AssignmentEditViewModel
-@{ ViewData["Title"] = "Manage Trainer assignment"; }
+@{
+    ViewData["FormPage"] = "standard"; ViewData["Title"] = "Manage Trainer assignment"; }
 <a class="ht-back" asp-action="Index"><i class="bi bi-arrow-left"></i>Trainer assignments</a>
 <div class="ht-head"><div><h1 class="ht-title">@Model.ClientName</h1><p class="ht-lede">@Model.ClientEmail</p></div></div>
 <div class="row"><div class="col-lg-8"><section class="ht-card"><div class="ht-card-body">

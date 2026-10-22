@@ -147,6 +147,29 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(WorkoutPlans));
         }
 
+        [HttpPost]
+        public async Task<IActionResult> DeleteWorkoutPlan(int id)
+        {
+            var plan = await _planService.GetWorkoutPlanByIdAsync(id, CurrentUserId);
+            if (plan == null)
+            {
+                TempData["Error"] = "Workout plan not found or you don't have permission to delete it.";
+                return RedirectToAction(nameof(WorkoutPlans));
+            }
+
+            var clientId = plan.ClientId;
+            var success = await _planService.DeleteWorkoutPlanAsync(id, CurrentUserId);
+
+            if (!success)
+            {
+                TempData["Error"] = "Failed to delete workout plan.";
+                return RedirectToAction(nameof(WorkoutPlans), new { clientId });
+            }
+
+            TempData["Success"] = "Workout plan deleted successfully.";
+            return RedirectToAction(nameof(WorkoutPlans), new { clientId });
+        }
+
         // ================= DIET PLANS =================
 
         public async Task<IActionResult> DietPlans(string? clientId)
@@ -276,6 +299,29 @@ namespace HealthTrack.Controllers
 
             TempData["Success"] = "Diet plan status updated.";
             return RedirectToAction(nameof(DietPlans));
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteDietPlan(int id)
+        {
+            var plan = await _planService.GetDietPlanByIdAsync(id, CurrentUserId);
+            if (plan == null)
+            {
+                TempData["Error"] = "Diet plan not found or you don't have permission to delete it.";
+                return RedirectToAction(nameof(DietPlans));
+            }
+
+            var clientId = plan.ClientId;
+            var success = await _planService.DeleteDietPlanAsync(id, CurrentUserId);
+
+            if (!success)
+            {
+                TempData["Error"] = "Failed to delete diet plan.";
+                return RedirectToAction(nameof(DietPlans), new { clientId });
+            }
+
+            TempData["Success"] = "Diet plan deleted successfully.";
+            return RedirectToAction(nameof(DietPlans), new { clientId });
         }
     }
 }

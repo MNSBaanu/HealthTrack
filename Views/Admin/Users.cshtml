@@ -71,6 +71,7 @@
                             <td><partial name="_StatusPill" model="user.IsLocked" /></td>
                             <td>
                                 <div class="ht-row-actions">
+                                    <a class="btn-icon" asp-action="LoginHistory" asp-route-id="@user.Id" title="Login history" aria-label="Login history for @user.Name"><i class="bi bi-clock-history"></i></a>
                                     @if (user.Role == AppRoles.Client)
                                     {
                                         <a class="btn-icon" asp-action="ClientDetails" asp-route-id="@user.Id" title="View client" aria-label="View @user.Name"><i class="bi bi-eye"></i></a>

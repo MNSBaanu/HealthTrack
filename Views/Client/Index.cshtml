@@ -58,6 +58,11 @@
             @if (latest != null)
             {
                 <div class="big">@latest.WeightKg.ToString("0.0")<small>kg</small></div>
+                <p class="mb-2">Starting weight: @Model.StartingWeightKg?.ToString("0.0") kg</p>
+                @if (Model.MetricCount == 1)
+                {
+                    <p class="mb-2">Log your next weigh-in to start seeing a trend. <a asp-controller="HealthMetrics" asp-action="Create">Add a weigh-in</a></p>
+                }
 
                 <div class="ht-bmi">
                     <div class="ht-bmi-head">

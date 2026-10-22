@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authentication;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using HealthTrack.Models;
@@ -30,6 +31,11 @@ builder.Services.AddIdentity<Person, IdentityRole>(options =>
 builder.Services.Configure<SecurityStampValidatorOptions>(options => options.ValidationInterval = TimeSpan.Zero);
 builder.Services.ConfigureApplicationCookie(options =>
 {
+    options.ExpireTimeSpan = TimeSpan.FromHours(8);
+    options.SlidingExpiration = true;
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SameSite = SameSiteMode.Lax;
     options.Events.OnValidatePrincipal = async cookieContext =>
     {
         await SecurityStampValidator.ValidatePrincipalAsync(cookieContext);
@@ -42,6 +48,13 @@ builder.Services.ConfigureApplicationCookie(options =>
             await cookieContext.HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);
         }
     };
+});
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("auth", httpContext => RateLimitPartition.GetFixedWindowLimiter(
+        httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1) }));
 });
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IExportService, ExportService>();
@@ -72,9 +85,22 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.Use(async (context, next) =>
+{
+    var headers = context.Response.Headers;
+    headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+        + "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
+        + "font-src 'self' https://cdn.jsdelivr.net https://fonts.gstatic.com; img-src 'self' data:; "
+        + "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'";
+    headers["X-Frame-Options"] = "DENY";
+    headers["X-Content-Type-Options"] = "nosniff";
+    headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+    await next();
+});
 app.UseStaticFiles();
 
 app.UseRouting();
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();

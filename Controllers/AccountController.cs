@@ -4,6 +4,7 @@ using HealthTrack.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace HealthTrack.Controllers
 {
@@ -31,6 +32,7 @@ namespace HealthTrack.Controllers
         }
 
         [HttpPost]
+        [EnableRateLimiting("auth")]
         public async Task<IActionResult> Register(RegisterViewModel model)
         {
             ValidatePastDate(model.DateOfBirth, nameof(model.DateOfBirth));
@@ -72,6 +74,7 @@ namespace HealthTrack.Controllers
         }
 
         [HttpPost]
+        [EnableRateLimiting("auth")]
         public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;

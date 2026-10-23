@@ -21,5 +21,9 @@ namespace HealthTrack.Models
         public string? FoodItems { get; set; }
 
         public DateTime LoggedAt { get; set; } = DateTime.Now;
+
+        public int? DietPlanMealId { get; set; }
+
+        public DietPlanMeal? DietPlanMeal { get; set; }
     }
 }

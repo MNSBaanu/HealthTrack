@@ -31,17 +31,46 @@ namespace HealthTrack.Controllers
         }
 
         [HttpGet]
-        public IActionResult Create()
+        public async Task<IActionResult> Create(int? planMealId)
         {
-            return View(new MealLog { LoggedAt = DateTime.Now });
+            var log = new MealLog { LoggedAt = DateTime.Now };
+            if (planMealId.HasValue)
+            {
+                var meal = await FindOwnedPlanMealAsync(planMealId.Value);
+                if (meal == null)
+                {
+                    return NotFound();
+                }
+
+                log.DietPlanMealId = meal.Id;
+                log.MealType = meal.MealType;
+                log.Calories = meal.ApproximateCalories ?? 0;
+                log.FoodItems = meal.FoodRecommendations;
+            }
+            return View(log);
+        }
+
+        private Task<DietPlanMeal?> FindOwnedPlanMealAsync(int id)
+        {
+            return Context.DietPlanMeals.AsNoTracking()
+                .FirstOrDefaultAsync(m => m.Id == id && m.DietPlan!.ClientId == CurrentUserId);
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([Bind("MealType,Calories,FoodItems,LoggedAt")] MealLog log)
+        public async Task<IActionResult> Create([Bind("MealType,Calories,FoodItems,LoggedAt,DietPlanMealId")] MealLog log)
         {
             log.ClientId = CurrentUserId;
             ModelState.Remove(nameof(MealLog.ClientId));
             ValidateNotInFuture(log.LoggedAt, nameof(log.LoggedAt));
+            DietPlanMeal? planMeal = null;
+            if (log.DietPlanMealId.HasValue)
+            {
+                planMeal = await FindOwnedPlanMealAsync(log.DietPlanMealId.Value);
+                if (planMeal == null)
+                {
+                    return NotFound();
+                }
+            }
             if (!ModelState.IsValid)
             {
                 return View(log);
@@ -51,7 +80,9 @@ namespace HealthTrack.Controllers
             await Context.SaveChangesAsync();
             _logger.LogInformation("Client {ClientId} logged a meal", log.ClientId);
             TempData["Success"] = "Meal logged.";
-            return RedirectToAction(nameof(Index));
+            return planMeal == null
+                ? RedirectToAction(nameof(Index))
+                : RedirectToAction("Diet", "ClientPlans", new { id = planMeal.DietPlanId });
         }
 
         [HttpGet]

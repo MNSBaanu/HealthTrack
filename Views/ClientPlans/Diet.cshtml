@@ -18,7 +18,17 @@
     @foreach (var meal in plan.Meals.OrderBy(m => m.Day.HasValue).ThenBy(m => ((int?)m.Day + 6) % 7).ThenBy(m => m.Time ?? TimeOnly.MaxValue).ThenBy(m => m.MealType).ThenBy(m => m.Id))
     {
         <article class="border-bottom py-3">
-            <h3 class="h5">@meal.MealType</h3>
+            <div class="d-flex justify-content-between align-items-start gap-2">
+                <h3 class="h5">@meal.MealType</h3>
+                @if (Model.LoggedTodayMealIds.Contains(meal.Id))
+                {
+                    <span class="ht-pill"><i class="bi bi-check2"></i>Logged today</span>
+                }
+                else
+                {
+                    <a class="btn btn-line btn-sm" asp-controller="MealLogs" asp-action="Create" asp-route-planMealId="@meal.Id"><i class="bi bi-check2"></i>Log this meal</a>
+                }
+            </div>
             <p class="small text-muted mb-2">@(meal.Day?.ToString() ?? "Every day") · @(meal.Time?.ToString("HH:mm") ?? "Any time")</p>
             <p style="white-space: pre-line">@meal.FoodRecommendations</p>
             @if (meal.ApproximateCalories.HasValue) { <p class="small">Estimated calories: @meal.ApproximateCalories kcal</p> }

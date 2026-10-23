@@ -57,6 +57,12 @@ public class ClientPlansController : ClientBaseController
         var plan = await Context.DietPlans.AsNoTracking().Include(p => p.Trainer).Include(p => p.Meals)
             .FirstOrDefaultAsync(p => p.Id == id && p.ClientId == CurrentUserId);
         if (plan == null) return NotFound();
-        return View(new ClientDietPlanViewModel { Plan = plan, Today = Today });
+        var mealIds = plan.Meals.Select(m => m.Id).ToList();
+        var today = Today;
+        var loggedToday = await Context.MealLogs.AsNoTracking()
+            .Where(l => l.ClientId == CurrentUserId && l.DietPlanMealId != null && mealIds.Contains(l.DietPlanMealId.Value)
+                && l.LoggedAt >= today && l.LoggedAt < today.AddDays(1))
+            .Select(l => l.DietPlanMealId!.Value).ToListAsync();
+        return View(new ClientDietPlanViewModel { Plan = plan, Today = today, LoggedTodayMealIds = loggedToday.ToHashSet() });
     }
 }

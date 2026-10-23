@@ -25,4 +25,5 @@ public class ClientDietPlanViewModel
 {
     public DietPlan Plan { get; set; } = null!;
     public DateTime Today { get; set; }
+    public HashSet<int> LoggedTodayMealIds { get; set; } = new();
 }

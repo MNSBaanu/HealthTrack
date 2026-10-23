@@ -34,9 +34,21 @@ namespace HealthTrack.Controllers
         }
 
         [HttpGet]
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            return View(new HealthMetric { RecordedAt = DateTime.Now });
+            var last = await Context.HealthMetrics
+                .Where(m => m.ClientId == CurrentUserId)
+                .OrderByDescending(m => m.RecordedAt)
+                .FirstOrDefaultAsync();
+            return View(new HealthMetric
+            {
+                RecordedAt = DateTime.Now,
+                WeightKg = last?.WeightKg ?? 0,
+                BodyFatPercent = last?.BodyFatPercent,
+                RestingHeartRate = last?.RestingHeartRate,
+                SystolicBp = last?.SystolicBp,
+                DiastolicBp = last?.DiastolicBp
+            });
         }
 
         [HttpPost]

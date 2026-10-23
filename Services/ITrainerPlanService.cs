@@ -14,4 +14,6 @@ public interface ITrainerPlanService
     Task<int> SaveDietPlanAsync(string trainerId, DietPlanFormViewModel model);
     Task<bool> ToggleWorkoutPlanStatusAsync(int planId, string trainerId);
     Task<bool> ToggleDietPlanStatusAsync(int planId, string trainerId);
+    Task<bool> DeleteWorkoutPlanAsync(int planId, string trainerId);
+    Task<bool> DeleteDietPlanAsync(int planId, string trainerId);
 }

@@ -104,6 +104,7 @@ namespace HealthTrack.Controllers
                 DateOfBirth = client.DateOfBirth,
                 HeightCm = client.HeightCm,
                 FitnessGoal = client.FitnessGoal,
+                EmailNotificationsEnabled = client.EmailNotificationsEnabled,
                 WorkoutReminderEnabled = client.WorkoutReminderEnabled,
                 WorkoutReminderHour = client.WorkoutReminderHour,
                 MealReminderEnabled = client.MealReminderEnabled,
@@ -148,6 +149,7 @@ namespace HealthTrack.Controllers
             client.DateOfBirth = model.DateOfBirth!.Value;
             client.HeightCm = model.HeightCm!.Value;
             client.FitnessGoal = model.FitnessGoal;
+            client.EmailNotificationsEnabled = model.EmailNotificationsEnabled;
             client.WorkoutReminderEnabled = model.WorkoutReminderEnabled;
             client.WorkoutReminderHour = model.WorkoutReminderHour;
             client.MealReminderEnabled = model.MealReminderEnabled;

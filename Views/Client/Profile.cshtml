@@ -82,6 +82,14 @@
                     </fieldset>
 
                     <fieldset class="ht-fieldset">
+                        <legend>Email</legend>
+                        <div class="form-check form-switch">
+                            <input asp-for="EmailNotificationsEnabled" class="form-check-input" />
+                            <label asp-for="EmailNotificationsEnabled" class="form-check-label">Email me my notifications</label>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="ht-fieldset">
                         <legend>Daily reminders</legend>
                         <div class="row g-3">
                             <div class="col-md-4">

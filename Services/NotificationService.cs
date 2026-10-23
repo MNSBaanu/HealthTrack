@@ -10,12 +10,32 @@ namespace HealthTrack.Services
         private readonly HealthTrackDbContext _context;
         private readonly TimeProvider _clock;
         private readonly AppointmentTime _appointmentTime;
+        private readonly IMailSender _mail;
 
-        public NotificationService(HealthTrackDbContext context, TimeProvider clock, AppointmentTime appointmentTime)
+        public NotificationService(HealthTrackDbContext context, TimeProvider clock, AppointmentTime appointmentTime, IMailSender mail)
         {
             _context = context;
             _clock = clock;
             _appointmentTime = appointmentTime;
+            _mail = mail;
+        }
+
+        // Scheduled notifications are only shown later, so they are not emailed now.
+        private async Task EmailAsync(IReadOnlyCollection<string> personIds, string message, DateTime? scheduledFor = null)
+        {
+            if (!_mail.IsConfigured || (scheduledFor != null && scheduledFor > DateTime.Now))
+            {
+                return;
+            }
+
+            var recipients = await _context.Users.AsNoTracking()
+                .Where(u => personIds.Contains(u.Id) && u.EmailNotificationsEnabled && u.Email != null)
+                .Select(u => new { u.Email, u.Name })
+                .ToListAsync();
+            foreach (var recipient in recipients)
+            {
+                _mail.QueueNotification(recipient.Email!, recipient.Name, message);
+            }
         }
 
         public async Task SendAsync(string personId, string message, NotificationType type, DateTime? scheduledFor = null)
@@ -28,6 +48,7 @@ namespace HealthTrack.Services
                 ScheduledFor = scheduledFor
             });
             await _context.SaveChangesAsync();
+            await EmailAsync(new[] { personId }, message, scheduledFor);
         }
 
         public async Task SendToAllClientsAsync(string message, NotificationType type, DateTime? scheduledFor = null)
@@ -41,6 +62,7 @@ namespace HealthTrack.Services
                 ScheduledFor = scheduledFor
             }));
             await _context.SaveChangesAsync();
+            await EmailAsync(clientIds, message, scheduledFor);
         }
 
         public async Task SendToAllTrainersAsync(string message, NotificationType type, DateTime? scheduledFor = null)
@@ -54,6 +76,7 @@ namespace HealthTrack.Services
                 ScheduledFor = scheduledFor
             }));
             await _context.SaveChangesAsync();
+            await EmailAsync(trainerIds, message, scheduledFor);
         }
 
         public async Task<List<Notification>> GetVisibleAsync(string personId, bool unreadOnly)
@@ -85,6 +108,7 @@ namespace HealthTrack.Services
                 .Where(n => n.PersonId == clientId && n.CreatedAt >= today)
                 .Select(n => n.Type)
                 .ToListAsync();
+            var reminders = new List<string>();
 
             if (client.WorkoutReminderEnabled && hour >= client.WorkoutReminderHour
                 && !remindedToday.Contains(NotificationType.Workout)
@@ -96,6 +120,7 @@ namespace HealthTrack.Services
                     Type = NotificationType.Workout,
                     Message = "You haven't logged a workout today. Keep your streak going!"
                 });
+                reminders.Add("You haven't logged a workout today. Keep your streak going!");
             }
 
             if (client.MealReminderEnabled && hour >= client.MealReminderHour
@@ -108,6 +133,7 @@ namespace HealthTrack.Services
                     Type = NotificationType.Meal,
                     Message = "Don't forget to log your meals for today."
                 });
+                reminders.Add("Don't forget to log your meals for today.");
             }
 
             var lastMetric = await _context.HealthMetrics
@@ -123,9 +149,14 @@ namespace HealthTrack.Services
                     Type = NotificationType.General,
                     Message = "It's been over a week since your last weight check-in. Record a new measurement."
                 });
+                reminders.Add("It's been over a week since your last weight check-in. Record a new measurement.");
             }
 
             await _context.SaveChangesAsync();
+            foreach (var reminder in reminders)
+            {
+                await EmailAsync(new[] { clientId }, reminder);
+            }
         }
 
         public async Task GenerateAppointmentRemindersAsync(string clientId)

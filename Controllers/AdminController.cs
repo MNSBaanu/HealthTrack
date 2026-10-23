@@ -31,8 +31,6 @@ namespace HealthTrack.Controllers
             _logger = logger;
             _notificationService = notificationService;
             _exportService = exportService;
-            _time = time;
-            _clock = clock;
         }
 
         public async Task<IActionResult> Index()
@@ -340,23 +338,15 @@ namespace HealthTrack.Controllers
 
         public async Task<IActionResult> Reports(DateTime? from, DateTime? to)
         {
-            if (from > to) (from, to) = (to, from);
-            ViewData["From"] = from;
-            ViewData["To"] = to;
-            ViewData["PopularActivities"] = await GetPopularActivitiesAsync(10, from, to);
-            var (planExercises, topPlans) = await GetPlanRoutinesAsync(10, from, to);
-            ViewData["PlanExercises"] = planExercises;
-            ViewData["TopPlans"] = topPlans;
-            return View(await GetClientPerformanceAsync(from, to));
+            ViewData["PopularActivities"] = await GetPopularActivitiesAsync(10);
+            return View(await GetClientPerformanceAsync());
         }
 
         [HttpGet]
         public async Task<IActionResult> ExportReport(string format = "csv", DateTime? from = null, DateTime? to = null)
         {
-            if (from > to) (from, to) = (to, from);
-            var performance = await GetClientPerformanceAsync(from, to);
-            var activities = await GetPopularActivitiesAsync(10, from, to);
-            var (planExercises, topPlans) = await GetPlanRoutinesAsync(10, from, to);
+            var performance = await GetClientPerformanceAsync();
+            var activities = await GetPopularActivitiesAsync(10);
 
             var sections = new List<ReportSection>
             {
@@ -367,7 +357,30 @@ namespace HealthTrack.Controllers
                         p.Name, p.Email, p.StartWeightKg, p.CurrentWeightKg, p.WeightChangeKg, p.CurrentBmi,
                         p.WorkoutCount, p.TotalMinutes, p.TotalCaloriesBurned, p.MealLogCount, p.WeightLogCount, p.AppointmentCount, p.ActiveDays, p.LastLoginAt
                     })),
-                new ReportSection("Popular Routines",
+                new ReportSection("Assigned Workout Plan Summary",
+                    new[] { "Metric", "Value" },
+                    new[]
+                    {
+                        new object?[] { "Report date", report.Today.ToString("yyyy-MM-dd") },
+                        new object?[] { "Date timezone", report.TimeZone },
+                        new object?[] { "Participation measure", "Clients with active assigned workout plans; not completion" },
+                        new object?[] { "Total assigned workout plans", report.AssignedRoutines.Count },
+                        new object?[] { "Active assigned workout plans", report.ActivePlanCount },
+                        new object?[] { "Clients with active assigned plans", report.ClientsWithActivePlans },
+                        new object?[] { "Active plan coverage (%)", report.ActivePlanCoveragePercent },
+                        new object?[] { "Clients with any assigned workout plans", report.ClientsWithAnyPlans },
+                        new object?[] { "Clients without assigned workout plans", report.Clients.Count - report.ClientsWithAnyPlans },
+                        new object?[] { "Clients with a current Trainer assignment", report.ClientsWithCurrentTrainer },
+                        new object?[] { "Clients without a current Trainer assignment", report.Clients.Count - report.ClientsWithCurrentTrainer }
+                    }),
+                new ReportSection("Assigned Workout Routines",
+                    new[] { "Plan ID", "Routine", "Client", "Original Trainer", "Start date", "End date", "Status", "Exercises" },
+                    report.AssignedRoutines.Select(p => new object?[]
+                    {
+                        p.PlanId, p.Title, p.ClientName, p.TrainerName, p.StartDate.ToString("yyyy-MM-dd"),
+                        p.EndDate?.ToString("yyyy-MM-dd") ?? "No end date", report.Status(p), p.ExerciseCount
+                    })),
+                new ReportSection("Personal Workout Activities",
                     new[] { "Activity", "Sessions", "Clients", "Total Minutes" },
                     activities.Select(a => new object?[] { a.Activity, a.Sessions, a.ClientCount, a.TotalMinutes })),
                 new ReportSection("Popular Plan Exercises",
@@ -489,6 +502,28 @@ namespace HealthTrack.Controllers
                 LastLoginAt = u.LastLoginAt,
                 IsLocked = u.LockoutEnd != null && u.LockoutEnd > now
             });
+        }
+
+        private async Task<AdminReportsViewModel> GetAdminReportAsync()
+        {
+            return new AdminReportsViewModel
+            {
+                Clients = await GetClientPerformanceAsync(),
+                PersonalActivities = await GetPopularActivitiesAsync(10),
+                Today = _reportTime.ToLocal(_clock.GetUtcNow().UtcDateTime).Date,
+                TimeZone = _reportTime.Label,
+                ClientsWithCurrentTrainer = await Context.ClientTrainerAssignments.CountAsync(),
+                AssignedRoutines = await Context.WorkoutPlans.AsNoTracking()
+                    .OrderByDescending(p => p.StartDate).ThenBy(p => p.Id)
+                    .Select(p => new AssignedRoutineReportRow
+                    {
+                        PlanId = p.Id, Title = p.Title, ClientId = p.ClientId,
+                        ClientName = p.Client != null ? p.Client.Name : "Client unavailable",
+                        TrainerName = p.Trainer != null ? p.Trainer.Name : "Trainer unavailable",
+                        StartDate = p.StartDate, EndDate = p.EndDate, IsActive = p.IsActive,
+                        ExerciseCount = p.Items.Count()
+                    }).ToListAsync()
+            };
         }
 
         private Task<List<ActivityStatViewModel>> GetPopularActivitiesAsync(int count, DateTime? from = null, DateTime? to = null)

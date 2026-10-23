@@ -409,9 +409,25 @@
                         @foreach (var fb in Model.Feedbacks)
                         {
                             <div class="list-group-item px-0 py-3">
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <h5 class="h6 mb-0 fw-bold">@fb.Title</h5>
-                                    <span class="ht-pill info">@fb.Category</span>
+                                <div class="d-flex justify-content-between align-items-start mb-1">
+                                    <div>
+                                        <h5 class="h6 mb-0 fw-bold">@fb.Title</h5>
+                                        <span class="ht-pill info me-2">@fb.Category</span>
+                                        @if (fb.IsReadByClient)
+                                        {
+                                            <span class="ht-pill success">Read</span>
+                                        }
+                                    </div>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a asp-action="EditFeedback" asp-route-id="@fb.Id" class="btn btn-line-info" title="Edit feedback">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <form asp-action="DeleteFeedback" asp-route-id="@fb.Id" method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this feedback?');">
+                                            <button type="submit" class="btn btn-line-danger" title="Delete feedback">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
                                 </div>
                                 <div class="text-muted small mb-2">@fb.CreatedAtUtc.ToString("MMM d, yyyy h:mm tt")</div>
                                 <p class="mb-0 small text-secondary">@fb.Comments</p>

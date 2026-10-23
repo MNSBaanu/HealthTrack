@@ -151,6 +151,62 @@ namespace HealthTrack.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> Ratings()
+        {
+            var rated = await Context.Appointments.AsNoTracking()
+                .Include(a => a.Slot).ThenInclude(s => s.Provider).Include(a => a.Client)
+                .Where(a => a.Rating != null)
+                .ToListAsync();
+
+            var model = new ProviderRatingsViewModel
+            {
+                Providers = rated.GroupBy(a => a.Slot.ProviderId)
+                    .Select(g => new ProviderRatingRow(g.First().Slot.Provider.Name, g.First().Slot.Provider.Kind.ToString(),
+                        g.First().Slot.Provider.Specialty, Math.Round(g.Average(a => a.Rating!.Value), 1), g.Count()))
+                    .OrderByDescending(r => r.Average).ThenByDescending(r => r.Count).ToList(),
+                Recent = rated.OrderByDescending(a => a.RatedAtUtc).Take(10)
+                    .Select(a => new RecentRating(a.Slot.Provider.Name, a.Client.Name, a.Rating!.Value, a.RatingComment, _time.ToLocal(a.RatedAtUtc!.Value)))
+                    .ToList()
+            };
+            return View(model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> SystemHealth()
+        {
+            var now = DateTime.Now;
+            var since7 = now.AddDays(-7);
+            var firstDay = now.Date.AddDays(-13);
+            var utcNow = DateTime.UtcNow;
+            var logins = await Context.LoginHistories.AsNoTracking()
+                .Where(l => l.LoggedInAt >= firstDay)
+                .Select(l => new { l.LoggedInAt, l.Succeeded, l.PersonId }).ToListAsync();
+
+            var model = new SystemHealthViewModel
+            {
+                Clients = await Context.Clients.CountAsync(),
+                Trainers = await Context.Trainers.CountAsync(),
+                Admins = await Context.Admins.CountAsync(),
+                NewUsers7d = await Context.Users.CountAsync(u => u.CreatedAt >= since7),
+                LockedAccounts = await Context.Users.CountAsync(u => u.LockoutEnd != null && u.LockoutEnd > DateTimeOffset.UtcNow),
+                ActiveUsers7d = logins.Where(l => l.Succeeded && l.LoggedInAt >= since7).Select(l => l.PersonId).Distinct().Count(),
+                FailedLogins24h = logins.Count(l => !l.Succeeded && l.LoggedInAt >= now.AddHours(-24)),
+                FailedLogins7d = logins.Count(l => !l.Succeeded && l.LoggedInAt >= since7),
+                Exports7d = await Context.AuditLogs.CountAsync(a => a.Action == "Exported" && a.CreatedAtUtc >= utcNow.AddDays(-7)),
+                Imports30d = await Context.AuditLogs.CountAsync(a => a.Action == "Imported" && a.CreatedAtUtc >= utcNow.AddDays(-30)),
+                PendingAppointments = await Context.Appointments.CountAsync(a => a.Status == AppointmentStatus.Pending),
+                UnreadNotifications = await Context.Notifications.CountAsync(n => !n.IsRead && !n.IsDismissed),
+                EmailConfigured = HttpContext.RequestServices.GetRequiredService<IMailSender>().IsConfigured,
+                Daily = Enumerable.Range(0, 14).Select(i => firstDay.AddDays(i))
+                    .Select(day => new DailyLogins(day,
+                        logins.Count(l => l.Succeeded && l.LoggedInAt.Date == day),
+                        logins.Count(l => !l.Succeeded && l.LoggedInAt.Date == day)))
+                    .ToList()
+            };
+            return View(model);
+        }
+
+        [HttpGet]
         public IActionResult ImportUsers()
         {
             return View(new UserImportResult());

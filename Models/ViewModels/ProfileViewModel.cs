@@ -24,6 +24,14 @@ namespace HealthTrack.Models.ViewModels
         [Display(Name = "Fitness Goal")]
         public string? FitnessGoal { get; set; }
 
+        [Range(20, 300)]
+        [Display(Name = "Target weight (kg)")]
+        public double? TargetWeightKg { get; set; }
+
+        [DataType(DataType.Date)]
+        [Display(Name = "Target date")]
+        public DateTime? TargetDate { get; set; }
+
         [Display(Name = "Email notifications")]
         public bool EmailNotificationsEnabled { get; set; }
 

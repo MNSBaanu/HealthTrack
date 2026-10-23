@@ -82,6 +82,23 @@
                     </fieldset>
 
                     <fieldset class="ht-fieldset">
+                        <legend>Weight goal</legend>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="TargetWeightKg" class="form-label"></label>
+                                <input asp-for="TargetWeightKg" class="form-control" type="number" step="0.1" min="20" max="300" placeholder="e.g. 65" />
+                                <span asp-validation-for="TargetWeightKg" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="TargetDate" class="form-label"></label>
+                                <input asp-for="TargetDate" class="form-control" type="date" min="@DateTime.Today.AddDays(1).ToString("yyyy-MM-dd")" />
+                                <span asp-validation-for="TargetDate" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <p class="small text-muted mt-2 mb-0">Your progress towards this goal is shown on the Progress page.</p>
+                    </fieldset>
+
+                    <fieldset class="ht-fieldset">
                         <legend>Email</legend>
                         <div class="form-check form-switch">
                             <input asp-for="EmailNotificationsEnabled" class="form-check-input" />

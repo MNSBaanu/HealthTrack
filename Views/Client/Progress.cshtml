@@ -28,6 +28,46 @@
     </div>
 </div>
 
+@{ var goal = ViewData["Goal"] as GoalProgressViewModel; }
+@if (goal != null)
+{
+    <section class="ht-card mb-3">
+        <div class="ht-card-head">
+            <h2>Weight goal</h2>
+            @if (goal.Reached) { <span class="ht-pill success"><i class="bi bi-check2"></i>Goal reached</span> }
+            else if (goal.OnTrack == true) { <span class="ht-pill success">On track</span> }
+            else if (goal.OnTrack == false) { <span class="ht-pill clay">Behind pace</span> }
+        </div>
+        <div class="ht-card-body">
+            <div class="d-flex justify-content-between small mb-2">
+                <span>Start <strong>@goal.StartWeightKg.ToString("0.#") kg</strong></span>
+                <span>Now <strong>@goal.CurrentWeightKg.ToString("0.#") kg</strong></span>
+                <span>Target <strong>@goal.TargetWeightKg.ToString("0.#") kg</strong></span>
+            </div>
+            <div class="ht-bar" role="progressbar" aria-valuenow="@goal.PercentComplete" aria-valuemin="0" aria-valuemax="100" aria-label="Progress towards weight goal"><span style="width: @(goal.PercentComplete)%"></span></div>
+            <p class="small text-muted mt-2 mb-0">
+                @if (goal.Reached) { <text>You reached your target weight. Well done!</text> }
+                else
+                {
+                    <text>@goal.PercentComplete% of the way, @goal.RemainingKg.ToString("0.#") kg to go.</text>
+                    @if (goal.ProjectedDate.HasValue) { <text> At your current pace you would reach it around <strong>@goal.ProjectedDate.Value.ToString("d MMM yyyy")</strong>.</text> }
+                    else { <text> Keep logging weigh-ins to see a projected date.</text> }
+                    @if (goal.TargetDate.HasValue) { <text> Target date: @goal.TargetDate.Value.ToString("d MMM yyyy").</text> }
+                }
+            </p>
+        </div>
+    </section>
+}
+else if (ViewData["HasGoal"] is false)
+{
+    <section class="ht-card mb-3">
+        <div class="ht-card-body d-flex flex-wrap align-items-center gap-3">
+            <span class="text-muted flex-grow-1">Set a target weight to track your progress and see a projected finish date.</span>
+            <a class="btn btn-line btn-sm" asp-action="Profile">Set a goal</a>
+        </div>
+    </section>
+}
+
 <section class="ht-card mb-3">
     <div class="ht-card-head">
         <h2>Weight &amp; BMI</h2>

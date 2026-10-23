@@ -19,5 +19,9 @@ namespace HealthTrack.Models.ViewModels
         public List<Notification> Notifications { get; set; } = new();
         public List<AppointmentViewModel> UpcomingAppointments { get; set; } = new();
         public string AppointmentTimeZone { get; set; } = string.Empty;
+        public int? DietTargetKcal { get; set; }
+        public int PlannedWorkoutsToday { get; set; }
+        public int DoneWorkoutsToday { get; set; }
+        public HealthTrack.Services.AchievementSummary Achievements { get; set; } = new(0, 0, new List<HealthTrack.Services.Badge>());
     }
 }

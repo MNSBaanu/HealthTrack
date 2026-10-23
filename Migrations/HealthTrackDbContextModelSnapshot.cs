@@ -38,6 +38,16 @@ namespace HealthTrack.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
+                    b.Property<DateTime?>("RatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("Rating")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RatingComment")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<DateTime>("RequestedAtUtc")
                         .HasColumnType("datetime2");
 
@@ -1013,6 +1023,12 @@ namespace HealthTrack.Migrations
                     b.Property<string>("ProfilePhotoContentType")
                         .HasMaxLength(32)
                         .HasColumnType("nvarchar(32)");
+
+                    b.Property<DateTime?>("TargetDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<double?>("TargetWeightKg")
+                        .HasColumnType("float");
 
                     b.Property<bool>("WeightReminderEnabled")
                         .HasColumnType("bit");

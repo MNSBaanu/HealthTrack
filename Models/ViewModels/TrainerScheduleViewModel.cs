@@ -7,12 +7,12 @@ public class AddAvailabilitySlotForm
     [Required]
     [DataType(DataType.DateTime)]
     [Display(Name = "Start Time")]
-    public DateTime StartLocal { get; set; } = DateTime.Today.AddDays(1).AddHours(9);
+    public DateTime StartLocal { get; set; }
 
     [Required]
     [DataType(DataType.DateTime)]
     [Display(Name = "End Time")]
-    public DateTime EndLocal { get; set; } = DateTime.Today.AddDays(1).AddHours(10);
+    public DateTime EndLocal { get; set; }
 }
 
 public class TrainerAppointmentItemViewModel

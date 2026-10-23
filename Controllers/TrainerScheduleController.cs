@@ -35,6 +35,13 @@ namespace HealthTrack.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            // Additional validation to ensure both values are properly parsed
+            if (form.StartLocal == DateTime.MinValue || form.EndLocal == DateTime.MinValue)
+            {
+                TempData["Error"] = "Please enter valid start and end times.";
+                return RedirectToAction(nameof(Index));
+            }
+
             var (success, error) = await _scheduleService.AddAvailabilitySlotAsync(CurrentUserId, form.StartLocal, form.EndLocal);
             if (!success)
             {

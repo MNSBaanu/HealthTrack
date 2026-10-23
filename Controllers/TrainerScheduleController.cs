@@ -10,14 +10,17 @@ namespace HealthTrack.Controllers
     public class TrainerScheduleController : TrainerBaseController
     {
         private readonly ITrainerScheduleService _scheduleService;
+        private readonly AppointmentTime _time;
 
         public TrainerScheduleController(
             HealthTrackDbContext context,
             UserManager<Person> userManager,
-            ITrainerScheduleService scheduleService)
+            ITrainerScheduleService scheduleService,
+            AppointmentTime time)
             : base(context, userManager)
         {
             _scheduleService = scheduleService;
+            _time = time;
         }
 
         public async Task<IActionResult> Index()
@@ -68,6 +71,48 @@ namespace HealthTrack.Controllers
                 TempData["Success"] = "Availability slot removed.";
             }
 
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> EditSlot(int slotId)
+        {
+            var slot = await _scheduleService.GetSlotForEditAsync(CurrentUserId, slotId);
+            if (slot == null) return NotFound();
+
+            var model = new EditAvailabilitySlotForm
+            {
+                SlotId = slot.Id,
+                StartLocal = _time.ToLocal(slot.StartUtc),
+                EndLocal = _time.ToLocal(slot.EndUtc)
+            };
+
+            return View(model);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> EditSlot(EditAvailabilitySlotForm form)
+        {
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = "Invalid time format for availability slot.";
+                return View(form);
+            }
+
+            if (form.StartLocal == DateTime.MinValue || form.EndLocal == DateTime.MinValue)
+            {
+                TempData["Error"] = "Please enter valid start and end times.";
+                return View(form);
+            }
+
+            var (success, error) = await _scheduleService.UpdateSlotAsync(CurrentUserId, form.SlotId, form.StartLocal, form.EndLocal);
+            if (!success)
+            {
+                TempData["Error"] = error;
+                return View(form);
+            }
+
+            TempData["Success"] = "Availability slot updated successfully.";
             return RedirectToAction(nameof(Index));
         }
 

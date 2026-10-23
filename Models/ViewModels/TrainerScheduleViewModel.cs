@@ -15,6 +15,21 @@ public class AddAvailabilitySlotForm
     public DateTime EndLocal { get; set; }
 }
 
+public class EditAvailabilitySlotForm
+{
+    public int SlotId { get; set; }
+
+    [Required]
+    [DataType(DataType.DateTime)]
+    [Display(Name = "Start Time")]
+    public DateTime StartLocal { get; set; }
+
+    [Required]
+    [DataType(DataType.DateTime)]
+    [Display(Name = "End Time")]
+    public DateTime EndLocal { get; set; }
+}
+
 public class TrainerAppointmentItemViewModel
 {
     public int Id { get; set; }

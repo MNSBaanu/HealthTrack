@@ -442,6 +442,47 @@ namespace HealthTrack.Migrations
                     b.UseTphMappingStrategy();
                 });
 
+            modelBuilder.Entity("HealthTrack.Models.RescheduleRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AppointmentId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("DecidedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("RequestedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TrainerNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppointmentId")
+                        .IsUnique()
+                        .HasFilter("[Status] IN (0, 1)");
+
+                    b.ToTable("RescheduleRequests", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_RescheduleRequests_Status", "[Status] IN (0, 1, 2, 3, 4)");
+                        });
+                });
+
             modelBuilder.Entity("HealthTrack.Models.TrainerFeedback", b =>
                 {
                     b.Property<int>("Id")
@@ -911,6 +952,17 @@ namespace HealthTrack.Migrations
                     b.Navigation("Appointment");
 
                     b.Navigation("Person");
+                });
+
+            modelBuilder.Entity("HealthTrack.Models.RescheduleRequest", b =>
+                {
+                    b.HasOne("HealthTrack.Models.Appointment", "Appointment")
+                        .WithMany()
+                        .HasForeignKey("AppointmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Appointment");
                 });
 
             modelBuilder.Entity("HealthTrack.Models.TrainerFeedback", b =>

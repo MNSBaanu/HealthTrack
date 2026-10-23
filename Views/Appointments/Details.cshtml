@@ -17,7 +17,7 @@
     {
         <div class="ht-form-actions mt-3">
             <a class="btn btn-primary" asp-action="Reschedule" asp-route-id="@Model.Id"><i class="bi bi-calendar-event me-1"></i>Reschedule</a>
-            <form asp-action="Cancel" asp-route-id="@Model.Id" method="post" class="d-inline" onsubmit="return confirm('Cancel this appointment?');">
+            <form asp-action="Cancel" asp-route-id="@Model.Id" method="post" class="d-inline" data-confirm="Cancel this appointment?">
                 <button type="submit" class="btn btn-line">Cancel appointment</button>
             </form>
         </div>

@@ -355,6 +355,10 @@ namespace HealthTrack.Controllers
             {
                 return File(_exportService.ToPdf("HealthTrack - Client Performance Report", sections), "application/pdf", fileName + ".pdf");
             }
+            if (format.Equals("xlsx", StringComparison.OrdinalIgnoreCase))
+            {
+                return File(_exportService.ToXlsx("Client Performance Report", sections), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName + ".xlsx");
+            }
             return File(_exportService.ToCsv(sections), "text/csv", fileName + ".csv");
         }
 

@@ -1769,3 +1769,37 @@ input[list]::-webkit-calendar-picker-indicator {
 .ht-auth-split .ht-auth-main > .ht-wordmark {
   align-self: flex-start;
 }
+
+.ht-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(26, 24, 35, 0.55);
+}
+
+.ht-confirm {
+  width: 100%;
+  max-width: 26rem;
+  padding: 1.5rem;
+  background: var(--ht-surface);
+  border: 1px solid var(--ht-line);
+  border-radius: var(--ht-radius-lg);
+  box-shadow: var(--ht-shadow-lg);
+}
+
+.ht-confirm p {
+  margin: 0 0 1.25rem;
+  color: var(--ht-ink);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.ht-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}

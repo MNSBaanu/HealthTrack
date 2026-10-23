@@ -43,4 +43,36 @@
             </div>
         </form>
     }
+    @if (ViewData["Rating"] is int givenRating)
+    {
+        <hr />
+        <h2 class="h6">Your rating</h2>
+        <p class="mb-1" aria-label="@givenRating out of 5">
+            @for (var star = 1; star <= 5; star++) { <i class="bi @(star <= givenRating ? "bi-star-fill" : "bi-star") text-warning"></i> }
+        </p>
+        @if (!string.IsNullOrWhiteSpace(ViewData["RatingComment"] as string)) { <p class="small text-muted mb-0">@ViewData["RatingComment"]</p> }
+    }
+    else if (ViewData["CanRate"] is true)
+    {
+        <hr />
+        <form asp-action="Rate" asp-route-id="@Model.Id" method="post">
+            <h2 class="h6">How was this consultation?</h2>
+            <div class="mb-3">
+                <label class="form-label" for="rating">Rating</label>
+                <select class="form-select" id="rating" name="rating" required>
+                    <option value="">Choose…</option>
+                    <option value="5">5 – Excellent</option>
+                    <option value="4">4 – Good</option>
+                    <option value="3">3 – Okay</option>
+                    <option value="2">2 – Poor</option>
+                    <option value="1">1 – Very poor</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="ratingComment">Comment (optional)</label>
+                <textarea class="form-control" id="ratingComment" name="comment" rows="2" maxlength="500"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-star me-1"></i>Submit rating</button>
+        </form>
+    }
 </div></section></div></div>

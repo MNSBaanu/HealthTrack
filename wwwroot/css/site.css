@@ -1803,3 +1803,48 @@ input[list]::-webkit-calendar-picker-indicator {
   justify-content: flex-end;
   gap: 0.6rem;
 }
+
+.ht-bar.over span {
+  background-color: var(--ht-clay);
+}
+
+.ht-streak {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--ht-font-display);
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: var(--ht-saffron-deep);
+}
+
+.ht-streak.muted {
+  color: var(--ht-slate);
+}
+
+.ht-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.ht-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  border: 1px dashed var(--ht-line-strong);
+  border-radius: 999px;
+  color: var(--ht-muted);
+  font-size: 0.82rem;
+  opacity: 0.6;
+}
+
+.ht-badge.earned {
+  border-style: solid;
+  border-color: var(--ht-saffron);
+  background-color: var(--ht-saffron-soft);
+  color: var(--ht-saffron-deep);
+  font-weight: 600;
+  opacity: 1;
+}

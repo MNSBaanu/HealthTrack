@@ -45,7 +45,41 @@ public class AppointmentsController : ClientBaseController
             .SingleOrDefaultAsync(a => a.Id == id && a.ClientId == CurrentUserId);
         if (record == null) return NotFound();
         ViewData["TimeZoneLabel"] = _time.Label;
+        ViewData["Rating"] = record.Rating;
+        ViewData["RatingComment"] = record.RatingComment;
+        ViewData["CanRate"] = CanRate(record);
         return View(_time.ToViewModel(record));
+    }
+
+    private bool CanRate(Appointment record) =>
+        record.Rating == null && (record.Status == AppointmentStatus.Completed
+            || (record.Status == AppointmentStatus.Approved && record.Slot.EndUtc < _clock.GetUtcNow().UtcDateTime));
+
+    [HttpPost]
+    public async Task<IActionResult> Rate(int id, int rating, string? comment)
+    {
+        comment = string.IsNullOrWhiteSpace(comment) ? null : comment.Trim();
+        if (rating is < 1 or > 5 || comment?.Length > 500)
+        {
+            TempData["Error"] = "Choose a rating from 1 to 5. Comments can be at most 500 characters.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        var record = await Context.Appointments.Include(a => a.Slot)
+            .SingleOrDefaultAsync(a => a.Id == id && a.ClientId == CurrentUserId);
+        if (record == null) return NotFound();
+        if (!CanRate(record))
+        {
+            TempData["Error"] = "This appointment cannot be rated.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        record.Rating = rating;
+        record.RatingComment = comment;
+        record.RatedAtUtc = DateTime.UtcNow;
+        await Context.SaveChangesAsync();
+        TempData["Success"] = "Thanks for your rating.";
+        return RedirectToAction(nameof(Details), new { id });
     }
 
     [HttpGet]

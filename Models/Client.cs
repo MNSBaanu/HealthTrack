@@ -16,6 +16,11 @@ namespace HealthTrack.Models
         [StringLength(32)]
         public string? ProfilePhotoContentType { get; set; }
 
+        [Range(20, 300)]
+        public double? TargetWeightKg { get; set; }
+
+        public DateTime? TargetDate { get; set; }
+
         public bool WorkoutReminderEnabled { get; set; } = true;
 
         [Range(0, 23)]

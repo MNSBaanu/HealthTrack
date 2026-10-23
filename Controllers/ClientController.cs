@@ -54,10 +54,30 @@ namespace HealthTrack.Controllers
                 .Where(w => w.ClientId == clientId && w.LoggedAt >= weekStart)
                 .ToListAsync();
 
+            var todayDay = planToday.DayOfWeek;
+            var plannedItemIds = await Context.WorkoutPlans.AsNoTracking()
+                .Where(p => p.ClientId == clientId && p.IsActive && p.StartDate.Date <= planToday && (!p.EndDate.HasValue || p.EndDate.Value.Date >= planToday))
+                .SelectMany(p => p.Items).Where(i => i.DayOfWeek == null || i.DayOfWeek == todayDay)
+                .Select(i => i.Id).ToListAsync();
+            var doneItemCount = await Context.WorkoutLogs.AsNoTracking()
+                .Where(w => w.ClientId == clientId && w.WorkoutPlanItemId != null && plannedItemIds.Contains(w.WorkoutPlanItemId.Value)
+                    && w.LoggedAt >= planToday && w.LoggedAt < planToday.AddDays(1))
+                .Select(w => w.WorkoutPlanItemId).Distinct().CountAsync();
+            var dietTarget = await Context.DietPlans.AsNoTracking()
+                .Where(p => p.ClientId == clientId && p.IsActive && p.StartDate.Date <= planToday && (!p.EndDate.HasValue || p.EndDate.Value.Date >= planToday))
+                .OrderByDescending(p => p.StartDate).Select(p => (int?)p.DailyCalorieTarget).FirstOrDefaultAsync();
+            var workoutDates = await Context.WorkoutLogs.AsNoTracking().Where(w => w.ClientId == clientId).Select(w => w.LoggedAt).ToListAsync();
+            var mealCount = await Context.MealLogs.CountAsync(m => m.ClientId == clientId);
+            var goalReached = GoalProgressViewModel.Create(client, metrics)?.Reached == true;
+
             var model = new ClientDashboardViewModel
             {
                 Client = client,
                 PlanToday = planToday,
+                DietTargetKcal = dietTarget,
+                PlannedWorkoutsToday = plannedItemIds.Count,
+                DoneWorkoutsToday = doneItemCount,
+                Achievements = ClientAchievements.Compute(workoutDates, planToday, mealCount, metrics.Count, goalReached),
                 AssignedWorkoutPlans = await Context.WorkoutPlans.AsNoTracking().Include(p => p.Trainer)
                     .Where(p => p.ClientId == clientId)
                     .OrderByDescending(p => p.IsActive && p.StartDate.Date <= planToday && (!p.EndDate.HasValue || p.EndDate.Value.Date >= planToday))
@@ -104,6 +124,8 @@ namespace HealthTrack.Controllers
                 DateOfBirth = client.DateOfBirth,
                 HeightCm = client.HeightCm,
                 FitnessGoal = client.FitnessGoal,
+                TargetWeightKg = client.TargetWeightKg,
+                TargetDate = client.TargetDate,
                 EmailNotificationsEnabled = client.EmailNotificationsEnabled,
                 WorkoutReminderEnabled = client.WorkoutReminderEnabled,
                 WorkoutReminderHour = client.WorkoutReminderHour,
@@ -124,6 +146,8 @@ namespace HealthTrack.Controllers
             model.Email = client.Email ?? string.Empty;
             model.HasPhoto = client.ProfilePhoto != null;
             ValidatePastDate(model.DateOfBirth, nameof(model.DateOfBirth));
+            if (model.TargetDate.HasValue && model.TargetDate.Value.Date <= DateTime.Today)
+                ModelState.AddModelError(nameof(model.TargetDate), "Choose a target date in the future.");
             byte[]? photo = null;
             string? photoType = null;
             if (model.Photo != null)
@@ -149,6 +173,8 @@ namespace HealthTrack.Controllers
             client.DateOfBirth = model.DateOfBirth!.Value;
             client.HeightCm = model.HeightCm!.Value;
             client.FitnessGoal = model.FitnessGoal;
+            client.TargetWeightKg = model.TargetWeightKg;
+            client.TargetDate = model.TargetWeightKg.HasValue ? model.TargetDate : null;
             client.EmailNotificationsEnabled = model.EmailNotificationsEnabled;
             client.WorkoutReminderEnabled = model.WorkoutReminderEnabled;
             client.WorkoutReminderHour = model.WorkoutReminderHour;
@@ -180,8 +206,13 @@ namespace HealthTrack.Controllers
             return File(photo.ProfilePhoto, photo.ProfilePhotoContentType);
         }
 
-        public IActionResult Progress()
+        public async Task<IActionResult> Progress()
         {
+            var client = await Context.Clients.AsNoTracking().FirstAsync(c => c.Id == CurrentUserId);
+            var metrics = await Context.HealthMetrics.AsNoTracking()
+                .Where(m => m.ClientId == client.Id).OrderBy(m => m.RecordedAt).ToListAsync();
+            ViewData["Goal"] = GoalProgressViewModel.Create(client, metrics);
+            ViewData["HasGoal"] = client.TargetWeightKg.HasValue;
             return View();
         }
 

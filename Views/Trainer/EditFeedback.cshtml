@@ -1,0 +1,77 @@
+@model TrainerFeedbackFormViewModel
+@{
+    ViewData["Title"] = "Edit Feedback";
+}
+
+<a class="ht-back" asp-action="ClientDetails" asp-route-id="@Model.ClientId"><i class="bi bi-arrow-left"></i>Back to client</a>
+
+<div class="ht-head">
+    <div>
+        <h1 class="ht-title">Edit feedback for @Model.ClientName</h1>
+        <p class="ht-lede">Update the feedback and guidance you provided to this client.</p>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-8">
+        <section class="ht-card">
+            <div class="ht-card-body p-4">
+                <form asp-action="EditFeedback" method="post">
+                    <div asp-validation-summary="All" class="text-danger mb-3" role="alert"></div>
+
+                    <input type="hidden" name="ClientId" value="@Model.ClientId" />
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Client</label>
+                        <div class="form-control-plaintext">
+                            <strong>@Model.ClientName</strong>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Title" class="form-label"></label>
+                        <input asp-for="Title" class="form-control" maxlength="150" required />
+                        <span asp-validation-for="Title" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Category" class="form-label"></label>
+                        <select asp-for="Category" class="form-select" asp-items="Html.GetEnumSelectList<FeedbackCategory>()"></select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Comments" class="form-label"></label>
+                        <textarea asp-for="Comments" class="form-control" rows="8" maxlength="2000" required></textarea>
+                        <small class="text-muted">Maximum 2000 characters</small>
+                        <span asp-validation-for="Comments" class="text-danger small"></span>
+                    </div>
+
+                    <div class="ht-form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-1"></i>Update feedback
+                        </button>
+                        <a class="btn btn-line" asp-action="ClientDetails" asp-route-id="@Model.ClientId">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </div>
+
+    <div class="col-lg-4">
+        <section class="ht-card">
+            <div class="ht-card-head">
+                <h2>Feedback categories</h2>
+            </div>
+            <div class="ht-card-body p-3">
+                <ul class="list-unstyled small text-muted">
+                    <li class="mb-2"><strong>General</strong> — Overall feedback or miscellaneous guidance</li>
+                    <li class="mb-2"><strong>Nutrition</strong> — Dietary guidance or meal feedback</li>
+                    <li class="mb-2"><strong>Workout</strong> — Exercise performance or technique feedback</li>
+                    <li class="mb-2"><strong>Progress</strong> — Performance improvement or achievements</li>
+                </ul>
+            </div>
+        </section>
+    </div>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

@@ -1730,3 +1730,13 @@ a:hover {
     font-weight: 600;
   }
 }
+
+/* Restore the original split layout for sign-in. */
+@media (min-width: 992px) {
+  .ht-auth.ht-auth-split {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.ht-auth-split .ht-auth-main > .ht-wordmark {
+  align-self: flex-start;
+}

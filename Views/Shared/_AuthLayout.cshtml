@@ -1,13 +1,22 @@
+@{ var splitAuth = ViewData["SplitAuth"] is true; }
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <partial name="_HeadPartial" />
 </head>
 <body>
-    <div class="ht-auth">
+    <div class="ht-auth @(splitAuth ? "ht-auth-split" : "")">
+        @if (splitAuth)
+        {
+            <aside class="ht-auth-panel">
+                <a class="ht-wordmark" asp-controller="Account" asp-action="Login"><span class="dot"></span>Health<em>Track</em></a>
+                <p class="ht-auth-quote">Track your workouts, meals and progress <em>in one place.</em></p>
+                <div class="copyright">&copy; 2026 HealthTrack</div>
+            </aside>
+        }
 
         <main class="ht-auth-main" role="main">
-            <a class="ht-wordmark dark" asp-controller="Account" asp-action="Login"><span class="dot"></span>Health<em>Track</em></a>
+            <a class="ht-wordmark dark @(splitAuth ? "d-lg-none" : "")" asp-controller="Account" asp-action="Login"><span class="dot"></span>Health<em>Track</em></a>
             <div class="ht-auth-body">
                 @RenderBody()
             </div>

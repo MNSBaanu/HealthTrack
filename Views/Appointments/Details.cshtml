@@ -9,7 +9,40 @@
         <dt class="col-sm-4">Starts</dt><dd class="col-sm-8">@Model.Start.ToString("dddd, d MMM yyyy HH:mm")</dd>
         <dt class="col-sm-4">Ends</dt><dd class="col-sm-8">@Model.End.ToString("dddd, d MMM yyyy HH:mm")</dd>
         <dt class="col-sm-4">Timezone</dt><dd class="col-sm-8">@ViewData["TimeZoneLabel"]</dd>
-        <dt class="col-sm-4">Status</dt><dd class="col-sm-8">@Model.Status</dd>
+        <dt class="col-sm-4">Status</dt><dd class="col-sm-8">
+            @if (Model.Status == AppointmentStatus.Pending)
+            {
+                <span class="ht-pill info">Pending Approval</span>
+            }
+            else if (Model.Status == AppointmentStatus.Approved)
+            {
+                <span class="ht-pill success">Approved</span>
+            }
+            else if (Model.Status == AppointmentStatus.Cancelled)
+            {
+                <span class="ht-pill danger">Cancelled</span>
+            }
+            else
+            {
+                <span class="ht-pill">@Model.Status</span>
+            }
+        </dd>
         <dt class="col-sm-4">Your notes</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Notes) ? "No notes provided." : Model.Notes)</dd>
     </dl>
-</div></section></div></div>
+</div>
+@if (Model.Status == AppointmentStatus.Pending)
+{
+    <div class="ht-card-footer p-3 border-top">
+        <div class="d-flex gap-2">
+            <a asp-action="Reschedule" asp-route-appointmentId="@Model.Id" class="btn btn-primary">
+                <i class="bi bi-calendar-event me-1"></i>Reschedule
+            </a>
+            <form asp-action="Cancel" method="post" asp-route-appointmentId="@Model.Id" class="d-inline" onsubmit="return confirm('Are you sure you want to cancel this appointment request?');">
+                <button type="submit" class="btn btn-line-danger">
+                    <i class="bi bi-x-lg me-1"></i>Cancel request
+                </button>
+            </form>
+        </div>
+    </div>
+}
+</section></div></div>

@@ -64,6 +64,79 @@ public class AppointmentsController : ClientBaseController
         return View(await LoadPage(form, null));
     }
 
+    [HttpGet]
+    public async Task<IActionResult> Reschedule(int appointmentId)
+    {
+        var appointment = await Context.Appointments.AsNoTracking()
+            .Include(a => a.Slot).ThenInclude(s => s.Provider)
+            .FirstOrDefaultAsync(a => a.Id == appointmentId && a.ClientId == CurrentUserId);
+
+        if (appointment == null) return NotFound();
+
+        if (appointment.Status != AppointmentStatus.Pending)
+        {
+            TempData["Error"] = "Only pending appointments can be rescheduled by you.";
+            return RedirectToAction(nameof(Details), new { id = appointmentId });
+        }
+
+        var now = _clock.GetUtcNow().UtcDateTime;
+        var slots = await Context.AvailabilitySlots.AsNoTracking().Include(s => s.Provider)
+            .Where(s => s.Provider.IsActive && s.IsAvailable && s.StartUtc > now && s.EndUtc > s.StartUtc)
+            .Where(s => s.ProviderId == appointment.Slot.ProviderId)
+            .Where(s => !Context.Appointments.Any(a => a.Status != AppointmentStatus.Cancelled
+                && a.Id != appointmentId
+                && a.Slot.StartUtc < s.EndUtc && a.Slot.EndUtc > s.StartUtc
+                && (a.Slot.ProviderId == s.ProviderId || a.ClientId == CurrentUserId)))
+            .OrderBy(s => s.StartUtc).ToListAsync();
+
+        return View(new ReschedulePageViewModel
+        {
+            AppointmentId = appointmentId,
+            ProviderName = appointment.Slot.Provider.Name,
+            CurrentStartLocal = _time.ToLocal(appointment.Slot.StartUtc),
+            CurrentEndLocal = _time.ToLocal(appointment.Slot.EndUtc),
+            TimeZoneLabel = _time.Label,
+            AvailableSlots = slots.Select(s => new AvailableSlotViewModel(s.Id, s.Provider.Name,
+                _time.ToLocal(s.StartUtc), _time.ToLocal(s.EndUtc))).ToList()
+        });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Reschedule(int appointmentId, RescheduleForm form)
+    {
+        if (!ModelState.IsValid)
+        {
+            TempData["Error"] = "Please select a valid appointment time.";
+            return RedirectToAction(nameof(Reschedule), new { appointmentId });
+        }
+
+        var (success, error) = await _booking.RescheduleClientAppointmentAsync(CurrentUserId, appointmentId, form.NewSlotId!.Value);
+        
+        if (!success)
+        {
+            TempData["Error"] = error;
+            return RedirectToAction(nameof(Reschedule), new { appointmentId });
+        }
+
+        TempData["Success"] = "Appointment rescheduled successfully. Your trainer will review the new time.";
+        return RedirectToAction(nameof(Details), new { id = appointmentId });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Cancel(int appointmentId)
+    {
+        var (success, error) = await _booking.CancelClientAppointmentAsync(CurrentUserId, appointmentId);
+        
+        if (!success)
+        {
+            TempData["Error"] = error;
+            return RedirectToAction(nameof(Details), new { id = appointmentId });
+        }
+
+        TempData["Success"] = "Appointment cancelled successfully.";
+        return RedirectToAction(nameof(Index));
+    }
+
     private async Task<BookingPageViewModel> LoadPage(BookingForm form, int? providerId)
     {
         var now = _clock.GetUtcNow().UtcDateTime;

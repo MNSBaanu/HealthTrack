@@ -69,10 +69,10 @@ git switch Baanu
 
 The default connection in `appsettings.json` uses `(localdb)\MSSQLLocalDB` and the database `HealthTrackDB`.
 
-For a different SQL Server instance, copy the local configuration template:
+For a different SQL Server instance, create an optional local configuration file:
 
 ```powershell
-Copy-Item appsettings.Local.example.json appsettings.Local.json
+New-Item -Path appsettings.Local.json -ItemType File
 ```
 
 Update `ConnectionStrings:DefaultConnection` in `appsettings.Local.json`. For example:

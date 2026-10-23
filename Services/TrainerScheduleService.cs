@@ -115,6 +115,11 @@ public class TrainerScheduleService : ITrainerScheduleService
             ProviderName = provider.Name,
             Specialty = provider.Specialty,
             TimeZoneLabel = _time.Label,
+            NewSlotForm = new AddAvailabilitySlotForm
+            {
+                StartLocal = DateTime.Today.AddDays(1).AddHours(9),
+                EndLocal = DateTime.Today.AddDays(1).AddHours(10)
+            },
             UpcomingSlots = slots,
             PendingAppointments = pending,
             UpcomingApprovedAppointments = approved,

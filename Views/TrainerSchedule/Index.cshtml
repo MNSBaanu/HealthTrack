@@ -22,13 +22,13 @@
                     <p class="small text-muted mb-3">Publish consultation hours when clients can book 1-on-1 consultations with you.</p>
 
                     <div class="mb-3">
-                        <label asp-for="NewSlotForm.StartLocal" class="form-label">Start Date & Time</label>
-                        <input asp-for="NewSlotForm.StartLocal" class="form-control" type="datetime-local" required />
+                        <label for="startLocal" class="form-label">Start Date & Time</label>
+                        <input id="startLocal" name="StartLocal" class="form-control" type="datetime-local" required value="@Model.NewSlotForm.StartLocal.ToString("yyyy-MM-ddTHH:mm")" />
                     </div>
 
                     <div class="mb-3">
-                        <label asp-for="NewSlotForm.EndLocal" class="form-label">End Date & Time</label>
-                        <input asp-for="NewSlotForm.EndLocal" class="form-control" type="datetime-local" required />
+                        <label for="endLocal" class="form-label">End Date & Time</label>
+                        <input id="endLocal" name="EndLocal" class="form-control" type="datetime-local" required value="@Model.NewSlotForm.EndLocal.ToString("yyyy-MM-ddTHH:mm")" />
                     </div>
 
                     <button type="submit" class="btn btn-primary w-100">

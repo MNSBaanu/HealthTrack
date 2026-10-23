@@ -40,15 +40,15 @@
 <div class="row g-3 mb-4">
     <!-- Client Performance Table -->
     <div class="col-lg-8">
-        <section class="ht-card h-100">
+        <section class="ht-card h-100 d-flex flex-column">
             <div class="ht-card-head">
                 <h2>Assigned clients progress breakdown</h2>
                 <span class="ht-overline">Individual tracking</span>
             </div>
-            <div class="ht-card-body p-0">
+            <div class="ht-card-body p-0 d-flex flex-column flex-grow-1">
                 @if (Model.ClientPerformances.Any())
                 {
-                    <div class="table-responsive">
+                    <div class="table-responsive flex-grow-1">
                         <table class="table ht-table align-middle mb-0">
                             <thead>
                                 <tr>

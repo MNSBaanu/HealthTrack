@@ -34,3 +34,22 @@ if (navigation && activeTab) {
     document.fonts.ready.then(revealActiveTab);
     new ResizeObserver(revealActiveTab).observe(navigation);
 }
+// Remember the page the user came from so back links return there (with its filters) instead of a fixed list.
+try {
+    const isFormPage = !!document.querySelector('.ht-form-page');
+    const here = location.pathname + location.search;
+    let current = sessionStorage.getItem('ht.current');
+    let previous = sessionStorage.getItem('ht.previous');
+    if (!isFormPage) {
+        if (current && current !== here) {
+            previous = current;
+            sessionStorage.setItem('ht.previous', previous);
+        }
+        sessionStorage.setItem('ht.current', here);
+        current = here;
+    }
+    const target = isFormPage ? current : previous;
+    if (target && target !== here) {
+        document.querySelectorAll('a.ht-back, .ht-form-actions a.btn-line').forEach(link => link.setAttribute('href', target));
+    }
+} catch { }

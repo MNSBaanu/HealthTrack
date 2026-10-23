@@ -364,6 +364,13 @@
                                 </div>
                                 <div class="text-muted small mb-2">@fb.CreatedAtUtc.ToString("MMM d, yyyy h:mm tt")</div>
                                 <p class="mb-0 small text-secondary">@fb.Comments</p>
+                                @if (fb.ClientReply != null)
+                                {
+                                    <div class="mt-2 ps-3 border-start">
+                                        <div class="text-muted small mb-1">Client reply@(fb.ClientRepliedAtUtc.HasValue ? " · " + fb.ClientRepliedAtUtc.Value.ToString("MMM d, yyyy h:mm tt") : "")</div>
+                                        <p class="mb-0 small" style="white-space: pre-line">@fb.ClientReply</p>
+                                    </div>
+                                }
                             </div>
                         }
                     </div>

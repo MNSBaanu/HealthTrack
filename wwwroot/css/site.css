@@ -1591,6 +1591,16 @@ a:hover {
   --ht-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3E%3C/svg%3E");
 }
 
+input[list] {
+  padding-right: 2.75rem;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23706a66' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M2.5 5.5l5.5 5.5 5.5-5.5'/%3E%3C/svg%3E") right 0.95rem center / 1rem 1rem no-repeat var(--ht-surface);
+}
+
+input[list]::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  cursor: pointer;
+}
+
 .dropdown-toggle::after {
   width: 0.7em;
   height: 0.7em;

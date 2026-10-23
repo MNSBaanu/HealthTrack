@@ -1,8 +1,55 @@
+function askConfirm(message, destructive) {
+    return new Promise(resolve => {
+        const previousFocus = document.activeElement;
+        const overlay = document.createElement("div");
+        overlay.className = "ht-confirm-overlay";
+        overlay.innerHTML =
+            '<div class="ht-confirm" role="alertdialog" aria-modal="true" aria-labelledby="ht-confirm-text">' +
+            '<p id="ht-confirm-text"></p>' +
+            '<div class="ht-confirm-actions">' +
+            '<button type="button" class="btn btn-line" data-answer="no">Cancel</button>' +
+            '<button type="button" class="btn ' + (destructive ? "btn-danger" : "btn-primary") + '" data-answer="yes">Confirm</button>' +
+            '</div></div>';
+        overlay.querySelector("p").textContent = message;
+        const close = answer => {
+            document.removeEventListener("keydown", onKey, true);
+            overlay.remove();
+            previousFocus?.focus?.();
+            resolve(answer);
+        };
+        const onKey = event => {
+            if (event.key === "Escape") {
+                event.preventDefault();
+                close(false);
+            }
+        };
+        overlay.addEventListener("click", event => {
+            if (event.target === overlay) {
+                close(false);
+            } else if (event.target.closest("[data-answer]")) {
+                close(event.target.closest("[data-answer]").dataset.answer === "yes");
+            }
+        });
+        document.addEventListener("keydown", onKey, true);
+        document.body.appendChild(overlay);
+        overlay.querySelector('[data-answer="yes"]').focus();
+    });
+}
+
 document.addEventListener("submit", function (event) {
-    const message = event.target.getAttribute("data-confirm");
-    if (message && !window.confirm(message)) {
-        event.preventDefault();
+    const form = event.target;
+    const message = form.getAttribute("data-confirm");
+    if (!message || form.dataset.confirmed) {
+        return;
     }
+    event.preventDefault();
+    const submitter = event.submitter;
+    askConfirm(message, /delete|remove|lock/i.test(message) && !/unlock/i.test(message)).then(accepted => {
+        if (accepted) {
+            form.dataset.confirmed = "true";
+            form.requestSubmit(submitter);
+        }
+    });
 });
 
 document.addEventListener("input", function (event) {

@@ -1,0 +1,77 @@
+@model List<AuditLog>
+@{
+    ViewData["Title"] = "Audit log";
+    var names = ViewData["SubjectNames"] as Dictionary<string, string> ?? new Dictionary<string, string>();
+    var actor = ViewData["Actor"] as string;
+    var action = ViewData["Action"] as string;
+    var from = ViewData["From"] as DateTime?;
+    var to = ViewData["To"] as DateTime?;
+}
+
+<div class="ht-head">
+    <div>
+        <h1 class="ht-title">Audit log</h1>
+    </div>
+    <div class="ht-head-actions">
+        <a class="btn btn-line" asp-action="Reports"><i class="bi bi-arrow-left"></i>Reports</a>
+    </div>
+</div>
+
+<form asp-action="AuditLog" method="get" class="ht-card ht-filter mb-3">
+    <div class="ht-input-icon flex-grow-1">
+        <i class="bi bi-search"></i>
+        <input type="search" name="actor" value="@actor" class="form-control" placeholder="Search by user email" aria-label="Search by user email" />
+    </div>
+    <select name="action" class="form-select" aria-label="Filter by action">
+        <option value="">All actions</option>
+        @foreach (var option in new[] { "Viewed", "Exported", "Created", "Updated", "Deleted" })
+        {
+            <option value="@option" selected="@(action == option)">@option</option>
+        }
+    </select>
+    <input type="date" name="from" value="@from?.ToString("yyyy-MM-dd")" class="form-control" aria-label="From date" />
+    <input type="date" name="to" value="@to?.ToString("yyyy-MM-dd")" class="form-control" aria-label="To date" />
+    <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i>Filter</button>
+    @if (!string.IsNullOrEmpty(actor) || !string.IsNullOrEmpty(action) || from.HasValue || to.HasValue)
+    {
+        <a class="btn btn-line" asp-action="AuditLog">Clear</a>
+    }
+</form>
+
+<section class="ht-card">
+    @if (Model.Any())
+    {
+        <div class="table-responsive">
+            <table class="ht-table">
+                <thead>
+                    <tr>
+                        <th>When</th>
+                        <th>Who</th>
+                        <th>Action</th>
+                        <th>Record</th>
+                        <th>Client</th>
+                        <th>Detail</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var entry in Model)
+                    {
+                        <tr>
+                            <td class="text-nowrap">@entry.CreatedAtUtc.ToLocalTime().ToString("d MMM yyyy HH:mm")</td>
+                            <td>@entry.ActorName <span class="sub">@entry.ActorRole</span></td>
+                            <td>@entry.Action</td>
+                            <td>@entry.Entity</td>
+                            <td>@(entry.SubjectClientId != null && names.TryGetValue(entry.SubjectClientId, out var name) ? name : (entry.SubjectClientId == null ? "–" : "Deleted account"))</td>
+                            <td class="text-muted">@entry.Detail</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="ht-card-body text-muted small">Showing the latest @Model.Count entries.</div>
+    }
+    else
+    {
+        <div class="ht-card-body text-muted">No audit entries match.</div>
+    }
+</section>

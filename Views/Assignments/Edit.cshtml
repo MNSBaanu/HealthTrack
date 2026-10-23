@@ -1,5 +1,6 @@
 @model AssignmentEditViewModel
-@{ ViewData["Title"] = "Manage Trainer assignment"; }
+@{
+    ViewData["FormPage"] = "standard"; ViewData["Title"] = "Manage Trainer assignment"; }
 <a class="ht-back" asp-action="Index"><i class="bi bi-arrow-left"></i>Trainer assignments</a>
 <div class="ht-head"><div><h1 class="ht-title">@Model.ClientName</h1><p class="ht-lede">@Model.ClientEmail</p></div></div>
 <div class="row"><div class="col-lg-8"><section class="ht-card"><div class="ht-card-body">
@@ -25,4 +26,20 @@
         </form>
     }
 </div></section></div></div>
+<div class="row"><div class="col-lg-8"><section class="ht-card mt-4"><div class="ht-card-head"><h2>Assignment history</h2></div>
+    @if (Model.History.Any())
+    {
+        <div class="table-responsive"><table class="ht-table">
+            <thead><tr><th>Trainer</th><th>Assigned</th><th>Ended</th></tr></thead>
+            <tbody>
+            @foreach (var h in Model.History)
+            {
+                <tr><td>@(h.Trainer?.Name ?? "Unknown")</td><td>@h.AssignedAtUtc.ToString("dd MMM yyyy HH:mm")</td>
+                    <td>@(h.EndedAtUtc?.ToString("dd MMM yyyy HH:mm") ?? "Current")</td></tr>
+            }
+            </tbody>
+        </table></div>
+    }
+    else { <div class="ht-card-body"><p class="text-muted mb-0">No assignment history yet.</p></div> }
+</section></div></div>
 @section Scripts { <partial name="_ValidationScriptsPartial" /> }

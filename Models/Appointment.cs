@@ -17,4 +17,12 @@ public class Appointment
     public DateTime RequestedAtUtc { get; set; }
     [StringLength(2000)]
     public string? Notes { get; set; }
+
+    [Range(1, 5)]
+    public int? Rating { get; set; }
+
+    [StringLength(500)]
+    public string? RatingComment { get; set; }
+
+    public DateTime? RatedAtUtc { get; set; }
 }

@@ -1,0 +1,38 @@
+@model DeleteAccountViewModel
+@{
+    ViewData["FormPage"] = "standard";
+    ViewData["Title"] = "Delete my account";
+}
+
+<div class="ht-head">
+    <div>
+        <h1 class="ht-title">Delete my account</h1>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <section class="ht-card">
+            <div class="ht-card-body">
+                <p>This permanently deletes your account and all your health data: weight records, workouts, meals, appointments, plans, feedback and notifications. It can't be undone.</p>
+                <p>You can <a asp-controller="Client" asp-action="Export" asp-route-format="csv" asp-route-all="true">download your data</a> first.</p>
+                <form asp-controller="Client" asp-action="DeleteAccount" method="post" novalidate>
+                    <div asp-validation-summary="ModelOnly" class="ht-flash error" role="alert"></div>
+                    <div class="mb-3">
+                        <label asp-for="Password" class="form-label"></label>
+                        <input asp-for="Password" class="form-control" autocomplete="current-password" />
+                        <span asp-validation-for="Password" class="text-danger"></span>
+                    </div>
+                    <div class="ht-form-actions">
+                        <button type="submit" class="btn btn-danger"><i class="bi bi-trash"></i>Delete my account</button>
+                        <a class="btn btn-line" asp-controller="Client" asp-action="Profile">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

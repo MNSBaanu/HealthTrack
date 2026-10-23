@@ -1,5 +1,8 @@
+@inject HealthTrack.Services.AppointmentTime FutureDateTime
+@inject TimeProvider FutureClock
 @model DietPlanFormViewModel
 @{
+    ViewData["FormPage"] = "wide";
     ViewData["Title"] = "New diet plan";
 }
 
@@ -35,7 +38,7 @@
                             </div>
                             <div class="col-md-3">
                                 <label asp-for="DailyCalorieTarget" class="form-label">Daily Calories (kcal)</label>
-                                <input asp-for="DailyCalorieTarget" class="form-control" type="number" required />
+                                <input asp-for="DailyCalorieTarget" class="form-control" type="number" value="@(Model.DailyCalorieTarget == 0 ? "" : Model.DailyCalorieTarget.ToString())" placeholder="e.g. 2200" required />
                                 <span asp-validation-for="DailyCalorieTarget" class="text-danger small"></span>
                             </div>
                             <div class="col-md-3">
@@ -51,13 +54,13 @@
                                 <input asp-for="TargetFatGrams" class="form-control" type="number" placeholder="e.g. 60" />
                             </div>
                             <div class="col-md-6">
-                                <label asp-for="StartDate" class="form-label">Start Date</label>
-                                <input asp-for="StartDate" class="form-control" type="date" required />
+                                <label asp-for="StartDate" data-not-past="true" data-future-zone="@FutureDateTime.Label" min="@(FutureDateTime.ToLocal(FutureClock.GetUtcNow().UtcDateTime).ToString("yyyy-MM-dd"))" class="form-label">Start Date</label>
+                                <input asp-for="StartDate" data-not-past="true" data-future-zone="@FutureDateTime.Label" min="@(FutureDateTime.ToLocal(FutureClock.GetUtcNow().UtcDateTime).ToString("yyyy-MM-dd"))" class="form-control" type="date" value="@(Model.StartDate == default ? "" : Model.StartDate.ToString("yyyy-MM-dd"))" placeholder="Choose start date" required />
                                 <span asp-validation-for="StartDate" class="text-danger small"></span>
                             </div>
                             <div class="col-md-6">
-                                <label asp-for="EndDate" class="form-label">End Date (optional)</label>
-                                <input asp-for="EndDate" class="form-control" type="date" />
+                                <label asp-for="EndDate" data-date-after="#StartDate" data-not-past="true" data-future-zone="@FutureDateTime.Label" min="@(FutureDateTime.ToLocal(FutureClock.GetUtcNow().UtcDateTime).ToString("yyyy-MM-dd"))" class="form-label">End Date (optional)</label>
+                                <input asp-for="EndDate" data-date-after="#StartDate" data-not-past="true" data-future-zone="@FutureDateTime.Label" min="@(FutureDateTime.ToLocal(FutureClock.GetUtcNow().UtcDateTime).ToString("yyyy-MM-dd"))" class="form-control" type="date" placeholder="Choose end date (optional)" />
                                 <span asp-validation-for="EndDate" class="text-danger small"></span>
                             </div>
                             <div class="col-12">
@@ -68,7 +71,7 @@
                     </fieldset>
 
                     <fieldset class="ht-fieldset mb-4">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="ht-schedule-heading">
                             <legend class="mb-0">Meal Recommendations</legend>
                             <button type="button" class="btn btn-sm btn-line" id="addMealBtn">
                                 <i class="bi bi-plus-lg me-1"></i>Add meal
@@ -91,7 +94,8 @@
                                     {
                                         <tr class="meal-row">
                                             <td>
-                                                <select name="Meals[@i].MealType" class="form-select form-select-sm">
+                                                <select name="Meals[@i].MealType" class="form-select form-select-sm" required>
+<option value="" disabled selected="@(!Enum.IsDefined(Model.Meals[i].MealType))">Choose meal</option>
                                                     <option value="0" selected="@(Model.Meals[i].MealType == MealType.Breakfast)">Breakfast</option>
                                                     <option value="1" selected="@(Model.Meals[i].MealType == MealType.Lunch)">Lunch</option>
                                                     <option value="2" selected="@(Model.Meals[i].MealType == MealType.Dinner)">Dinner</option>
@@ -137,11 +141,12 @@
             newRow.className = 'meal-row';
             newRow.innerHTML = `
                 <td>
-                    <select name="Meals[${rowCount}].MealType" class="form-select form-select-sm">
+                    <select name="Meals[${rowCount}].MealType" class="form-select form-select-sm" required>
+<option value="" disabled selected>Choose meal</option>
                         <option value="0">Breakfast</option>
                         <option value="1">Lunch</option>
                         <option value="2">Dinner</option>
-                        <option value="3" selected>Snack</option>
+                        <option value="3">Snack</option>
                     </select>
                 </td>
                 <td><input name="Meals[${rowCount}].FoodRecommendations" class="form-control form-control-sm" placeholder="Recommended foods" required /></td>

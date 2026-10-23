@@ -31,6 +31,7 @@ public class ReschedulePageViewModel : RescheduleForm
 public class BookingPageViewModel : BookingForm
 {
     public int? ProviderId { get; set; }
+    public ConsultationProviderKind? Kind { get; set; }
     public List<ConsultationProvider> Providers { get; set; } = new();
     public List<AvailableSlotViewModel> Slots { get; set; } = new();
     public string TimeZoneLabel { get; set; } = string.Empty;

@@ -68,6 +68,7 @@ builder.Services.AddRateLimiter(options =>
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
 builder.Services.AddSingleton<IMailSender, MailSender>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<UserImportService>();
 builder.Services.AddScoped<IExportService, ExportService>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<AppointmentTime>();

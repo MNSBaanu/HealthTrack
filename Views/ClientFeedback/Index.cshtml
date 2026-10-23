@@ -5,6 +5,62 @@
     <div><h1 class="ht-title">Trainer feedback</h1><p class="ht-lede">Notes and guidance from your Trainer.</p></div>
     <a class="btn btn-line" asp-controller="Client" asp-action="Index">Back to overview</a>
 </div>
+@{ var checkIns = ViewData["CheckIns"] as List<WeeklyCheckIn> ?? new List<WeeklyCheckIn>(); }
+@if (checkIns.Any())
+{
+    <section class="ht-card mb-3">
+        <div class="ht-card-head"><h2>Weekly check-ins</h2></div>
+        <div class="ht-card-body">
+            @foreach (var checkIn in checkIns)
+            {
+                <article class="border-bottom pb-3 mb-3">
+                    <p class="small text-muted mb-1">@(checkIn.Trainer?.Name ?? "Trainer unavailable") · @Time.ToLocal(checkIn.RequestedAtUtc).ToString("d MMM yyyy")</p>
+                    @if (checkIn.IsAnswered)
+                    {
+                        <span class="ht-pill">Answered</span>
+                        <p class="mb-0 mt-2">Energy <strong>@checkIn.Energy / 5</strong> · Mood <strong>@checkIn.Mood / 5</strong> · Pain <strong>@checkIn.Pain / 10</strong></p>
+                        @if (!string.IsNullOrWhiteSpace(checkIn.Comment)) { <p class="mb-0 small text-muted mt-1" style="white-space: pre-line">@checkIn.Comment</p> }
+                    }
+                    else
+                    {
+                        <span class="ht-pill saffron">Needs your answer</span>
+                        @if (!string.IsNullOrWhiteSpace(checkIn.Note)) { <p class="mb-2 mt-2">@checkIn.Note</p> }
+                        <form asp-action="CheckIn" asp-route-id="@checkIn.Id" method="post" class="mt-2">
+                            <div class="row g-2 mb-2">
+                                <div class="col-md-4">
+                                    <label class="form-label small" for="energy-@checkIn.Id">Energy</label>
+                                    <select name="energy" id="energy-@checkIn.Id" class="form-select" required>
+                                        <option value="">Choose…</option>
+                                        <option value="1">1 – Exhausted</option><option value="2">2 – Low</option><option value="3">3 – Okay</option><option value="4">4 – Good</option><option value="5">5 – Great</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small" for="mood-@checkIn.Id">Mood</label>
+                                    <select name="mood" id="mood-@checkIn.Id" class="form-select" required>
+                                        <option value="">Choose…</option>
+                                        <option value="1">1 – Very low</option><option value="2">2 – Low</option><option value="3">3 – Neutral</option><option value="4">4 – Good</option><option value="5">5 – Excellent</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small" for="pain-@checkIn.Id">Pain or soreness</label>
+                                    <select name="pain" id="pain-@checkIn.Id" class="form-select" required>
+                                        <option value="">Choose…</option>
+                                        @for (var level = 0; level <= 10; level++)
+                                        {
+                                            <option value="@level">@(level == 0 ? "0 – None" : level == 10 ? "10 – Severe" : level.ToString())</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                            <textarea name="comment" class="form-control mb-2" rows="2" maxlength="1000" placeholder="Anything else your Trainer should know? (optional)" aria-label="Comment"></textarea>
+                            <button type="submit" class="btn btn-primary btn-sm">Submit check-in</button>
+                        </form>
+                    }
+                </article>
+            }
+        </div>
+    </section>
+}
 <section class="ht-card">
     <div class="ht-card-body">
     @if (!Model.Any()) { <p class="text-muted mb-0">No feedback yet. Feedback from your Trainer will appear here.</p> }

@@ -669,6 +669,54 @@ namespace HealthTrack.Migrations
                     b.ToTable("TrainerFeedbacks");
                 });
 
+            modelBuilder.Entity("HealthTrack.Models.WeeklyCheckIn", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ClientId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int?>("Energy")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("Mood")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<int?>("Pain")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("RequestedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("RespondedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TrainerId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TrainerId");
+
+                    b.HasIndex("ClientId", "RequestedAtUtc");
+
+                    b.ToTable("WeeklyCheckIns");
+                });
+
             modelBuilder.Entity("HealthTrack.Models.WorkoutLog", b =>
                 {
                     b.Property<int>("WorkoutLogId")
@@ -1163,6 +1211,25 @@ namespace HealthTrack.Migrations
 
                     b.HasOne("HealthTrack.Models.Trainer", "Trainer")
                         .WithMany("Feedbacks")
+                        .HasForeignKey("TrainerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Client");
+
+                    b.Navigation("Trainer");
+                });
+
+            modelBuilder.Entity("HealthTrack.Models.WeeklyCheckIn", b =>
+                {
+                    b.HasOne("HealthTrack.Models.Client", "Client")
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("HealthTrack.Models.Trainer", "Trainer")
+                        .WithMany()
                         .HasForeignKey("TrainerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();

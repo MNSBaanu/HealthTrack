@@ -29,6 +29,7 @@ namespace HealthTrack.Models.Data
         public DbSet<DietPlan> DietPlans { get; set; }
         public DbSet<DietPlanMeal> DietPlanMeals { get; set; }
         public DbSet<TrainerFeedback> TrainerFeedbacks { get; set; }
+        public DbSet<WeeklyCheckIn> WeeklyCheckIns { get; set; }
         public DbSet<LoginHistory> LoginHistories { get; set; }
         public DbSet<TrainerAssignmentHistory> TrainerAssignmentHistories { get; set; }
 
@@ -119,6 +120,12 @@ namespace HealthTrack.Models.Data
                 .HasForeignKey(f => f.ClientId).OnDelete(DeleteBehavior.Cascade);
             builder.Entity<TrainerFeedback>().Property(f => f.Category)
                 .HasConversion<string>().HasMaxLength(20);
+
+            builder.Entity<WeeklyCheckIn>().HasOne(c => c.Trainer).WithMany()
+                .HasForeignKey(c => c.TrainerId).OnDelete(DeleteBehavior.Restrict);
+            builder.Entity<WeeklyCheckIn>().HasOne(c => c.Client).WithMany()
+                .HasForeignKey(c => c.ClientId).OnDelete(DeleteBehavior.Cascade);
+            builder.Entity<WeeklyCheckIn>().HasIndex(c => new { c.ClientId, c.RequestedAtUtc });
 
             builder.Entity<LoginHistory>().HasOne(l => l.Person).WithMany()
                 .HasForeignKey(l => l.PersonId).OnDelete(DeleteBehavior.Cascade);

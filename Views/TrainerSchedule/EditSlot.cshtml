@@ -1,0 +1,61 @@
+@model EditAvailabilitySlotForm
+@{
+    ViewData["Title"] = "Edit availability slot";
+}
+
+<a class="ht-back" asp-action="Index"><i class="bi bi-arrow-left"></i>Back to schedule</a>
+
+<div class="ht-head">
+    <div>
+        <h1 class="ht-title">Edit availability slot</h1>
+        <p class="ht-lede">Update the date and time for this consultation slot.</p>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-8">
+        <section class="ht-card">
+            <div class="ht-card-body p-4">
+                <form asp-action="EditSlot" method="post">
+                    <div asp-validation-summary="All" class="text-danger mb-3" role="alert"></div>
+
+                    <input type="hidden" name="SlotId" value="@Model.SlotId" />
+
+                    <div class="mb-3">
+                        <label for="startLocal" class="form-label">Start Date & Time</label>
+                        <input id="startLocal" name="StartLocal" class="form-control" type="datetime-local" required value="@Model.StartLocal.ToString("yyyy-MM-ddTHH:mm")" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="endLocal" class="form-label">End Date & Time</label>
+                        <input id="endLocal" name="EndLocal" class="form-control" type="datetime-local" required value="@Model.EndLocal.ToString("yyyy-MM-ddTHH:mm")" />
+                    </div>
+
+                    <div class="ht-form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-1"></i>Update slot
+                        </button>
+                        <a class="btn btn-line" asp-action="Index">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </div>
+
+    <div class="col-lg-4">
+        <section class="ht-card">
+            <div class="ht-card-head">
+                <h2>Important notes</h2>
+            </div>
+            <div class="ht-card-body p-3">
+                <ul class="list-unstyled small text-muted">
+                    <li class="mb-2"><strong>Cannot edit booked slots</strong> — If this slot has an active booking, you must delete and create a new slot instead.</li>
+                    <li class="mb-2"><strong>Future dates only</strong> — Consultation slots must be scheduled for a future date and time.</li>
+                    <li class="mb-2"><strong>No overlaps</strong> — The new time cannot overlap with your existing availability slots.</li>
+                    <li class="mb-2"><strong>End after start</strong> — The end time must be after the start time.</li>
+                </ul>
+            </div>
+        </section>
+    </div>
+</div>
+

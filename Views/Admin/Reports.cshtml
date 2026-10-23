@@ -1,12 +1,20 @@
-@model AdminReportsViewModel
+@model List<ClientPerformanceViewModel>
 @{
     ViewData["Title"] = "Reports";
-    var activities = Model.PersonalActivities;
+    var activities = ViewData["PopularActivities"] as List<ActivityStatViewModel> ?? new List<ActivityStatViewModel>();
+    var planExercises = ViewData["PlanExercises"] as List<PlanExerciseStatViewModel> ?? new List<PlanExerciseStatViewModel>();
+    var topPlans = ViewData["TopPlans"] as List<PlanStatViewModel> ?? new List<PlanStatViewModel>();
+    var topExerciseCompletions = planExercises.FirstOrDefault()?.Completions ?? 0;
     var topSessions = activities.FirstOrDefault()?.Sessions ?? 0;
     var weekStart = DateTime.Today.AddDays(-6);
-    var activeClients = Model.Clients.Count(c => c.LastLoginAt >= weekStart);
-    var clientsWithWorkouts = Model.Clients.Count(c => c.WorkoutCount > 0);
-    var averageWorkouts = Model.Clients.Count == 0 ? 0 : Model.Clients.Average(c => c.WorkoutCount);
+    var activeClients = Model.Count(c => c.LastLoginAt >= weekStart);
+    var clientsWithWorkouts = Model.Count(c => c.WorkoutCount > 0);
+    var from = ViewData["From"] as DateTime?;
+    var to = ViewData["To"] as DateTime?;
+    var mealLoggers = Model.Count(c => c.MealLogCount > 0);
+    var weightLoggers = Model.Count(c => c.WeightLogCount > 0);
+    var averageActiveDays = Model.Count == 0 ? 0 : Model.Average(c => c.ActiveDays);
+    var averageWorkouts = Model.Count == 0 ? 0 : Model.Average(c => c.WorkoutCount);
 }
 
 <div class="ht-head">
@@ -39,12 +47,12 @@
 <div class="ht-ledger">
     <div>
         <div class="ht-overline">Clients</div>
-        <div class="value">@Model.Clients.Count</div>
+        <div class="value">@Model.Count</div>
     </div>
     <div>
         <div class="ht-overline">Active in 7 days</div>
         <div class="value">@activeClients</div>
-        <div class="hint">@(Model.Clients.Count == 0 ? 0 : activeClients * 100 / Model.Clients.Count)% of clients</div>
+        <div class="hint">@(Model.Count == 0 ? 0 : activeClients * 100 / Model.Count)% of clients</div>
     </div>
     <div>
         <div class="ht-overline">Have logged a workout</div>
@@ -56,45 +64,33 @@
     </div>
 </div>
 
-
-<section class="ht-card mb-3">
-    <div class="ht-card-head"><h2>Assigned workout routines</h2><span class="ht-overline">As of @Model.Today.ToString("d MMM yyyy")</span></div>
-    <div class="ht-card-body">
-        <p class="text-muted">Participation means Clients with an active assigned workout plan, not attendance or completion. Dates use @Model.TimeZone. Historical plans retain their original Trainer.</p>
-        <dl class="row">
-            <dt class="col-sm-8">Total assigned workout plans</dt><dd class="col-sm-4" data-report-metric="total-plans">@Model.AssignedRoutines.Count</dd>
-            <dt class="col-sm-8">Active assigned workout plans</dt><dd class="col-sm-4" data-report-metric="active-plans">@Model.ActivePlanCount</dd>
-            <dt class="col-sm-8">Clients with active assigned plans</dt><dd class="col-sm-4" data-report-metric="active-clients">@Model.ClientsWithActivePlans</dd>
-            <dt class="col-sm-8">Active plan coverage</dt><dd class="col-sm-4" data-report-metric="coverage">@Model.ActivePlanCoveragePercent.ToString("0.#")% of @Model.Clients.Count Clients</dd>
-            <dt class="col-sm-8">Clients with any assigned workout plans</dt><dd class="col-sm-4" data-report-metric="any-clients">@Model.ClientsWithAnyPlans</dd>
-            <dt class="col-sm-8">Clients without assigned workout plans</dt><dd class="col-sm-4" data-report-metric="no-plan-clients">@(Model.Clients.Count - Model.ClientsWithAnyPlans)</dd>
-            <dt class="col-sm-8">Clients with a current Trainer assignment</dt><dd class="col-sm-4" data-report-metric="assigned-clients">@Model.ClientsWithCurrentTrainer</dd>
-            <dt class="col-sm-8">Clients without a current Trainer assignment</dt><dd class="col-sm-4" data-report-metric="unassigned-clients">@(Model.Clients.Count - Model.ClientsWithCurrentTrainer)</dd>
-        </dl>
+<div class="ht-ledger mt-3">
+    <div>
+        <div class="ht-overline">Logged meals</div>
+        <div class="value">@mealLoggers</div>
+        <div class="hint">@(Model.Count == 0 ? 0 : mealLoggers * 100 / Model.Count)% of clients</div>
     </div>
-    @if (Model.AssignedRoutines.Any())
-    {
-        <div class="table-responsive"><table class="ht-table">
-            <thead><tr><th>Plan ID</th><th>Routine</th><th>Client</th><th>Original Trainer</th><th>Active dates</th><th>Status</th><th>Exercises</th></tr></thead>
-            <tbody>
-            @foreach (var plan in Model.AssignedRoutines)
-            {
-                <tr><td>@plan.PlanId</td><td>@plan.Title</td><td><a asp-action="ClientDetails" asp-route-id="@plan.ClientId">@plan.ClientName</a></td><td>@plan.TrainerName</td>
-                    <td>@plan.StartDate.ToString("d MMM yyyy") – @(plan.EndDate?.ToString("d MMM yyyy") ?? "No end date")</td>
-                    <td>@Model.Status(plan)</td><td>@plan.ExerciseCount</td></tr>
-            }
-            </tbody>
-        </table></div>
-    }
-    else { <div class="ht-card-body text-muted">No assigned workout routines yet.</div> }
-</section>
+    <div>
+        <div class="ht-overline">Logged weight</div>
+        <div class="value">@weightLoggers</div>
+        <div class="hint">@(Model.Count == 0 ? 0 : weightLoggers * 100 / Model.Count)% of clients</div>
+    </div>
+    <div>
+        <div class="ht-overline">Appointments</div>
+        <div class="value">@Model.Sum(c => c.AppointmentCount)</div>
+    </div>
+    <div>
+        <div class="ht-overline">Avg. active days</div>
+        <div class="value">@averageActiveDays.ToString("0.#")<small>per client</small></div>
+    </div>
+</div>
 
-<section class="ht-card mb-3">
+<section class="ht-card my-3">
     <div class="ht-card-head">
         <h2>Performance by client</h2>
         <span class="ht-overline">Sorted by name</span>
     </div>
-    @if (Model.Clients.Any())
+    @if (Model.Any())
     {
         <div class="table-responsive">
             <table class="ht-table">
@@ -116,7 +112,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var client in Model.Clients)
+                    @foreach (var client in Model)
                     {
                         <tr>
                             <td>
@@ -128,19 +124,19 @@
                                     </div>
                                 </div>
                             </td>
-                            <td class="num">@(client.StartWeightKg?.ToString("0.0") ?? "â€“")</td>
-                            <td class="num">@(client.CurrentWeightKg?.ToString("0.0") ?? "â€“")</td>
+                            <td class="num">@(client.StartWeightKg?.ToString("0.0") ?? "–")</td>
+                            <td class="num">@(client.CurrentWeightKg?.ToString("0.0") ?? "–")</td>
                             <td>
                                 @if (client.WeightChangeKg is double change && change != 0)
                                 {
-                                    <span class="ht-pill @(change < 0 ? "success" : "clay")">@(change < 0 ? "â–¼" : "â–²") @Math.Abs(change).ToString("0.0") kg</span>
+                                    <span class="ht-pill @(change < 0 ? "success" : "clay")">@(change < 0 ? "▼" : "▲") @Math.Abs(change).ToString("0.0") kg</span>
                                 }
                                 else
                                 {
-                                    <span class="text-muted">â€“</span>
+                                    <span class="text-muted">–</span>
                                 }
                             </td>
-                            <td class="num">@(client.CurrentBmi?.ToString("0.0") ?? "â€“")</td>
+                            <td class="num">@(client.CurrentBmi?.ToString("0.0") ?? "–")</td>
                             <td class="num">@client.WorkoutCount <span class="sub">@client.TotalMinutes min</span></td>
                             <td class="num">@client.TotalCaloriesBurned.ToString("N0") <small>kcal</small></td>
                             <td class="num">@client.MealLogCount</td>
@@ -163,8 +159,8 @@
 
 <section class="ht-card">
     <div class="ht-card-head">
-        <h2>Personal workout activities</h2>
-        <span class="ht-overline">Top 10 logged activities by sessions</span>
+        <h2>Popular routines</h2>
+        <span class="ht-overline">Top 10 by sessions</span>
     </div>
     <div class="ht-card-body">
         @if (activities.Any())

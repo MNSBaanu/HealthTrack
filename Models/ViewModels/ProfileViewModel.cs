@@ -24,6 +24,9 @@ namespace HealthTrack.Models.ViewModels
         [Display(Name = "Fitness Goal")]
         public string? FitnessGoal { get; set; }
 
+        [Display(Name = "Email notifications")]
+        public bool EmailNotificationsEnabled { get; set; }
+
         [Display(Name = "Workout reminder")]
         public bool WorkoutReminderEnabled { get; set; }
 

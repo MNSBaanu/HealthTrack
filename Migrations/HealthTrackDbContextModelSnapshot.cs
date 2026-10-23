@@ -519,6 +519,9 @@ namespace HealthTrack.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("EmailNotificationsEnabled")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime?>("LastLoginAt")
                         .HasColumnType("datetime2");
 

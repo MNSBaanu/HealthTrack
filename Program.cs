@@ -65,6 +65,8 @@ builder.Services.AddRateLimiter(options =>
         httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1) }));
 });
+builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
+builder.Services.AddSingleton<IMailSender, MailSender>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IExportService, ExportService>();
 builder.Services.AddSingleton(TimeProvider.System);

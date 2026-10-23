@@ -188,6 +188,60 @@ public class TrainerScheduleService : ITrainerScheduleService
         return (true, null);
     }
 
+    public async Task<AvailabilitySlot?> GetSlotForEditAsync(string trainerId, int slotId)
+    {
+        var provider = await GetOrCreateTrainerProviderAsync(trainerId);
+        return await _context.AvailabilitySlots
+            .FirstOrDefaultAsync(s => s.Id == slotId && s.ProviderId == provider.Id);
+    }
+
+    public async Task<(bool Success, string? Error)> UpdateSlotAsync(string trainerId, int slotId, DateTime startLocal, DateTime endLocal)
+    {
+        if (endLocal <= startLocal)
+        {
+            return (false, "Slot end time must be after start time.");
+        }
+
+        var startUtc = _time.ToUtc(startLocal);
+        var endUtc = _time.ToUtc(endLocal);
+        var nowUtc = _clock.GetUtcNow().UtcDateTime;
+
+        if (startUtc <= nowUtc)
+        {
+            return (false, "Slot start time must be in the future.");
+        }
+
+        var provider = await GetOrCreateTrainerProviderAsync(trainerId);
+        var slot = await _context.AvailabilitySlots
+            .Include(s => s.Appointments)
+            .FirstOrDefaultAsync(s => s.Id == slotId && s.ProviderId == provider.Id);
+
+        if (slot == null) return (false, "Slot not found.");
+
+        // If slot is booked, don't allow editing the time
+        if (slot.Appointments.Any(a => a.Status != AppointmentStatus.Cancelled))
+        {
+            return (false, "Cannot edit a slot that has an active booking. Delete and create a new slot instead.");
+        }
+
+        // Check for overlapping slots with other existing slots
+        var hasOverlap = await _context.AvailabilitySlots.AnyAsync(s =>
+            s.ProviderId == provider.Id &&
+            s.Id != slotId &&
+            s.StartUtc < endUtc &&
+            s.EndUtc > startUtc);
+
+        if (hasOverlap)
+        {
+            return (false, "You already have an availability slot that overlaps with this time range.");
+        }
+
+        slot.StartUtc = startUtc;
+        slot.EndUtc = endUtc;
+        await _context.SaveChangesAsync();
+        return (true, null);
+    }
+
     public async Task<(bool Success, string? Error)> ApproveAppointmentAsync(string trainerId, int appointmentId)
     {
         var provider = await GetOrCreateTrainerProviderAsync(trainerId);

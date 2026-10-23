@@ -78,7 +78,10 @@
                                         <td class="text-end">
                                             @if (!slot.IsBooked)
                                             {
-                                                <form asp-action="DeleteSlot" method="post" class="d-inline">
+                                                <a asp-action="EditSlot" asp-route-slotId="@slot.Id" class="btn btn-sm btn-line" title="Edit slot">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                <form asp-action="DeleteSlot" method="post" class="d-inline ms-1">
                                                     <input type="hidden" name="slotId" value="@slot.Id" />
                                                     <button type="submit" class="btn btn-sm btn-line-danger" title="Remove slot">
                                                         <i class="bi bi-trash"></i>

@@ -1,3 +1,4 @@
+using System.Text;
 using System.Linq.Expressions;
 using HealthTrack.Models;
 using HealthTrack.Models.Data;
@@ -19,11 +20,14 @@ namespace HealthTrack.Controllers
         private readonly IExportService _exportService;
         private readonly AppointmentTime _time;
         private readonly TimeProvider _clock;
+        private readonly UserImportService _userImport;
 
         public AdminController(ILogger<AdminController> logger, HealthTrackDbContext context, UserManager<Person> userManager,
-            INotificationService notificationService, IExportService exportService, AppointmentTime time, TimeProvider clock)
+            INotificationService notificationService, IExportService exportService, AppointmentTime time, TimeProvider clock,
+            UserImportService userImport)
             : base(context, userManager)
         {
+            _userImport = userImport;
             _logger = logger;
             _notificationService = notificationService;
             _exportService = exportService;
@@ -144,6 +148,45 @@ namespace HealthTrack.Controllers
             ViewData["Person"] = person;
             return View(await Context.LoginHistories.Where(l => l.PersonId == id)
                 .OrderByDescending(l => l.LoggedInAt).Take(100).ToListAsync());
+        }
+
+        [HttpGet]
+        public IActionResult ImportUsers()
+        {
+            return View(new UserImportResult());
+        }
+
+        [HttpGet]
+        public IActionResult ImportTemplate()
+        {
+            return File(Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(UserImportService.Template)).ToArray(), "text/csv", "HealthTrack_UserImport_Template.csv");
+        }
+
+        [HttpPost]
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+        public async Task<IActionResult> ImportUsers(IFormFile? file)
+        {
+            var result = new UserImportResult();
+            if (file == null || file.Length == 0)
+            {
+                result.FileError = "Choose a CSV file to import.";
+            }
+            else if (!Path.GetExtension(file.FileName).Equals(".csv", StringComparison.OrdinalIgnoreCase))
+            {
+                result.FileError = "Only .csv files can be imported.";
+            }
+            else if (file.Length > UserImportService.MaxBytes)
+            {
+                result.FileError = "The file is larger than 1 MB.";
+            }
+            else
+            {
+                await using var stream = file.OpenReadStream();
+                result = await _userImport.ImportAsync(stream);
+                await AuditAsync("Imported", "Users", null, $"{result.Imported.Count} imported, {result.Rejected.Count} rejected");
+                _logger.LogInformation("Admin {AdminId} imported {Imported} users ({Rejected} rejected)", CurrentUserId, result.Imported.Count, result.Rejected.Count);
+            }
+            return View(result);
         }
 
         [HttpGet]

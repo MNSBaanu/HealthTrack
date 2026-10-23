@@ -419,6 +419,9 @@ namespace HealthTrack.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<int?>("DietPlanMealId")
+                        .HasColumnType("int");
+
                     b.Property<string>("FoodItems")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -434,6 +437,8 @@ namespace HealthTrack.Migrations
                     b.HasKey("MealLogId");
 
                     b.HasIndex("ClientId");
+
+                    b.HasIndex("DietPlanMealId");
 
                     b.ToTable("MealLogs");
                 });
@@ -1099,7 +1104,13 @@ namespace HealthTrack.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("HealthTrack.Models.DietPlanMeal", "DietPlanMeal")
+                        .WithMany()
+                        .HasForeignKey("DietPlanMealId");
+
                     b.Navigation("Client");
+
+                    b.Navigation("DietPlanMeal");
                 });
 
             modelBuilder.Entity("HealthTrack.Models.Notification", b =>

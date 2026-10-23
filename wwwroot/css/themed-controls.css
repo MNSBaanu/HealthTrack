@@ -34,6 +34,13 @@
     background: var(--ht-surface); color: var(--ht-ink); border: 1px solid var(--ht-line-strong);
     border-radius: var(--ht-radius-sm); box-shadow: var(--ht-shadow); padding: 0.3rem;
   }
+  .flatpickr-current-month .flatpickr-monthDropdown-months::picker-icon {
+    content: "";
+    width: 0.8rem;
+    height: 0.8rem;
+    background-color: currentColor;
+    mask: var(--ht-chevron) center / contain no-repeat;
+  }
   .flatpickr-monthDropdown-months option { padding: 0.3rem 0.6rem; border-radius: 0.3rem; }
   .flatpickr-monthDropdown-months option:checked { background: var(--ht-saffron); color: var(--ht-ink); }
   .flatpickr-monthDropdown-months option:hover { background: var(--ht-saffron-soft); }

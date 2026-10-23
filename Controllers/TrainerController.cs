@@ -251,7 +251,8 @@ namespace HealthTrack.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> SendFeedback(TrainerFeedbackFormViewModel model)
+        public async Task<IActionResult> SendFeedback(
+            [Bind(Prefix = nameof(TrainerClientDetailsViewModel.NewFeedbackForm))] TrainerFeedbackFormViewModel model)
         {
             var trainerId = CurrentUserId;
             var isAssigned = await Context.ClientTrainerAssignments

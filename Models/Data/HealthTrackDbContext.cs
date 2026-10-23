@@ -100,6 +100,8 @@ namespace HealthTrack.Models.Data
                 .HasForeignKey(i => i.WorkoutPlanId).OnDelete(DeleteBehavior.Cascade);
             builder.Entity<WorkoutLog>().HasOne(l => l.WorkoutPlanItem).WithMany()
                 .HasForeignKey(l => l.WorkoutPlanItemId).OnDelete(DeleteBehavior.ClientSetNull);
+            builder.Entity<MealLog>().HasOne(l => l.DietPlanMeal).WithMany()
+                .HasForeignKey(l => l.DietPlanMealId).OnDelete(DeleteBehavior.ClientSetNull);
 
             builder.Entity<DietPlan>().HasOne(p => p.Trainer).WithMany(t => t.DietPlans)
                 .HasForeignKey(p => p.TrainerId).OnDelete(DeleteBehavior.Restrict);

@@ -1,5 +1,6 @@
 using HealthTrack.Models;
 using HealthTrack.Models.Data;
+using HealthTrack.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -8,7 +9,12 @@ namespace HealthTrack.Controllers;
 
 public class ClientFeedbackController : ClientBaseController
 {
-    public ClientFeedbackController(HealthTrackDbContext context, UserManager<Person> users) : base(context, users) { }
+    private readonly INotificationService _notifications;
+
+    public ClientFeedbackController(HealthTrackDbContext context, UserManager<Person> users, INotificationService notifications) : base(context, users)
+    {
+        _notifications = notifications;
+    }
 
     [HttpGet]
     public async Task<IActionResult> Index()
@@ -47,6 +53,7 @@ public class ClientFeedbackController : ClientBaseController
         feedback.ClientReply = reply;
         feedback.ClientRepliedAtUtc = DateTime.UtcNow;
         await Context.SaveChangesAsync();
+        await _notifications.SendAsync(feedback.TrainerId, $"Your client replied to your feedback \"{feedback.Title}\".", NotificationType.General);
         TempData["Success"] = "Reply sent.";
         return RedirectToAction(nameof(Index));
     }

@@ -1587,6 +1587,30 @@ a:hover {
   align-self: center;
 }
 /* Shared dropdown theme: form pickers, account menus and export menus. */
+:root {
+  --ht-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3E%3C/svg%3E");
+}
+
+input[list] {
+  padding-right: 2.75rem;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23706a66' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M2.5 5.5l5.5 5.5 5.5-5.5'/%3E%3C/svg%3E") right 0.95rem center / 1rem 1rem no-repeat var(--ht-surface);
+}
+
+input[list]::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  cursor: pointer;
+}
+
+.dropdown-toggle::after {
+  width: 0.7em;
+  height: 0.7em;
+  border: 0;
+  vertical-align: -0.1em;
+  background-color: currentColor;
+  -webkit-mask: var(--ht-chevron) center / contain no-repeat;
+  mask: var(--ht-chevron) center / contain no-repeat;
+}
+
 .form-select {
   padding-right: 2.75rem;
   background-position: right 0.95rem center;
@@ -1669,6 +1693,11 @@ a:hover {
   }
 
   select.form-select::picker-icon {
+    content: "";
+    width: 1rem;
+    height: 1rem;
+    background-color: currentColor;
+    mask: var(--ht-chevron) center / contain no-repeat;
     color: var(--ht-saffron-deep);
     margin-inline-start: auto;
     transition: rotate 0.15s ease;
@@ -1729,4 +1758,14 @@ a:hover {
   select.form-select optgroup {
     font-weight: 600;
   }
+}
+
+/* Restore the original split layout for sign-in. */
+@media (min-width: 992px) {
+  .ht-auth.ht-auth-split {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.ht-auth-split .ht-auth-main > .ht-wordmark {
+  align-self: flex-start;
 }

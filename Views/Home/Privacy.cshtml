@@ -1,5 +1,7 @@
 @{
     ViewData["Title"] = "Privacy Policy";
+    var contact = ViewData["ContactEmail"] as string;
+    var retentionMonths = ViewData["RetentionMonths"] as int? ?? 0;
 }
 
 <div class="ht-head">
@@ -10,15 +12,41 @@
 
 <article class="ht-card ht-card-body ht-prose">
     <h2>What we store</h2>
-    <p>Your name, email address, date of birth, height, fitness goal, and the health measurements, workouts and meals you record.</p>
+    <p>Your name, email address, date of birth, height, fitness goal, and the health measurements, workouts, meals, appointments, trainer feedback and notifications that you or your trainer record.</p>
+
+    <h2>Consent</h2>
+    <p>You accept this policy when you create an account. You can withdraw your consent at any time by deleting your account.</p>
 
     <h2>How it is protected</h2>
     <ul>
         <li>Passwords are never stored in plain text; they are hashed before saving.</li>
         <li>Every page with personal data requires you to be signed in, and you can only see your own records.</li>
-        <li>Accounts are locked after repeated failed sign-in attempts.</li>
+        <li>Accounts are locked after repeated failed sign-in attempts, and sign-in attempts are rate limited.</li>
+        <li>Connections to the service are encrypted with HTTPS.</li>
+        <li>Views, exports and changes to health records by administrators and trainers are written to an audit log.</li>
     </ul>
 
     <h2>Who can see it</h2>
-    <p class="mb-0">Administrators can view account and progress information to manage the service. Your data is never shared outside HealthTrack.</p>
+    <p>Administrators can view account and progress information to manage the service. Your assigned trainer can view your progress and plans. Your data is never shared outside HealthTrack.</p>
+    <p>If an optional AI help feature is turned on, the text of a question you type into the help chat (and nothing else from your account) is sent to an AI provider to produce an answer.</p>
+
+    <h2>Your rights</h2>
+    <ul>
+        <li><strong>Access and download:</strong> in Progress, choose Export, then All my data to download everything we hold about you.</li>
+        <li><strong>Correction:</strong> edit your profile and your records at any time.</li>
+        <li><strong>Deletion:</strong> delete your account and all your health data from your Profile page.</li>
+    </ul>
+
+    <h2>How long we keep it</h2>
+    @if (retentionMonths > 0)
+    {
+        <p>We keep your data while your account is active. A client account with no sign-in for @retentionMonths months is deleted automatically together with its health data.</p>
+    }
+    else
+    {
+        <p>We keep your data until you delete your account.</p>
+    }
+
+    <h2>Contact</h2>
+    <p class="mb-0">For questions about your data, contact <a href="mailto:@contact">@contact</a>.</p>
 </article>

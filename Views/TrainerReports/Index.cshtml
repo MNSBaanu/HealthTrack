@@ -10,6 +10,7 @@
     </div>
     <div class="ht-head-actions">
         <a class="btn btn-line" asp-action="ExportReport" asp-route-format="csv"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Export CSV</a>
+        <a class="btn btn-line" asp-action="ExportReport" asp-route-format="xlsx"><i class="bi bi-file-earmark-excel me-1"></i>Export Excel</a>
         <a class="btn btn-primary" asp-action="ExportReport" asp-route-format="pdf"><i class="bi bi-file-earmark-pdf me-1"></i>Export PDF</a>
     </div>
 </div>
@@ -40,15 +41,15 @@
 <div class="row g-3 mb-4">
     <!-- Client Performance Table -->
     <div class="col-lg-8">
-        <section class="ht-card h-100">
+        <section class="ht-card h-100 d-flex flex-column">
             <div class="ht-card-head">
                 <h2>Assigned clients progress breakdown</h2>
                 <span class="ht-overline">Individual tracking</span>
             </div>
-            <div class="ht-card-body p-0">
+            <div class="ht-card-body p-0 d-flex flex-column flex-grow-1">
                 @if (Model.ClientPerformances.Any())
                 {
-                    <div class="table-responsive">
+                    <div class="table-responsive flex-grow-1">
                         <table class="table ht-table align-middle mb-0">
                             <thead>
                                 <tr>

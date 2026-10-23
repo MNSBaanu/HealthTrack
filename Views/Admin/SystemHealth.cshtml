@@ -1,0 +1,63 @@
+@model SystemHealthViewModel
+@{
+    ViewData["Title"] = "System health";
+    var maxDaily = Math.Max(1, Model.Daily.Max(d => d.Successful + d.Failed));
+}
+
+<a class="ht-back" asp-action="Reports"><i class="bi bi-arrow-left"></i>Reports</a>
+<div class="ht-head">
+    <div>
+        <h1 class="ht-title">System health</h1>
+        <p class="ht-lede">Sign-in activity, security signals and workload at a glance.</p>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-6 col-lg-3"><div class="ht-card ht-tile"><div class="ht-tile-top"><span class="ht-overline">Active users (7 days)</span><span class="ht-glyph success"><i class="bi bi-people"></i></span></div><div class="value">@Model.ActiveUsers7d</div></div></div>
+    <div class="col-6 col-lg-3"><div class="ht-card ht-tile"><div class="ht-tile-top"><span class="ht-overline">New accounts (7 days)</span><span class="ht-glyph saffron"><i class="bi bi-person-plus"></i></span></div><div class="value">@Model.NewUsers7d</div></div></div>
+    <div class="col-6 col-lg-3"><div class="ht-card ht-tile"><div class="ht-tile-top"><span class="ht-overline">Failed sign-ins (24 h)</span><span class="ht-glyph clay"><i class="bi bi-shield-exclamation"></i></span></div><div class="value">@Model.FailedLogins24h<small>@Model.FailedLogins7d this week</small></div></div></div>
+    <div class="col-6 col-lg-3"><div class="ht-card ht-tile"><div class="ht-tile-top"><span class="ht-overline">Locked accounts</span><span class="ht-glyph slate"><i class="bi bi-lock"></i></span></div><div class="value">@Model.LockedAccounts</div></div></div>
+    <div class="col-6 col-lg-3"><div class="ht-card ht-tile"><div class="ht-tile-top"><span class="ht-overline">Pending appointments</span><span class="ht-glyph saffron"><i class="bi bi-calendar-check"></i></span></div><div class="value">@Model.PendingAppointments</div></div></div>
+    <div class="col-6 col-lg-3"><div class="ht-card ht-tile"><div class="ht-tile-top"><span class="ht-overline">Unread notifications</span><span class="ht-glyph slate"><i class="bi bi-bell"></i></span></div><div class="value">@Model.UnreadNotifications</div></div></div>
+    <div class="col-6 col-lg-3"><div class="ht-card ht-tile"><div class="ht-tile-top"><span class="ht-overline">Exports (7 days)</span><span class="ht-glyph success"><i class="bi bi-download"></i></span></div><div class="value">@Model.Exports7d</div></div></div>
+    <div class="col-6 col-lg-3"><div class="ht-card ht-tile"><div class="ht-tile-top"><span class="ht-overline">Imports (30 days)</span><span class="ht-glyph slate"><i class="bi bi-file-earmark-arrow-up"></i></span></div><div class="value">@Model.Imports30d</div></div></div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <section class="ht-card h-100">
+            <div class="ht-card-head"><h2>Sign-ins, last 14 days</h2><span class="ht-overline">Successful · failed</span></div>
+            <div class="ht-card-body">
+                <ul class="ht-bars-list">
+                    @foreach (var day in Model.Daily)
+                    {
+                        <li>
+                            <div class="row-top"><span>@day.Day.ToString("ddd d MMM")</span><strong>@day.Successful<span class="text-muted fw-normal"> · @day.Failed failed</span></strong></div>
+                            <div class="ht-bar" role="progressbar" aria-valuenow="@day.Successful" aria-valuemin="0" aria-valuemax="@maxDaily" aria-label="Successful sign-ins on @day.Day.ToString("d MMM")"><span style="width: @(day.Successful * 100 / maxDaily)%"></span></div>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </section>
+    </div>
+    <div class="col-lg-5">
+        <section class="ht-card mb-3">
+            <div class="ht-card-head"><h2>Accounts</h2></div>
+            <div class="ht-card-body">
+                <div class="d-flex justify-content-between mb-2"><span>Clients</span><strong>@Model.Clients</strong></div>
+                <div class="d-flex justify-content-between mb-2"><span>Trainers</span><strong>@Model.Trainers</strong></div>
+                <div class="d-flex justify-content-between"><span>Administrators</span><strong>@Model.Admins</strong></div>
+            </div>
+        </section>
+        <section class="ht-card">
+            <div class="ht-card-head"><h2>Services</h2></div>
+            <div class="ht-card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span>Email notifications</span>
+                    @if (Model.EmailConfigured) { <span class="ht-pill success">Configured</span> }
+                    else { <span class="ht-pill clay">Not configured</span> }
+                </div>
+            </div>
+        </section>
+    </div>
+</div>

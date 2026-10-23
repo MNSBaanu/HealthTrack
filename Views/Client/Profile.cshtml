@@ -1,6 +1,8 @@
 @model ProfileViewModel
 @{
+    ViewData["FormPage"] = "standard";
     ViewData["Title"] = "My profile";
+    var hours = Enumerable.Range(0, 24).Select(h => new SelectListItem($"{h:00}:00", h.ToString())).ToList();
 }
 
 <div class="ht-head">
@@ -79,9 +81,63 @@
                         </div>
                     </fieldset>
 
+                    <fieldset class="ht-fieldset">
+                        <legend>Weight goal</legend>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="TargetWeightKg" class="form-label"></label>
+                                <input asp-for="TargetWeightKg" class="form-control" type="number" step="0.1" min="20" max="300" placeholder="e.g. 65" />
+                                <span asp-validation-for="TargetWeightKg" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="TargetDate" class="form-label"></label>
+                                <input asp-for="TargetDate" class="form-control" type="date" min="@DateTime.Today.AddDays(1).ToString("yyyy-MM-dd")" />
+                                <span asp-validation-for="TargetDate" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <p class="small text-muted mt-2 mb-0">Your progress towards this goal is shown on the Progress page.</p>
+                    </fieldset>
+
+                    <fieldset class="ht-fieldset">
+                        <legend>Email</legend>
+                        <div class="form-check form-switch">
+                            <input asp-for="EmailNotificationsEnabled" class="form-check-input" />
+                            <label asp-for="EmailNotificationsEnabled" class="form-check-label">Email me my notifications</label>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="ht-fieldset">
+                        <legend>Daily reminders</legend>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="form-check form-switch">
+                                    <input asp-for="WorkoutReminderEnabled" class="form-check-input" />
+                                    <label asp-for="WorkoutReminderEnabled" class="form-check-label">Workout reminder</label>
+                                </div>
+                                <select asp-for="WorkoutReminderHour" class="form-select mt-2" aria-label="Workout reminder time" asp-items="hours"></select>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check form-switch">
+                                    <input asp-for="MealReminderEnabled" class="form-check-input" />
+                                    <label asp-for="MealReminderEnabled" class="form-check-label">Meal reminder</label>
+                                </div>
+                                <select asp-for="MealReminderHour" class="form-select mt-2" aria-label="Meal reminder time" asp-items="hours"></select>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check form-switch">
+                                    <input asp-for="WeightReminderEnabled" class="form-check-input" />
+                                    <label asp-for="WeightReminderEnabled" class="form-check-label">Weight check-in</label>
+                                </div>
+                                <select asp-for="WeightReminderHour" class="form-select mt-2" aria-label="Weight check-in time" asp-items="hours"></select>
+                            </div>
+                        </div>
+                        <div class="form-text">Reminders appear from the chosen time if you haven't logged yet.</div>
+                    </fieldset>
+
                     <div class="ht-form-actions">
                         <button type="submit" class="btn btn-primary"><i class="bi bi-check2"></i>Save changes</button>
                         <a class="btn btn-line" asp-controller="Client" asp-action="Index">Cancel</a>
+                        <a class="btn btn-line text-danger ms-auto" asp-controller="Client" asp-action="DeleteAccount"><i class="bi bi-trash"></i>Delete my account</a>
                     </div>
                 </form>
             </div>

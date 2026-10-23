@@ -4,6 +4,7 @@ using HealthTrack.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace HealthTrack.Controllers
 {
@@ -31,6 +32,7 @@ namespace HealthTrack.Controllers
         }
 
         [HttpPost]
+        [EnableRateLimiting("auth")]
         public async Task<IActionResult> Register(RegisterViewModel model)
         {
             ValidatePastDate(model.DateOfBirth, nameof(model.DateOfBirth));
@@ -72,6 +74,7 @@ namespace HealthTrack.Controllers
         }
 
         [HttpPost]
+        [EnableRateLimiting("auth")]
         public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
@@ -81,6 +84,20 @@ namespace HealthTrack.Controllers
             }
 
             var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: true);
+            var user = await UserManager.FindByEmailAsync(model.Email);
+            if (user != null)
+            {
+                var agent = Request.Headers.UserAgent.ToString();
+                Context.LoginHistories.Add(new LoginHistory
+                {
+                    PersonId = user.Id,
+                    LoggedInAt = DateTime.Now,
+                    Succeeded = result.Succeeded,
+                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                    UserAgent = agent.Length > 300 ? agent[..300] : agent
+                });
+                await Context.SaveChangesAsync();
+            }
             if (result.IsLockedOut)
             {
                 _logger.LogWarning("Locked out account tried to sign in: {Email}", model.Email);
@@ -93,7 +110,6 @@ namespace HealthTrack.Controllers
                 return View(model);
             }
 
-            var user = await UserManager.FindByEmailAsync(model.Email);
             user!.LastLoginAt = DateTime.Now;
             await UserManager.UpdateAsync(user);
 
@@ -110,6 +126,35 @@ namespace HealthTrack.Controllers
         {
             await _signInManager.SignOutAsync();
             return RedirectToAction("Index", "Home");
+        }
+
+        [HttpGet]
+        [Authorize]
+        public IActionResult ChangePassword()
+        {
+            return View(new ChangePasswordViewModel());
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+        {
+            if (!ModelState.IsValid) return View(model);
+
+            var user = await UserManager.GetUserAsync(User);
+            if (user == null) return RedirectToAction(nameof(Login));
+
+            var result = await UserManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
+            if (!result.Succeeded)
+            {
+                foreach (var error in result.Errors) ModelState.AddModelError(string.Empty, error.Description);
+                return View(model);
+            }
+
+            await _signInManager.RefreshSignInAsync(user);
+            _logger.LogInformation("User {UserId} changed their password", user.Id);
+            TempData["Success"] = "Password changed.";
+            return RedirectToAction(nameof(ChangePassword));
         }
 
         [HttpGet]

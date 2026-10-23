@@ -4,5 +4,6 @@ namespace HealthTrack.Services
     {
         byte[] ToCsv(IEnumerable<ReportSection> sections);
         byte[] ToPdf(string title, IEnumerable<ReportSection> sections);
+        byte[] ToXlsx(string title, IEnumerable<ReportSection> sections);
     }
 }

@@ -1,0 +1,98 @@
+@model Trainer
+@{
+    ViewData["Title"] = Model.Name;
+}
+
+<a class="ht-back" asp-action="Users"><i class="bi bi-arrow-left"></i>All users</a>
+
+<section class="ht-card ink mb-3">
+    <div class="ht-banner">
+        <span class="ht-monogram lg">@Model.Initials</span>
+        <div class="flex-grow-1">
+            <div class="ht-overline">Trainer profile</div>
+            <h2>@Model.Name</h2>
+            <div class="ht-on-ink-muted">@Model.Email</div>
+            <div class="facts">
+                <span class="ht-pill on-ink"><i class="bi bi-calendar3"></i>Joined @Model.CreatedAt.ToString("d MMM yyyy")</span>
+                <span class="ht-pill on-ink"><i class="bi bi-clock-history"></i>Last active @(Model.LastLoginAt?.ToString("d MMM, HH:mm") ?? "never")</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="ht-ledger">
+    <div>
+        <div class="ht-overline">Clients</div>
+        <div class="value">@Model.ClientAssignments.Count</div>
+    </div>
+    <div>
+        <div class="ht-overline">Workout plans</div>
+        <div class="value">@Model.WorkoutPlans.Count</div>
+        <div class="hint">@Model.WorkoutPlans.Count(p => p.IsActive) active</div>
+    </div>
+    <div>
+        <div class="ht-overline">Feedback sent</div>
+        <div class="value">@Model.Feedbacks.Count</div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-5">
+        <section class="ht-card h-100">
+            <div class="ht-card-head"><h2>Assigned clients</h2></div>
+            @if (Model.ClientAssignments.Any())
+            {
+                <table class="ht-table">
+                    <thead>
+                        <tr><th>Client</th><th>Since</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var assignment in Model.ClientAssignments.OrderBy(a => a.Client.Name))
+                        {
+                            <tr>
+                                <td><a asp-action="ClientDetails" asp-route-id="@assignment.ClientId">@assignment.Client.Name</a></td>
+                                <td class="text-nowrap">@assignment.AssignedAtUtc.ToString("d MMM yyyy")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="ht-card-body text-muted">No clients assigned.</div>
+            }
+        </section>
+    </div>
+    <div class="col-lg-7">
+        <section class="ht-card h-100">
+            <div class="ht-card-head">
+                <h2>Recent workout plans</h2>
+                <span class="ht-overline">Latest 8</span>
+            </div>
+            @if (Model.WorkoutPlans.Any())
+            {
+                <div class="table-responsive">
+                    <table class="ht-table">
+                        <thead>
+                            <tr><th>Plan</th><th>Client</th><th>Created</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var plan in Model.WorkoutPlans.Take(8))
+                            {
+                                <tr>
+                                    <td>@plan.Title</td>
+                                    <td>@plan.Client?.Name</td>
+                                    <td class="text-nowrap">@plan.CreatedAtUtc.ToString("d MMM yyyy")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="ht-card-body text-muted">No workout plans created.</div>
+            }
+        </section>
+    </div>
+</div>

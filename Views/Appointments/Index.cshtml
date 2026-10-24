@@ -4,45 +4,61 @@
     <div><h1 class="ht-title">My appointments</h1><p class="ht-lede">Consultation requests and their current status. Times shown in @Model.TimeZoneLabel.</p></div>
     <a class="btn btn-primary" asp-action="Book"><i class="bi bi-calendar-plus"></i>Book a consultation</a>
 </div>
-<section class="ht-card">
-    @if (!Model.Appointments.Any())
+@{
+    var upcoming = Model.Appointments.Where(a => a.Status is AppointmentStatus.Pending or AppointmentStatus.Approved).OrderBy(a => a.Start).ToList();
+    var past = Model.Appointments.Where(a => a.Status is AppointmentStatus.Completed or AppointmentStatus.Cancelled).ToList();
+    var groups = new[] { (Title: "Upcoming", Empty: "No upcoming appointments.", Items: upcoming), (Title: "Past and cancelled", Empty: "No past or cancelled appointments.", Items: past) };
+}
+@if (!Model.Appointments.Any())
+{
+    <section class="ht-card"><div class="ht-card-body text-muted">You have no appointments yet.</div></section>
+}
+else
+{
+    foreach (var group in groups)
     {
-        <div class="ht-card-body text-muted">You have no appointments yet.</div>
+        <section class="ht-card mb-3">
+            <div class="ht-card-head"><h2>@group.Title</h2></div>
+            @if (!group.Items.Any())
+            {
+                <div class="ht-card-body text-muted">@group.Empty</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="ht-table">
+                        <thead><tr><th scope="col">Provider</th><th scope="col">Date and time</th><th scope="col">Status</th><th scope="col">Details</th></tr></thead>
+                        <tbody>
+                            @foreach (var appointment in group.Items)
+                            {
+                                <tr>
+                                    <td><strong>@appointment.ProviderName</strong><div class="small text-muted">@appointment.ProviderKind</div></td>
+                                    <td>@appointment.Start.ToString("d MMM yyyy, HH:mm")–@appointment.End.ToString("HH:mm")</td>
+                                    <td>
+                                        @if (appointment.Status == AppointmentStatus.Pending)
+                                        {
+                                            <span class="ht-pill info">Pending</span>
+                                        }
+                                        else if (appointment.Status == AppointmentStatus.Approved)
+                                        {
+                                            <span class="ht-pill success">Approved</span>
+                                        }
+                                        else if (appointment.Status == AppointmentStatus.Cancelled)
+                                        {
+                                            <span class="ht-pill danger">Cancelled</span>
+                                        }
+                                        else if (appointment.Status == AppointmentStatus.Completed)
+                                        {
+                                            <span class="ht-pill">Completed</span>
+                                        }
+                                    </td>
+                                    <td><a asp-action="Details" asp-route-id="@appointment.Id" aria-label="View appointment with @appointment.ProviderName">View</a></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </section>
     }
-    else
-    {
-        <div class="table-responsive">
-            <table class="table mb-0">
-                <thead><tr><th scope="col">Provider</th><th scope="col">Date and time</th><th scope="col">Status</th><th scope="col">Details</th></tr></thead>
-                <tbody>
-                    @foreach (var appointment in Model.Appointments)
-                    {
-                        <tr>
-                            <td><strong>@appointment.ProviderName</strong><div class="small text-muted">@appointment.ProviderKind</div></td>
-                            <td>@appointment.Start.ToString("d MMM yyyy, HH:mm")–@appointment.End.ToString("HH:mm")</td>
-                            <td>
-                                @if (appointment.Status == AppointmentStatus.Pending)
-                                {
-                                    <span class="ht-pill info">Pending</span>
-                                }
-                                else if (appointment.Status == AppointmentStatus.Approved)
-                                {
-                                    <span class="ht-pill success">Approved</span>
-                                }
-                                else if (appointment.Status == AppointmentStatus.Cancelled)
-                                {
-                                    <span class="ht-pill danger">Cancelled</span>
-                                }
-                                else if (appointment.Status == AppointmentStatus.Completed)
-                                {
-                                    <span class="ht-pill">Completed</span>
-                                }
-                            </td>
-                            <td><a asp-action="Details" asp-route-id="@appointment.Id" aria-label="View appointment with @appointment.ProviderName">View</a></td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    }
-</section>
+}

@@ -7,7 +7,7 @@
 <div class="row g-3">
     <div class="col-lg-6"><section class="ht-card h-100">
         <div class="ht-card-head"><h2>Workout plans</h2></div>
-        <div class="ht-card-body">
+        <div class="ht-card-body" data-filterable>
         @if (!Model.WorkoutPlans.Any()) { <p class="text-muted mb-0">No workout plans assigned yet. Your Trainer's saved plans will appear here.</p> }
         @foreach (var plan in Model.WorkoutPlans)
         {
@@ -23,7 +23,7 @@
     </section></div>
     <div class="col-lg-6"><section class="ht-card h-100">
         <div class="ht-card-head"><h2>Diet plans</h2></div>
-        <div class="ht-card-body">
+        <div class="ht-card-body" data-filterable>
         @if (!Model.DietPlans.Any()) { <p class="text-muted mb-0">No diet plans assigned yet. Your Trainer's saved schedules will appear here.</p> }
         @foreach (var plan in Model.DietPlans)
         {

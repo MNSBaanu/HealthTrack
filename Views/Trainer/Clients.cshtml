@@ -67,7 +67,7 @@
                                         <td>
                                             <span class="small text-muted">@(client.LastActiveAt.HasValue ? client.LastActiveAt.Value.ToString("MMM d, yyyy") : "Never")</span>
                                         </td>
-                                        <td class="text-end">
+                                        <td class="text-end text-nowrap">
                                             <a asp-action="ClientDetails" asp-route-id="@client.ClientId" class="btn btn-sm btn-line">
                                                 <i class="bi bi-person-lines-fill me-1"></i>Inspect
                                             </a>

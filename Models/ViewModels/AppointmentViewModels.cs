@@ -49,6 +49,28 @@ public class AppointmentViewModel
     public DateTime End { get; set; }
     public AppointmentStatus Status { get; set; }
     public string? Notes { get; set; }
+
+    // Latest reschedule request for an approved appointment, if any.
+    public RescheduleRequestStatus? RescheduleStatus { get; set; }
+    public string? RescheduleReason { get; set; }
+    public string? RescheduleTrainerNote { get; set; }
+    public bool CanRequestReschedule { get; set; }
+    public bool IsUpcoming { get; set; }
+    public bool CanReschedule { get; set; }
+}
+
+public class RescheduleRequestForm
+{
+    [Required(ErrorMessage = "Explain why you need to reschedule.")]
+    [StringLength(500, MinimumLength = 10, ErrorMessage = "The reason must be between 10 and 500 characters.")]
+    [Display(Name = "Reason for rescheduling")]
+    public string? Reason { get; set; }
+}
+
+public class RescheduleRequestPageViewModel : RescheduleRequestForm
+{
+    public AppointmentViewModel Appointment { get; set; } = new();
+    public string TimeZoneLabel { get; set; } = string.Empty;
 }
 
 public class AppointmentListViewModel

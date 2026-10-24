@@ -77,12 +77,36 @@ public class TrainerScheduleService : ITrainerScheduleService
             .OrderBy(a => a.Slot.StartUtc)
             .ToListAsync();
 
+        var openRequests = await _context.RescheduleRequests.AsNoTracking()
+            .Where(r => r.Appointment.Slot.ProviderId == provider.Id
+                && (r.Status == RescheduleRequestStatus.Pending || r.Status == RescheduleRequestStatus.Accepted))
+            .Select(r => new { r.Id, r.AppointmentId, r.Status, r.Reason, r.RequestedAtUtc })
+            .ToListAsync();
+
         var pending = new List<TrainerAppointmentItemViewModel>();
         var approved = new List<TrainerAppointmentItemViewModel>();
         var pastOrCancelled = new List<TrainerAppointmentItemViewModel>();
+        var rescheduleRequests = new List<TrainerRescheduleRequestViewModel>();
 
         foreach (var appt in appointments)
         {
+            var request = openRequests.FirstOrDefault(r => r.AppointmentId == appt.Id);
+            var isUpcomingApproved = appt.Status == AppointmentStatus.Approved && appt.Slot.StartUtc > nowUtc;
+            if (request?.Status == RescheduleRequestStatus.Pending && isUpcomingApproved)
+            {
+                rescheduleRequests.Add(new TrainerRescheduleRequestViewModel
+                {
+                    RequestId = request.Id,
+                    AppointmentId = appt.Id,
+                    ClientName = appt.Client?.Name ?? "Client",
+                    ClientEmail = appt.Client?.Email ?? string.Empty,
+                    StartLocal = _time.ToLocal(appt.Slot.StartUtc),
+                    EndLocal = _time.ToLocal(appt.Slot.EndUtc),
+                    Reason = request.Reason,
+                    RequestedAtLocal = _time.ToLocal(request.RequestedAtUtc)
+                });
+            }
+
             var item = new TrainerAppointmentItemViewModel
             {
                 Id = appt.Id,
@@ -93,7 +117,8 @@ public class TrainerScheduleService : ITrainerScheduleService
                 EndLocal = _time.ToLocal(appt.Slot.EndUtc),
                 Status = appt.Status,
                 Notes = appt.Notes,
-                RequestedAtLocal = _time.ToLocal(appt.RequestedAtUtc)
+                RequestedAtLocal = _time.ToLocal(appt.RequestedAtUtc),
+                ClientMayReschedule = request?.Status == RescheduleRequestStatus.Accepted && isUpcomingApproved
             };
 
             if (appt.Status == AppointmentStatus.Pending)
@@ -122,6 +147,7 @@ public class TrainerScheduleService : ITrainerScheduleService
             },
             UpcomingSlots = slots,
             PendingAppointments = pending,
+            RescheduleRequests = rescheduleRequests,
             UpcomingApprovedAppointments = approved,
             PastOrCancelledAppointments = pastOrCancelled
         };
@@ -319,6 +345,7 @@ public class TrainerScheduleService : ITrainerScheduleService
 
             var oldStatus = appointment.Status;
             appointment.Status = AppointmentStatus.Cancelled;
+            await CloseOpenRescheduleRequestsAsync(appointment.Id);
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
@@ -390,6 +417,7 @@ public class TrainerScheduleService : ITrainerScheduleService
             var newStart = _time.ToLocal(newSlot.StartUtc);
 
             appointment.SlotId = newSlotId;
+            await CloseOpenRescheduleRequestsAsync(appointment.Id);
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
@@ -437,6 +465,71 @@ public class TrainerScheduleService : ITrainerScheduleService
             AvailableSlots = slots.Select(s => new AvailableSlotViewModel(s.Id, s.Provider.Name,
                 _time.ToLocal(s.StartUtc), _time.ToLocal(s.EndUtc))).ToList()
         };
+    }
+
+    public Task<(bool Success, string? Error)> AcceptRescheduleRequestAsync(string trainerId, int requestId) =>
+        DecideRescheduleRequestAsync(trainerId, requestId, accept: true, note: null);
+
+    public Task<(bool Success, string? Error)> DeclineRescheduleRequestAsync(string trainerId, int requestId, string? note) =>
+        DecideRescheduleRequestAsync(trainerId, requestId, accept: false, note);
+
+    private async Task<(bool Success, string? Error)> DecideRescheduleRequestAsync(string trainerId, int requestId, bool accept, string? note)
+    {
+        var provider = await GetOrCreateTrainerProviderAsync(trainerId);
+        note = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
+        if (note?.Length > 500) return (false, "The note must be 500 characters or fewer.");
+
+        // Serializable so a request cannot be accepted and declined at the same time.
+        await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+        try
+        {
+            var request = await _context.RescheduleRequests
+                .Include(r => r.Appointment).ThenInclude(a => a.Slot)
+                .FirstOrDefaultAsync(r => r.Id == requestId && r.Appointment.Slot.ProviderId == provider.Id);
+
+            if (request == null) return (false, "Reschedule request not found.");
+            if (request.Status != RescheduleRequestStatus.Pending)
+                return (false, "This reschedule request has already been answered.");
+            if (request.Appointment.Status != AppointmentStatus.Approved
+                || request.Appointment.Slot.StartUtc <= _clock.GetUtcNow().UtcDateTime)
+            {
+                request.Status = RescheduleRequestStatus.Closed;
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return (false, "This appointment is no longer upcoming, so the request was closed.");
+            }
+
+            request.Status = accept ? RescheduleRequestStatus.Accepted : RescheduleRequestStatus.Declined;
+            request.TrainerNote = note;
+            request.DecidedAtUtc = _clock.GetUtcNow().UtcDateTime;
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            var start = _time.ToLocal(request.Appointment.Slot.StartUtc);
+            var message = accept
+                ? $"Your trainer ACCEPTED your request to reschedule the consultation on {start:MMM dd, yyyy} at {start:hh:mm tt}. Open the appointment to choose a new time."
+                : $"Your trainer DECLINED your request to reschedule the consultation on {start:MMM dd, yyyy} at {start:hh:mm tt}. The appointment stays as booked.{(note == null ? "" : " Note: " + note)}";
+            if (message.Length > 300) message = message[..297] + "...";
+            await _notificationService.SendAsync(request.Appointment.ClientId, message, NotificationType.Appointment);
+            return (true, null);
+        }
+        catch (Exception exception) when (IsRescheduleConflict(exception))
+        {
+            _context.ChangeTracker.Clear();
+            return (false, "The request changed while processing. Please try again.");
+        }
+    }
+
+    // Requests stop applying once the trainer cancels or moves the appointment themselves.
+    private async Task CloseOpenRescheduleRequestsAsync(int appointmentId)
+    {
+        var open = await _context.RescheduleRequests.Where(r => r.AppointmentId == appointmentId
+            && (r.Status == RescheduleRequestStatus.Pending || r.Status == RescheduleRequestStatus.Accepted)).ToListAsync();
+        foreach (var request in open)
+        {
+            request.Status = RescheduleRequestStatus.Closed;
+            request.DecidedAtUtc ??= _clock.GetUtcNow().UtcDateTime;
+        }
     }
 
     private static bool IsRescheduleConflict(Exception exception) =>

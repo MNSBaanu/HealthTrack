@@ -595,7 +595,7 @@ namespace HealthTrack.Migrations
                     b.UseTphMappingStrategy();
                 });
 
-            modelBuilder.Entity("HealthTrack.Models.TrainerAssignmentHistory", b =>
+            modelBuilder.Entity("HealthTrack.Models.RescheduleRequest", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -603,27 +603,37 @@ namespace HealthTrack.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("AssignedAtUtc")
+                    b.Property<int>("AppointmentId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("DecidedAtUtc")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("ClientId")
+                    b.Property<string>("Reason")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
-                    b.Property<DateTime?>("EndedAtUtc")
+                    b.Property<DateTime>("RequestedAtUtc")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("TrainerId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TrainerNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ClientId");
+                    b.HasIndex("AppointmentId")
+                        .IsUnique()
+                        .HasFilter("[Status] IN (0, 1)");
 
-                    b.HasIndex("TrainerId");
-
-                    b.ToTable("TrainerAssignmentHistories");
+                    b.ToTable("RescheduleRequests", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_RescheduleRequests_Status", "[Status] IN (0, 1, 2, 3, 4)");
+                        });
                 });
 
             modelBuilder.Entity("HealthTrack.Models.TrainerFeedback", b =>
@@ -1198,23 +1208,15 @@ namespace HealthTrack.Migrations
                     b.Navigation("Person");
                 });
 
-            modelBuilder.Entity("HealthTrack.Models.TrainerAssignmentHistory", b =>
+            modelBuilder.Entity("HealthTrack.Models.RescheduleRequest", b =>
                 {
-                    b.HasOne("HealthTrack.Models.Client", "Client")
+                    b.HasOne("HealthTrack.Models.Appointment", "Appointment")
                         .WithMany()
-                        .HasForeignKey("ClientId")
+                        .HasForeignKey("AppointmentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("HealthTrack.Models.Trainer", "Trainer")
-                        .WithMany()
-                        .HasForeignKey("TrainerId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Client");
-
-                    b.Navigation("Trainer");
+                    b.Navigation("Appointment");
                 });
 
             modelBuilder.Entity("HealthTrack.Models.TrainerFeedback", b =>

@@ -15,4 +15,6 @@ public interface ITrainerScheduleService
     Task<(bool Success, string? Error)> CancelAppointmentAsync(string trainerId, int appointmentId, string? reason);
     Task<(bool Success, string? Error)> RescheduleAppointmentAsync(string trainerId, int appointmentId, int newSlotId);
     Task<ReschedulePageViewModel?> LoadReschedulePageAsync(string trainerId, int appointmentId);
+    Task<(bool Success, string? Error)> AcceptRescheduleRequestAsync(string trainerId, int requestId);
+    Task<(bool Success, string? Error)> DeclineRescheduleRequestAsync(string trainerId, int requestId, string? note);
 }

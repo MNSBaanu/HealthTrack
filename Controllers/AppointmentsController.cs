@@ -45,10 +45,43 @@ public class AppointmentsController : ClientBaseController
             .SingleOrDefaultAsync(a => a.Id == id && a.ClientId == CurrentUserId);
         if (record == null) return NotFound();
         ViewData["TimeZoneLabel"] = _time.Label;
-        ViewData["Rating"] = record.Rating;
-        ViewData["RatingComment"] = record.RatingComment;
-        ViewData["CanRate"] = CanRate(record);
-        return View(_time.ToViewModel(record));
+        return View(await ToDetailsViewModel(record));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> RequestReschedule(int appointmentId)
+    {
+        var record = await LoadOwnAppointment(appointmentId);
+        if (record == null) return NotFound();
+        var model = await ToDetailsViewModel(record);
+        if (!model.CanRequestReschedule)
+        {
+            TempData["Error"] = "A reschedule request can't be sent for this appointment.";
+            return RedirectToAction(nameof(Details), new { id = appointmentId });
+        }
+        return View(new RescheduleRequestPageViewModel { Appointment = model, TimeZoneLabel = _time.Label });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> RequestReschedule(int appointmentId, RescheduleRequestForm form)
+    {
+        if (ModelState.IsValid)
+        {
+            var (success, error) = await _booking.RequestRescheduleAsync(CurrentUserId, appointmentId, form.Reason!);
+            if (success)
+            {
+                TempData["Success"] = "Your reschedule request was sent. You'll be notified when your trainer responds.";
+                return RedirectToAction(nameof(Details), new { id = appointmentId });
+            }
+            ModelState.AddModelError(string.Empty, error!);
+        }
+
+        var record = await LoadOwnAppointment(appointmentId);
+        if (record == null) return NotFound();
+        return View(new RescheduleRequestPageViewModel
+        {
+            Appointment = await ToDetailsViewModel(record), TimeZoneLabel = _time.Label, Reason = form.Reason
+        });
     }
 
     private bool CanRate(Appointment record) =>
@@ -108,7 +141,7 @@ public class AppointmentsController : ClientBaseController
             .Include(a => a.Client).Include(a => a.Slot).ThenInclude(s => s.Provider)
             .SingleOrDefaultAsync(a => a.Id == id && a.ClientId == CurrentUserId);
         if (record == null) return NotFound();
-        if (record.Status != AppointmentStatus.Approved || record.Slot.Provider.PersonId == null)
+        if (record.Status != AppointmentStatus.Approved || record.Slot.Provider.PersonId == null || record.Slot.StartUtc <= _clock.GetUtcNow().UtcDateTime)
         {
             TempData["Error"] = "A change request can only be sent for an approved trainer appointment.";
             return RedirectToAction(nameof(Details), new { id });
@@ -133,9 +166,17 @@ public class AppointmentsController : ClientBaseController
 
         if (appointment == null) return NotFound();
 
-        if (appointment.Status != AppointmentStatus.Pending)
+        var state = await ToDetailsViewModel(appointment);
+        if (!state.CanReschedule)
         {
-            TempData["Error"] = "Only pending appointments can be rescheduled by you.";
+            TempData["Error"] = state.RescheduleStatus switch
+            {
+                RescheduleRequestStatus.Pending => "Your reschedule request is still waiting for your trainer's decision.",
+                RescheduleRequestStatus.Declined => "Your trainer declined your reschedule request, so this appointment can't be moved.",
+                _ when appointment.Status == AppointmentStatus.Approved =>
+                    "This appointment is approved. Send a reschedule request to your trainer first.",
+                _ => "This appointment can no longer be rescheduled."
+            };
             return RedirectToAction(nameof(Details), new { id = appointmentId });
         }
 
@@ -178,7 +219,7 @@ public class AppointmentsController : ClientBaseController
             return RedirectToAction(nameof(Reschedule), new { appointmentId });
         }
 
-        TempData["Success"] = "Appointment rescheduled successfully. Your trainer will review the new time.";
+        TempData["Success"] = "Appointment rescheduled successfully.";
         return RedirectToAction(nameof(Details), new { id = appointmentId });
     }
 
@@ -195,6 +236,32 @@ public class AppointmentsController : ClientBaseController
 
         TempData["Success"] = "Appointment cancelled successfully.";
         return RedirectToAction(nameof(Index));
+    }
+
+    private Task<Appointment?> LoadOwnAppointment(int appointmentId) =>
+        Context.Appointments.AsNoTracking()
+            .Include(a => a.Slot).ThenInclude(s => s.Provider)
+            .SingleOrDefaultAsync(a => a.Id == appointmentId && a.ClientId == CurrentUserId);
+
+    // Adds the reschedule-request state and decides which actions the client may take.
+    private async Task<AppointmentViewModel> ToDetailsViewModel(Appointment record)
+    {
+        var model = _time.ToViewModel(record);
+        var latest = await Context.RescheduleRequests.AsNoTracking()
+            .Where(r => r.AppointmentId == record.Id)
+            .OrderByDescending(r => r.RequestedAtUtc).FirstOrDefaultAsync();
+        model.RescheduleStatus = latest?.Status;
+        model.RescheduleReason = latest?.Reason;
+        model.RescheduleTrainerNote = latest?.TrainerNote;
+
+        var isUpcoming = record.Slot.StartUtc > _clock.GetUtcNow().UtcDateTime;
+        model.IsUpcoming = isUpcoming;
+        var isOpen = latest?.Status is RescheduleRequestStatus.Pending or RescheduleRequestStatus.Accepted;
+        model.CanRequestReschedule = record.Status == AppointmentStatus.Approved && isUpcoming && !isOpen
+            && record.Slot.Provider.Kind == ConsultationProviderKind.Trainer && record.Slot.Provider.PersonId != null;
+        model.CanReschedule = (record.Status == AppointmentStatus.Pending && isUpcoming)
+            || (record.Status == AppointmentStatus.Approved && isUpcoming && latest?.Status == RescheduleRequestStatus.Accepted);
+        return model;
     }
 
     private async Task<BookingPageViewModel> LoadPage(BookingForm form, int? providerId, ConsultationProviderKind? kind)

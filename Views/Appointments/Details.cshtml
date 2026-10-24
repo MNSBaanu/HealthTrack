@@ -29,9 +29,57 @@
             }
         </dd>
         <dt class="col-sm-4">Your notes</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Notes) ? "No notes provided." : Model.Notes)</dd>
+        @if (Model.RescheduleStatus != null)
+        {
+            <dt class="col-sm-4">Reschedule request</dt>
+            <dd class="col-sm-8">
+                @switch (Model.RescheduleStatus)
+                {
+                    case RescheduleRequestStatus.Pending:
+                        <span class="ht-pill info">Waiting for your trainer</span>
+                        break;
+                    case RescheduleRequestStatus.Accepted:
+                        <span class="ht-pill success">Accepted &middot; choose a new time</span>
+                        break;
+                    case RescheduleRequestStatus.Declined:
+                        <span class="ht-pill danger">Declined</span>
+                        break;
+                    case RescheduleRequestStatus.Used:
+                        <span class="ht-pill">Rescheduled</span>
+                        break;
+                    default:
+                        <span class="ht-pill">Closed</span>
+                        break;
+                }
+                <div class="small text-muted mt-1">Your reason: @Model.RescheduleReason</div>
+                @if (!string.IsNullOrWhiteSpace(Model.RescheduleTrainerNote))
+                {
+                    <div class="small mt-1">Trainer's note: @Model.RescheduleTrainerNote</div>
+                }
+            </dd>
+        }
     </dl>
 </div>
-@if (Model.Status == AppointmentStatus.Pending)
+@if (Model.Status == AppointmentStatus.Approved && (Model.CanReschedule || Model.CanRequestReschedule))
+{
+    <div class="ht-card-footer p-3 border-top">
+        <div class="d-flex gap-2">
+            @if (Model.CanReschedule)
+            {
+                <a asp-action="Reschedule" asp-route-appointmentId="@Model.Id" class="btn btn-primary">
+                    <i class="bi bi-calendar-event me-1"></i>Choose a new time
+                </a>
+            }
+            else
+            {
+                <a asp-action="RequestReschedule" asp-route-appointmentId="@Model.Id" class="btn btn-line">
+                    <i class="bi bi-arrow-repeat me-1"></i>Request to reschedule
+                </a>
+            }
+        </div>
+    </div>
+}
+@if (Model.Status == AppointmentStatus.Pending && Model.IsUpcoming)
 {
     <div class="ht-card-footer p-3 border-top">
         <div class="d-flex gap-2">
@@ -46,7 +94,7 @@
         </div>
     </div>
 }
-@if (Model.Status == AppointmentStatus.Approved)
+@if (Model.Status == AppointmentStatus.Approved && Model.IsUpcoming)
 {
     <div class="ht-card-footer p-3 border-top">
         <form asp-action="RequestChange" asp-route-id="@Model.Id" method="post">

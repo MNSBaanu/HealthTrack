@@ -41,6 +41,19 @@ public class TrainerAppointmentItemViewModel
     public AppointmentStatus Status { get; set; }
     public string? Notes { get; set; }
     public DateTime RequestedAtLocal { get; set; }
+    public bool ClientMayReschedule { get; set; }
+}
+
+public class TrainerRescheduleRequestViewModel
+{
+    public int RequestId { get; set; }
+    public int AppointmentId { get; set; }
+    public string ClientName { get; set; } = string.Empty;
+    public string ClientEmail { get; set; } = string.Empty;
+    public DateTime StartLocal { get; set; }
+    public DateTime EndLocal { get; set; }
+    public string Reason { get; set; } = string.Empty;
+    public DateTime RequestedAtLocal { get; set; }
 }
 
 public class TrainerAvailabilitySlotViewModel
@@ -61,6 +74,7 @@ public class TrainerScheduleViewModel
 
     public List<TrainerAvailabilitySlotViewModel> UpcomingSlots { get; set; } = new();
     public List<TrainerAppointmentItemViewModel> PendingAppointments { get; set; } = new();
+    public List<TrainerRescheduleRequestViewModel> RescheduleRequests { get; set; } = new();
     public List<TrainerAppointmentItemViewModel> UpcomingApprovedAppointments { get; set; } = new();
     public List<TrainerAppointmentItemViewModel> PastOrCancelledAppointments { get; set; } = new();
 }

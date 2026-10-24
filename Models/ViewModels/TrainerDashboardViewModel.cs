@@ -5,6 +5,7 @@ public class TrainerDashboardViewModel
     public string TrainerName { get; set; } = string.Empty;
     public int TotalAssignedClients { get; set; }
     public int PendingAppointmentsCount { get; set; }
+    public int RescheduleRequestsCount { get; set; }
     public int ActiveWorkoutPlansCount { get; set; }
     public int ActiveDietPlansCount { get; set; }
 

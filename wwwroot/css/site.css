@@ -1848,3 +1848,20 @@ input[list]::-webkit-calendar-picker-indicator {
   font-weight: 600;
   opacity: 1;
 }
+
+tr[hidden], li[hidden], article[hidden] {
+  display: none !important;
+}
+
+.ht-pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 1rem;
+}
+
+.ht-pager[hidden] {
+  display: none;
+}

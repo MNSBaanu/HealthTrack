@@ -5,6 +5,7 @@
     ViewData["FormPage"] = "standard";
     ViewData["Title"] = "Broadcast";
     var recipients = ViewData["Recipients"] as List<SelectListItem> ?? new List<SelectListItem>();
+    var history = ViewData["History"] as List<BroadcastHistoryItem> ?? new List<BroadcastHistoryItem>();
 }
 
 <div class="ht-head">
@@ -57,6 +58,33 @@
         </section>
     </div>
 </div>
+
+<section class="ht-card mt-3">
+    <div class="ht-card-head"><h2>Sent history</h2></div>
+    @if (!history.Any())
+    {
+        <div class="ht-card-body text-muted">No notifications have been sent yet.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="ht-table">
+                <thead><tr><th scope="col">Sent</th><th scope="col">Type</th><th scope="col">Message</th><th scope="col">Recipients</th></tr></thead>
+                <tbody>
+                    @foreach (var item in history)
+                    {
+                        <tr>
+                            <td>@item.SentAt.ToString("d MMM yyyy, HH:mm")@if (item.ScheduledFor.HasValue) { <div class="small text-muted">Scheduled @item.ScheduledFor.Value.ToString("d MMM yyyy, HH:mm")</div> }</td>
+                            <td>@item.Type</td>
+                            <td>@item.Message</td>
+                            <td>@(item.RecipientName ?? $"{item.Recipients} recipients")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

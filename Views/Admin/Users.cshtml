@@ -30,7 +30,6 @@
         <option value="@AppRoles.Admin" selected="@(role == AppRoles.Admin)">Admins</option>
         <option value="@AppRoles.Trainer" selected="@(role == AppRoles.Trainer)">Trainers</option>
     </select>
-    <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i>Filter</button>
     @if (isFiltered)
     {
         <a class="btn btn-line" asp-action="Users">Clear</a>
@@ -77,6 +76,10 @@
                                     {
                                         <a class="btn-icon" asp-action="ClientDetails" asp-route-id="@user.Id" title="View client" aria-label="View @user.Name"><i class="bi bi-eye"></i></a>
                                         <a class="btn-icon" asp-controller="Assignments" asp-action="Edit" asp-route-id="@user.Id" title="Manage Trainer assignment" aria-label="Manage Trainer for @user.Name"><i class="bi bi-person-check"></i></a>
+                                    }
+                                    @if (user.Role == AppRoles.Trainer)
+                                    {
+                                        <a class="btn-icon" asp-action="TrainerDetails" asp-route-id="@user.Id" title="View trainer" aria-label="View @user.Name"><i class="bi bi-eye"></i></a>
                                     }
                                     @if (!isSelf)
                                     {

@@ -141,6 +141,19 @@ namespace HealthTrack.Controllers
             return View(client);
         }
 
+        public async Task<IActionResult> TrainerDetails(string id)
+        {
+            var trainer = await Context.Trainers
+                .Include(t => t.ClientAssignments).ThenInclude(a => a.Client)
+                .Include(t => t.WorkoutPlans.OrderByDescending(p => p.CreatedAtUtc)).ThenInclude(p => p.Client)
+                .Include(t => t.Feedbacks)
+                .AsSplitQuery()
+                .FirstOrDefaultAsync(t => t.Id == id);
+            if (trainer == null) return NotFound();
+            await AuditAsync("Viewed", "TrainerDetails", id);
+            return View(trainer);
+        }
+
         public async Task<IActionResult> LoginHistory(string id)
         {
             var person = await UserManager.FindByIdAsync(id);

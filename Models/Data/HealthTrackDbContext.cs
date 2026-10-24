@@ -30,6 +30,9 @@ namespace HealthTrack.Models.Data
         public DbSet<DietPlanMeal> DietPlanMeals { get; set; }
         public DbSet<TrainerFeedback> TrainerFeedbacks { get; set; }
         public DbSet<RescheduleRequest> RescheduleRequests { get; set; }
+        public DbSet<WeeklyCheckIn> WeeklyCheckIns { get; set; }
+        public DbSet<LoginHistory> LoginHistories { get; set; }
+        public DbSet<TrainerAssignmentHistory> TrainerAssignmentHistories { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

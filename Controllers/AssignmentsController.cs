@@ -13,7 +13,7 @@ namespace HealthTrack.Controllers;
 
 [Authorize(Roles = AppRoles.Admin)]
 public class AssignmentsController(HealthTrackDbContext context, UserManager<Person> users,
-    TrainerAssignmentQueries queries, TimeProvider clock) : BaseController(context, users)
+    TrainerAssignmentQueries queries, TimeProvider clock, INotificationService notifications) : BaseController(context, users)
 {
     [HttpGet]
     public async Task<IActionResult> Index(string? search, bool unassignedOnly = false)
@@ -61,23 +61,34 @@ public class AssignmentsController(HealthTrackDbContext context, UserManager<Per
             ModelState.AddModelError(nameof(form.TrainerId), "This Trainer is already assigned to the Client.");
         if (!ModelState.IsValid) return View(await LoadPage(client, form));
 
+        var oldTrainerId = assignment?.TrainerId;
+        var now = clock.GetUtcNow().UtcDateTime;
         if (assignment == null)
         {
             Context.ClientTrainerAssignments.Add(new ClientTrainerAssignment
             {
-                ClientId = client.Id, TrainerId = trainer!.Id, AssignedAtUtc = clock.GetUtcNow().UtcDateTime
+                ClientId = client.Id, TrainerId = trainer!.Id, AssignedAtUtc = now
             });
         }
         else
         {
             Context.Entry(assignment).Property(a => a.RowVersion).OriginalValue = Convert.FromBase64String(form.RowVersion!);
             assignment.TrainerId = trainer!.Id;
-            assignment.AssignedAtUtc = clock.GetUtcNow().UtcDateTime;
+            assignment.AssignedAtUtc = now;
         }
+        await CloseHistory(client.Id, now);
+        Context.TrainerAssignmentHistories.Add(new TrainerAssignmentHistory
+        {
+            ClientId = client.Id, TrainerId = trainer.Id, AssignedAtUtc = now
+        });
         try { await Context.SaveChangesAsync(); }
         catch (DbUpdateConcurrencyException) { return Changed(form.ClientId); }
         catch (DbUpdateException ex) when (ex.InnerException is SqlException { Number: 2601 or 2627 or 547 })
         { return Changed(form.ClientId); }
+        await notifications.SendAsync(client.Id, $"{trainer.Name} is now your Trainer.", NotificationType.General);
+        await notifications.SendAsync(trainer.Id, $"{client.Name} has been assigned to you.", NotificationType.General);
+        if (oldTrainerId != null)
+            await notifications.SendAsync(oldTrainerId, $"{client.Name} is no longer assigned to you.", NotificationType.General);
         TempData["Success"] = "Trainer assignment saved. Existing plans and appointments are unchanged.";
         return RedirectToAction(nameof(Index));
     }
@@ -86,12 +97,16 @@ public class AssignmentsController(HealthTrackDbContext context, UserManager<Per
     public async Task<IActionResult> Remove(RemoveAssignmentForm form)
     {
         if (!ModelState.IsValid) return BadRequest();
-        var assignment = await Context.ClientTrainerAssignments.SingleOrDefaultAsync(a => a.ClientId == form.ClientId);
+        var assignment = await Context.ClientTrainerAssignments.Include(a => a.Client).Include(a => a.Trainer)
+            .SingleOrDefaultAsync(a => a.ClientId == form.ClientId);
         if (assignment == null || !VersionMatches(assignment, form.RowVersion)) return Changed(form.ClientId);
         Context.Entry(assignment).Property(a => a.RowVersion).OriginalValue = Convert.FromBase64String(form.RowVersion);
         Context.ClientTrainerAssignments.Remove(assignment);
+        await CloseHistory(assignment.ClientId, clock.GetUtcNow().UtcDateTime);
         try { await Context.SaveChangesAsync(); }
         catch (DbUpdateConcurrencyException) { return Changed(form.ClientId); }
+        await notifications.SendAsync(assignment.ClientId, $"{assignment.Trainer.Name} is no longer your Trainer.", NotificationType.General);
+        await notifications.SendAsync(assignment.TrainerId, $"{assignment.Client.Name} is no longer assigned to you.", NotificationType.General);
         TempData["Success"] = "Trainer assignment removed. Existing plans and appointments are unchanged.";
         return RedirectToAction(nameof(Index));
     }
@@ -100,6 +115,13 @@ public class AssignmentsController(HealthTrackDbContext context, UserManager<Per
     {
         TempData["Error"] = "The assignment or selected account changed. Review the current assignment and try again.";
         return RedirectToAction(nameof(Edit), new { id = clientId });
+    }
+
+    private async Task CloseHistory(string clientId, DateTime now)
+    {
+        var open = await Context.TrainerAssignmentHistories
+            .Where(h => h.ClientId == clientId && h.EndedAtUtc == null).ToListAsync();
+        foreach (var row in open) row.EndedAtUtc = now;
     }
 
     private static bool VersionMatches(ClientTrainerAssignment? assignment, string? version)
@@ -119,11 +141,13 @@ public class AssignmentsController(HealthTrackDbContext context, UserManager<Per
                 && Context.Roles.Any(r => r.Id == ur.RoleId && r.Name == AppRoles.Trainer)))
             .OrderBy(t => t.Name).Select(t => new SelectListItem
             { Value = t.Id, Text = t.Name + " (" + t.Email + ")" }).ToListAsync();
+        var history = await Context.TrainerAssignmentHistories.AsNoTracking().Include(h => h.Trainer)
+            .Where(h => h.ClientId == client.Id).OrderByDescending(h => h.AssignedAtUtc).ToListAsync();
         return new AssignmentEditViewModel
         {
             ClientId = client.Id, ClientName = client.Name, ClientEmail = client.Email ?? string.Empty,
             CurrentTrainerName = client.TrainerAssignment?.Trainer.Name, Trainers = trainers,
-            TrainerId = form.TrainerId, RowVersion = form.RowVersion
+            TrainerId = form.TrainerId, RowVersion = form.RowVersion, History = history
         };
     }
 }

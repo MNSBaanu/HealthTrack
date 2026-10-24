@@ -1,7 +1,7 @@
 @model List<HealthMetric>
 @{
     ViewData["Title"] = "Health metrics";
-    var emptyState = new EmptyStateViewModel("bi-rulers", "No measurements yet", "Record your weight to start tracking your BMI over time.", "Record weight", "HealthMetrics");
+    var emptyState = new EmptyStateViewModel("bi-rulers", "No measurements yet", "Record your weight to start tracking your BMI over time.");
 }
 
 <div class="ht-head">
@@ -50,6 +50,11 @@
                         <th>Weight</th>
                         <th>BMI</th>
                         <th>Category</th>
+                        <th>Body fat</th>
+                        <th>Heart rate</th>
+                        <th>Blood pressure</th>
+                        <th>Steps</th>
+                        <th>Sleep</th>
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>
@@ -64,6 +69,11 @@
                             <td class="num">@metric.WeightKg.ToString("0.0") <small>kg</small></td>
                             <td class="num">@(metric.Bmi?.ToString("0.0") ?? "–")</td>
                             <td><partial name="_BmiPill" model="metric.BmiCategory" /></td>
+                            <td class="num">@(metric.BodyFatPercent.HasValue ? metric.BodyFatPercent.Value.ToString("0.0") + " %" : "–")</td>
+                            <td class="num">@(metric.RestingHeartRate.HasValue ? metric.RestingHeartRate + " bpm" : "–")</td>
+                            <td class="num">@(metric.SystolicBp.HasValue && metric.DiastolicBp.HasValue ? $"{metric.SystolicBp}/{metric.DiastolicBp}" : "–")</td>
+                            <td class="num">@(metric.Steps?.ToString("N0") ?? "–")</td>
+                            <td class="num">@(metric.SleepHours.HasValue ? metric.SleepHours.Value.ToString("0.#") + " h" : "–")</td>
                             <td>
                                 <div class="ht-row-actions">
                                     <a class="btn-icon" asp-action="Edit" asp-route-id="@metric.MetricId" title="Edit" aria-label="Edit measurement"><i class="bi bi-pencil"></i></a>

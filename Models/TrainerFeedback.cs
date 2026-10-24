@@ -27,4 +27,9 @@ public class TrainerFeedback
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
 
     public bool IsReadByClient { get; set; }
+
+    [StringLength(1000)]
+    public string? ClientReply { get; set; }
+
+    public DateTime? ClientRepliedAtUtc { get; set; }
 }

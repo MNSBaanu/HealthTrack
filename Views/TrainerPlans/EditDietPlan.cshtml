@@ -1,5 +1,6 @@
 @model DietPlanFormViewModel
 @{
+    ViewData["FormPage"] = "wide";
     ViewData["Title"] = $"Edit diet plan: {Model.Title}";
 }
 
@@ -70,7 +71,7 @@
                     </fieldset>
 
                     <fieldset class="ht-fieldset mb-4">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="ht-schedule-heading">
                             <legend class="mb-0">Meal Recommendations</legend>
                             <button type="button" class="btn btn-sm btn-line" id="addMealBtn">
                                 <i class="bi bi-plus-lg me-1"></i>Add meal

@@ -12,6 +12,9 @@ namespace HealthTrack.Models.ViewModels
         public int TotalMinutes { get; set; }
         public int TotalCaloriesBurned { get; set; }
         public int MealLogCount { get; set; }
+        public int WeightLogCount { get; set; }
+        public int AppointmentCount { get; set; }
+        public int ActiveDays { get; set; }
         public DateTime? LastLoginAt { get; set; }
 
         public double? WeightChangeKg => StartWeightKg.HasValue && CurrentWeightKg.HasValue

@@ -6,6 +6,7 @@ namespace HealthTrack.Services
     {
         Task SendAsync(string personId, string message, NotificationType type, DateTime? scheduledFor = null);
         Task SendToAllClientsAsync(string message, NotificationType type, DateTime? scheduledFor = null);
+        Task SendToAllTrainersAsync(string message, NotificationType type, DateTime? scheduledFor = null);
         Task<List<Notification>> GetVisibleAsync(string personId, bool unreadOnly);
         Task<int> GetUnreadCountAsync(string personId);
         Task GenerateDailyRemindersAsync(string clientId);

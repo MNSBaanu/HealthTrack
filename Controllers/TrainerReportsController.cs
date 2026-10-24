@@ -92,11 +92,17 @@ namespace HealthTrack.Controllers
                     })
             };
 
+            await AuditAsync("Exported", "TrainerClientReport", null, format);
             var fileName = $"Trainer_Report_{trainer.Name.Replace(" ", "_")}_{DateTime.Now:yyyyMMdd}";
 
             if (format.Equals("pdf", StringComparison.OrdinalIgnoreCase))
             {
                 return File(_exportService.ToPdf($"HealthTrack - Coach {trainer.Name} Client Report", sections), "application/pdf", fileName + ".pdf");
+            }
+
+            if (format.Equals("xlsx", StringComparison.OrdinalIgnoreCase))
+            {
+                return File(_exportService.ToXlsx($"Coach {trainer.Name} Client Report", sections), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName + ".xlsx");
             }
 
             return File(_exportService.ToCsv(sections), "text/csv", fileName + ".csv");

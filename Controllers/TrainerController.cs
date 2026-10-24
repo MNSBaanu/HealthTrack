@@ -13,15 +13,18 @@ namespace HealthTrack.Controllers
         private readonly ITrainerFeedbackService _feedbackService;
         private readonly ITrainerScheduleService _scheduleService;
         private readonly AppointmentTime _time;
+        private readonly INotificationService _notifications;
 
         public TrainerController(
             HealthTrackDbContext context,
             UserManager<Person> userManager,
             ITrainerFeedbackService feedbackService,
             ITrainerScheduleService scheduleService,
-            AppointmentTime time)
+            AppointmentTime time,
+            INotificationService notifications)
             : base(context, userManager)
         {
+            _notifications = notifications;
             _feedbackService = feedbackService;
             _scheduleService = scheduleService;
             _time = time;
@@ -206,6 +209,7 @@ namespace HealthTrack.Controllers
                 return RedirectToAction(nameof(Clients));
             }
 
+            await AuditAsync("Viewed", "ClientDetails", id);
             var client = await Context.Clients
                 .Include(c => c.HealthMetrics.OrderByDescending(m => m.RecordedAt))
                 .Include(c => c.WorkoutLogs.OrderByDescending(w => w.LoggedAt))
@@ -243,6 +247,9 @@ namespace HealthTrack.Controllers
                 WorkoutPlans = client.WorkoutPlans.OrderByDescending(p => p.CreatedAtUtc).ToList(),
                 DietPlans = client.DietPlans.OrderByDescending(p => p.CreatedAtUtc).ToList(),
                 Feedbacks = client.Feedbacks.OrderByDescending(f => f.CreatedAtUtc).ToList(),
+                CheckIns = await Context.WeeklyCheckIns.AsNoTracking()
+                    .Where(c => c.ClientId == client.Id && c.TrainerId == trainerId)
+                    .OrderByDescending(c => c.RequestedAtUtc).Take(12).ToListAsync(),
                 NewFeedbackForm = new TrainerFeedbackFormViewModel
                 {
                     ClientId = client.Id,
@@ -254,7 +261,40 @@ namespace HealthTrack.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> SendFeedback(TrainerFeedbackFormViewModel model)
+        public async Task<IActionResult> RequestCheckIn(string clientId, string? note)
+        {
+            var trainerId = CurrentUserId;
+            var isAssigned = await Context.ClientTrainerAssignments
+                .AnyAsync(a => a.TrainerId == trainerId && a.ClientId == clientId);
+            if (!isAssigned)
+            {
+                TempData["Error"] = "Client is not assigned to you.";
+                return RedirectToAction(nameof(Clients));
+            }
+
+            note = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
+            if (note?.Length > 300)
+            {
+                TempData["Error"] = "The note can be at most 300 characters.";
+                return RedirectToAction(nameof(ClientDetails), new { id = clientId });
+            }
+
+            if (await Context.WeeklyCheckIns.AnyAsync(c => c.ClientId == clientId && c.TrainerId == trainerId && c.RespondedAtUtc == null))
+            {
+                TempData["Error"] = "This client already has a check-in waiting for an answer.";
+                return RedirectToAction(nameof(ClientDetails), new { id = clientId });
+            }
+
+            Context.WeeklyCheckIns.Add(new WeeklyCheckIn { TrainerId = trainerId, ClientId = clientId, Note = note });
+            await Context.SaveChangesAsync();
+            await _notifications.SendAsync(clientId, "Your Trainer asked for your weekly check-in. Open Feedback to answer.", NotificationType.General);
+            TempData["Success"] = "Weekly check-in sent to the client.";
+            return RedirectToAction(nameof(ClientDetails), new { id = clientId });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SendFeedback(
+            [Bind(Prefix = nameof(TrainerClientDetailsViewModel.NewFeedbackForm))] TrainerFeedbackFormViewModel model)
         {
             var trainerId = CurrentUserId;
             

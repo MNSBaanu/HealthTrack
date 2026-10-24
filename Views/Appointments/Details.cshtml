@@ -79,7 +79,7 @@
         </div>
     </div>
 }
-@if (Model.Status == AppointmentStatus.Pending)
+@if (Model.Status == AppointmentStatus.Pending && Model.IsUpcoming)
 {
     <div class="ht-card-footer p-3 border-top">
         <div class="d-flex gap-2">
@@ -94,7 +94,7 @@
         </div>
     </div>
 }
-@if (Model.Status == AppointmentStatus.Approved)
+@if (Model.Status == AppointmentStatus.Approved && Model.IsUpcoming)
 {
     <div class="ht-card-footer p-3 border-top">
         <form asp-action="RequestChange" asp-route-id="@Model.Id" method="post">

@@ -718,6 +718,14 @@ namespace HealthTrack.Controllers
                 .Select(t => new SelectListItem { Value = t.Id, Text = t.Name + " (" + t.Email + ")", Group = trainers })
                 .ToListAsync());
             ViewData["Recipients"] = recipients;
+            ViewData["History"] = (await Context.Notifications.AsNoTracking()
+                    .Where(n => n.AppointmentId == null)
+                    .OrderByDescending(n => n.CreatedAt).Take(1000)
+                    .Select(n => new { n.Message, n.Type, n.ScheduledFor, n.CreatedAt, n.Person!.Name })
+                    .ToListAsync())
+                .GroupBy(n => new { n.Message, n.Type, n.ScheduledFor, Sent = new DateTime(n.CreatedAt.Ticks - n.CreatedAt.Ticks % TimeSpan.TicksPerMinute) })
+                .Select(g => new BroadcastHistoryItem(g.Key.Sent, g.Key.Type, g.Key.Message, g.Key.ScheduledFor, g.Count(), g.Count() == 1 ? g.First().Name : null))
+                .Take(50).ToList();
         }
 
         public async Task<IActionResult> Providers()

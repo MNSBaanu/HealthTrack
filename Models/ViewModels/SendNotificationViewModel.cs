@@ -16,4 +16,6 @@ namespace HealthTrack.Models.ViewModels
         [Display(Name = "Scheduled For")]
         public DateTime? ScheduledFor { get; set; }
     }
+
+    public record BroadcastHistoryItem(DateTime SentAt, NotificationType Type, string Message, DateTime? ScheduledFor, int Recipients, string? RecipientName);
 }

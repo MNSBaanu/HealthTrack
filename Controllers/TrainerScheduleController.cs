@@ -164,6 +164,38 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        [HttpPost]
+        public async Task<IActionResult> AcceptRescheduleRequest(int requestId)
+        {
+            var (success, error) = await _scheduleService.AcceptRescheduleRequestAsync(CurrentUserId, requestId);
+            if (!success)
+            {
+                TempData["Error"] = error;
+            }
+            else
+            {
+                TempData["Success"] = "Reschedule request accepted. The client can now choose a new time.";
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeclineRescheduleRequest(int requestId, string? note)
+        {
+            var (success, error) = await _scheduleService.DeclineRescheduleRequestAsync(CurrentUserId, requestId, note);
+            if (!success)
+            {
+                TempData["Error"] = error;
+            }
+            else
+            {
+                TempData["Success"] = "Reschedule request declined. The client has been notified.";
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
         [HttpGet]
         public async Task<IActionResult> RescheduleAppointment(int appointmentId)
         {

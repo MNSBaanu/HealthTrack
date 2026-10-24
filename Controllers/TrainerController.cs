@@ -144,6 +144,7 @@ namespace HealthTrack.Controllers
                 TrainerName = trainer.Name,
                 TotalAssignedClients = clients.Count,
                 PendingAppointmentsCount = schedule.PendingAppointments.Count,
+                RescheduleRequestsCount = schedule.RescheduleRequests.Count,
                 ActiveWorkoutPlansCount = await Context.WorkoutPlans.CountAsync(p => p.TrainerId == trainerId && p.IsActive),
                 ActiveDietPlansCount = await Context.DietPlans.CountAsync(p => p.TrainerId == trainerId && p.IsActive),
                 AssignedClients = clientSummaries,

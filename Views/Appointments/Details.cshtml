@@ -86,12 +86,66 @@
             <a asp-action="Reschedule" asp-route-appointmentId="@Model.Id" class="btn btn-primary">
                 <i class="bi bi-calendar-event me-1"></i>Reschedule
             </a>
-            <form asp-action="Cancel" method="post" asp-route-appointmentId="@Model.Id" class="d-inline" onsubmit="return confirm('Are you sure you want to cancel this appointment request?');">
+            <form asp-action="Cancel" method="post" asp-route-appointmentId="@Model.Id" class="d-inline" data-confirm="Cancel this appointment request?">
                 <button type="submit" class="btn btn-line-danger">
                     <i class="bi bi-x-lg me-1"></i>Cancel request
                 </button>
             </form>
         </div>
+    </div>
+}
+@if (Model.Status == AppointmentStatus.Approved)
+{
+    <div class="ht-card-footer p-3 border-top">
+        <form asp-action="RequestChange" asp-route-id="@Model.Id" method="post">
+            <p class="text-muted small">This appointment is approved. Send a request to your trainer to cancel or reschedule it.</p>
+            <div class="mb-3">
+                <label class="form-label" for="requestType">Request</label>
+                <select class="form-select" id="requestType" name="requestType">
+                    <option value="Reschedule">Reschedule</option>
+                    <option value="Cancel">Cancel</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="message">Message (optional)</label>
+                <textarea class="form-control" id="message" name="message" rows="3" maxlength="500"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-send me-1"></i>Send request</button>
+        </form>
+    </div>
+}
+@if (ViewData["Rating"] is int givenRating)
+{
+    <div class="ht-card-footer p-3 border-top">
+        <h2 class="h6">Your rating</h2>
+        <p class="mb-1" aria-label="@givenRating out of 5">
+            @for (var star = 1; star <= 5; star++) { <i class="bi @(star <= givenRating ? "bi-star-fill" : "bi-star") text-warning"></i> }
+        </p>
+        @if (!string.IsNullOrWhiteSpace(ViewData["RatingComment"] as string)) { <p class="small text-muted mb-0">@ViewData["RatingComment"]</p> }
+    </div>
+}
+else if (ViewData["CanRate"] is true)
+{
+    <div class="ht-card-footer p-3 border-top">
+        <form asp-action="Rate" asp-route-id="@Model.Id" method="post">
+            <h2 class="h6">How was this consultation?</h2>
+            <div class="mb-3">
+                <label class="form-label" for="rating">Rating</label>
+                <select class="form-select" id="rating" name="rating" required>
+                    <option value="">Choose…</option>
+                    <option value="5">5 – Excellent</option>
+                    <option value="4">4 – Good</option>
+                    <option value="3">3 – Okay</option>
+                    <option value="2">2 – Poor</option>
+                    <option value="1">1 – Very poor</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="ratingComment">Comment (optional)</label>
+                <textarea class="form-control" id="ratingComment" name="comment" rows="2" maxlength="500"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-star me-1"></i>Submit rating</button>
+        </form>
     </div>
 }
 </section></div></div>

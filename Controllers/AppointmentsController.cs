@@ -135,41 +135,6 @@ public class AppointmentsController : ClientBaseController
     }
 
     [HttpPost]
-    public async Task<IActionResult> Cancel(int id)
-    {
-        var error = await _booking.CancelAsync(CurrentUserId, id);
-        if (error == null) TempData["Success"] = "Your appointment was cancelled.";
-        else TempData["Error"] = error;
-        return RedirectToAction(nameof(Details), new { id });
-    }
-
-    [HttpGet]
-    public async Task<IActionResult> Reschedule(int id)
-    {
-        var model = await LoadReschedulePage(id);
-        if (model == null) return NotFound();
-        return model.NewSlotId == null ? RedirectToAction(nameof(Details), new { id }) : View(model);
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> Reschedule(int id, RescheduleForm form)
-    {
-        if (ModelState.IsValid)
-        {
-            var error = await _booking.RescheduleAsync(CurrentUserId, id, form.NewSlotId!.Value);
-            if (error == null)
-            {
-                TempData["Success"] = "Your appointment was rescheduled.";
-                return RedirectToAction(nameof(Details), new { id });
-            }
-            ModelState.AddModelError(nameof(form.NewSlotId), error);
-        }
-        var model = await LoadReschedulePage(id);
-        if (model == null) return NotFound();
-        return View(model);
-    }
-
-    [HttpPost]
     public async Task<IActionResult> RequestChange(int id, string requestType, string? message)
     {
         var record = await Context.Appointments.AsNoTracking()
@@ -190,35 +155,6 @@ public class AppointmentsController : ClientBaseController
             NotificationType.Appointment);
         TempData["Success"] = "Your request was sent to your trainer.";
         return RedirectToAction(nameof(Details), new { id });
-    }
-
-    private async Task<ReschedulePageViewModel?> LoadReschedulePage(int id)
-    {
-        var clientId = CurrentUserId;
-        var record = await Context.Appointments.AsNoTracking()
-            .Include(a => a.Slot).ThenInclude(s => s.Provider)
-            .SingleOrDefaultAsync(a => a.Id == id && a.ClientId == clientId);
-        if (record == null) return null;
-
-        var model = new ReschedulePageViewModel
-        {
-            AppointmentId = id, ProviderName = record.Slot.Provider.Name, TimeZoneLabel = _time.Label,
-            CurrentStartLocal = _time.ToLocal(record.Slot.StartUtc), CurrentEndLocal = _time.ToLocal(record.Slot.EndUtc)
-        };
-        if (record.Status != AppointmentStatus.Pending) return model;
-
-        var now = _clock.GetUtcNow().UtcDateTime;
-        var slots = await Context.AvailabilitySlots.AsNoTracking().Include(s => s.Provider)
-            .Where(s => s.ProviderId == record.Slot.ProviderId && s.Provider.IsActive && s.IsAvailable
-                && s.StartUtc > now && s.EndUtc > s.StartUtc)
-            .Where(s => !Context.Appointments.Any(a => a.Id != id && a.Status != AppointmentStatus.Cancelled
-                && (a.Slot.ProviderId == s.ProviderId || a.ClientId == clientId)
-                && a.Slot.StartUtc < s.EndUtc && a.Slot.EndUtc > s.StartUtc))
-            .OrderBy(s => s.StartUtc).ToListAsync();
-        model.NewSlotId = record.SlotId;
-        model.AvailableSlots = slots.Where(s => s.Id != record.SlotId).Select(s => new AvailableSlotViewModel(s.Id, s.Provider.Name,
-            _time.ToLocal(s.StartUtc), _time.ToLocal(s.EndUtc))).ToList();
-        return model;
     }
 
     [HttpGet]

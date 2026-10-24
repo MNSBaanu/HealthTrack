@@ -389,6 +389,23 @@ namespace HealthTrack.Controllers
                 TempData["Error"] = "Reassign or remove this Trainer's Client assignments before deleting the account.";
                 return RedirectToAction(nameof(Users));
             }
+            await using var transaction = await Context.Database.BeginTransactionAsync();
+            if (user is Trainer)
+            {
+                var provider = await Context.ConsultationProviders.Include(p => p.Slots).FirstOrDefaultAsync(p => p.PersonId == id);
+                if (provider != null)
+                {
+                    if (await Context.Appointments.AnyAsync(a => a.Slot.ProviderId == provider.Id))
+                    {
+                        TempData["Error"] = "This Trainer has linked sessions. Retain the account for existing consultations.";
+                        return RedirectToAction(nameof(Users));
+                    }
+                    Context.AvailabilitySlots.RemoveRange(provider.Slots);
+                    Context.ConsultationProviders.Remove(provider);
+                }
+                Context.TrainerAssignmentHistories.RemoveRange(Context.TrainerAssignmentHistories.Where(h => h.TrainerId == id));
+                await Context.SaveChangesAsync();
+            }
             IdentityResult result;
             try { result = await UserManager.DeleteAsync(user); }
             catch (DbUpdateException ex) when (ex.InnerException is Microsoft.Data.SqlClient.SqlException { Number: 547 })
@@ -401,6 +418,7 @@ namespace HealthTrack.Controllers
                 TempData["Error"] = string.Join(" ", result.Errors.Select(e => e.Description));
                 return RedirectToAction(nameof(Users));
             }
+            await transaction.CommitAsync();
 
             _logger.LogInformation("Admin {AdminId} deleted user {UserId}", CurrentUserId, id);
             TempData["Success"] = $"{user.Name} has been deleted.";

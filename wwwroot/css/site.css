@@ -1558,6 +1558,11 @@ a:hover {
 }
 
 /* Password visibility control: focus outline for keyboard navigation only. */
+/* Suppress the browser's native password-reveal button (Edge/IE). */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
 #togglePassword:focus {
   box-shadow: none;
   outline: none;

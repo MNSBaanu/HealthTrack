@@ -14,7 +14,7 @@ else
             <section class="ht-card h-100">
                 <div class="ht-card-head"><h2>Providers</h2></div>
                 <div class="ht-card-body">
-                    <form method="get" asp-action="Book" class="mb-4">
+                    <form method="get" asp-action="Book" class="mb-4" data-autofilter>
                         <label class="form-label" for="kind">Provider type</label>
                         <select id="kind" name="kind" class="form-select mb-2">
                             <option value="">All types</option>
@@ -34,7 +34,6 @@ else
                                 </optgroup>
                             }
                         </select>
-                        <button type="submit" class="btn btn-line">Show available times</button>
                     </form>
                     @foreach (var provider in Model.Providers.Where(p => (Model.ProviderId == null || p.Id == Model.ProviderId) && (Model.Kind == null || p.Kind == Model.Kind)))
                     {

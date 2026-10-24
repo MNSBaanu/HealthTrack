@@ -31,7 +31,6 @@
     </select>
     <input type="date" name="from" value="@from?.ToString("yyyy-MM-dd")" class="form-control" aria-label="From date" />
     <input type="date" name="to" value="@to?.ToString("yyyy-MM-dd")" class="form-control" aria-label="To date" />
-    <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i>Filter</button>
     @if (!string.IsNullOrEmpty(actor) || !string.IsNullOrEmpty(action) || from.HasValue || to.HasValue)
     {
         <a class="btn btn-line" asp-action="AuditLog">Clear</a>

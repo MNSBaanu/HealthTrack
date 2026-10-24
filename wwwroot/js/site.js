@@ -125,3 +125,49 @@ document.querySelectorAll('form.ht-filter, form[data-autofilter]').forEach(form 
         }
     } catch { }
 });
+
+(function () {
+    if (document.querySelector('form.ht-filter, form[data-autofilter]')) return;
+    const text = el => el.textContent.replace(/\s+/g, ' ').trim();
+    const lists = [];
+    document.querySelectorAll('table.ht-table, table.table').forEach(table => {
+        if (table.hasAttribute('data-nofilter')) return;
+        const rows = [...table.tBodies].flatMap(body => [...body.rows]).filter(row => row.cells.length > 1);
+        if (rows.length >= 5) lists.push({ anchor: table, rows, headers: [...table.querySelectorAll('thead th')].map(text) });
+    });
+    document.querySelectorAll('ul.ht-journal, ul.ht-notes, [data-filterable]').forEach(box => {
+        const rows = [...box.querySelectorAll(box.matches('ul') ? ':scope > li' : ':scope > article')];
+        if (rows.length >= 5) lists.push({ anchor: box, rows, headers: [] });
+    });
+    lists.forEach(({ anchor, rows, headers }) => {
+        const bar = document.createElement('div');
+        bar.className = 'ht-card ht-filter mb-3';
+        bar.innerHTML = '<div class="ht-input-icon flex-grow-1"><i class="bi bi-search"></i><input type="search" class="form-control" placeholder="Search" aria-label="Search list" /></div>';
+        const search = bar.querySelector('input');
+        const selects = [];
+        headers.forEach((title, column) => {
+            if (!title) return;
+            const values = [...new Set(rows.map(row => row.cells[column] ? text(row.cells[column]) : '').filter(value => value && value.length <= 30))];
+            if (values.length < 2 || values.length > Math.min(8, rows.length / 2)) return;
+            const select = document.createElement('select');
+            select.className = 'form-select';
+            select.setAttribute('aria-label', 'Filter by ' + title);
+            select.innerHTML = '<option value="">All ' + title.toLowerCase() + '</option>';
+            values.sort().forEach(value => select.add(new Option(value, value)));
+            select.dataset.column = column;
+            bar.appendChild(select);
+            selects.push(select);
+        });
+        const apply = () => {
+            const query = search.value.trim().toLowerCase();
+            rows.forEach(row => {
+                const matches = (!query || text(row).toLowerCase().includes(query)) &&
+                    selects.every(select => !select.value || (row.cells[select.dataset.column] && text(row.cells[select.dataset.column]) === select.value));
+                row.hidden = !matches;
+            });
+        };
+        bar.addEventListener('input', apply);
+        bar.addEventListener('change', apply);
+        (anchor.closest('.ht-card') || anchor).before(bar);
+    });
+})();

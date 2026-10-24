@@ -30,7 +30,7 @@ namespace HealthTrack.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> AddSlot(AddAvailabilitySlotForm form)
+        public async Task<IActionResult> AddSlot([Bind(Prefix = "NewSlotForm")] AddAvailabilitySlotForm form)
         {
             if (!ModelState.IsValid)
             {

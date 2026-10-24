@@ -1,0 +1,95 @@
+@model HealthTrack.Services.UserImportResult
+@{
+    ViewData["Title"] = "Import users";
+    var attempted = Model.Imported.Count > 0 || Model.Rejected.Count > 0;
+    var generated = Model.Imported.Where(u => u.TemporaryPassword != null).ToList();
+}
+
+<a class="ht-back" asp-action="Users"><i class="bi bi-arrow-left"></i>All users</a>
+<div class="ht-head">
+    <div>
+        <h1 class="ht-title">Import users</h1>
+        <p class="ht-lede">Add many clients and trainers at once from a CSV file.</p>
+    </div>
+    <a class="btn btn-line" asp-action="ImportTemplate"><i class="bi bi-download"></i>Download template</a>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-5">
+        <section class="ht-card">
+            <div class="ht-card-body">
+                <form asp-action="ImportUsers" method="post" enctype="multipart/form-data">
+                    <label for="file" class="form-label">CSV file</label>
+                    <input type="file" id="file" name="file" class="form-control mb-3" accept=".csv,text/csv" required />
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-file-earmark-arrow-up"></i>Import</button>
+                </form>
+                <hr />
+                <p class="small text-muted mb-1"><strong>Columns:</strong> Name, Email, Role, DateOfBirth, HeightCm, FitnessGoal, Password</p>
+                <ul class="small text-muted mb-0 ps-3">
+                    <li>Role is <em>Client</em> or <em>Trainer</em>.</li>
+                    <li>DateOfBirth is written as yyyy-MM-dd.</li>
+                    <li>HeightCm (50–250) is required for clients.</li>
+                    <li>Leave Password empty to generate a temporary one.</li>
+                    <li>Up to @HealthTrack.Services.UserImportService.MaxRows rows and 1 MB per file.</li>
+                </ul>
+            </div>
+        </section>
+    </div>
+
+    <div class="col-lg-7">
+        @if (Model.FileError != null)
+        {
+            <div class="ht-flash error alert" role="alert"><i class="bi bi-exclamation-octagon"></i><span>@Model.FileError</span></div>
+        }
+        @if (attempted)
+        {
+            <section class="ht-card mb-3">
+                <div class="ht-card-head">
+                    <h2>@Model.Imported.Count imported · @Model.Rejected.Count skipped</h2>
+                </div>
+                @if (generated.Any())
+                {
+                    <div class="ht-card-body">
+                        <p class="small text-muted">Temporary passwords are shown only now and are not stored. Share them securely and ask people to change them after the first sign-in.</p>
+                    </div>
+                }
+                @if (Model.Imported.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table ht-table align-middle mb-0">
+                            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Temporary password</th></tr></thead>
+                            <tbody>
+                                @foreach (var user in Model.Imported)
+                                {
+                                    <tr>
+                                        <td>@user.Name</td>
+                                        <td>@user.Email</td>
+                                        <td><span class="ht-pill">@user.Role</span></td>
+                                        <td>@if (user.TemporaryPassword != null) { <code>@user.TemporaryPassword</code> } else { <span class="text-muted small">Set in file</span> }</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </section>
+        }
+        @if (Model.Rejected.Any())
+        {
+            <section class="ht-card">
+                <div class="ht-card-head"><h2>Skipped rows</h2></div>
+                <div class="table-responsive">
+                    <table class="table ht-table align-middle mb-0">
+                        <thead><tr><th>Row</th><th>Email</th><th>Reason</th></tr></thead>
+                        <tbody>
+                            @foreach (var row in Model.Rejected)
+                            {
+                                <tr><td>@row.Line</td><td>@row.Email</td><td class="small">@row.Reason</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        }
+    </div>
+</div>

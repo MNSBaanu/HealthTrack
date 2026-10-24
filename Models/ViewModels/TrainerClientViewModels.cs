@@ -31,6 +31,7 @@ public class TrainerClientDetailsViewModel
     public List<WorkoutPlan> WorkoutPlans { get; set; } = new();
     public List<DietPlan> DietPlans { get; set; } = new();
     public List<TrainerFeedback> Feedbacks { get; set; } = new();
+    public List<WeeklyCheckIn> CheckIns { get; set; } = new();
 
     public TrainerFeedbackFormViewModel NewFeedbackForm { get; set; } = new();
 }

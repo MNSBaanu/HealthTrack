@@ -17,6 +17,8 @@ namespace HealthTrack.Models
 
         public DateTime? LastLoginAt { get; set; }
 
+        public bool EmailNotificationsEnabled { get; set; } = true;
+
         public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 
         [NotMapped]

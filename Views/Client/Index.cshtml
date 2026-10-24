@@ -7,7 +7,8 @@
     var latest = Model.LatestMetric;
     var bmi = latest?.Bmi;
     var bmiPosition = bmi.HasValue ? Math.Clamp((bmi.Value - 15) / 20 * 100, 2, 98) : 0;
-    var noWorkouts = new EmptyStateViewModel("bi-lightning-charge", "Your journal is empty", "Log your first workout to start building your training history.", "Log a workout", "WorkoutLogs");
+    var noWorkouts = new EmptyStateViewModel("bi-lightning-charge", "Your journal is empty", "Log your first workout to start building your training history.");
+    var noMeals = new EmptyStateViewModel("bi-cup-hot", "No meals yet", "Log your first meal to start tracking what you eat.");
 }
 
 <div class="ht-head">
@@ -58,6 +59,11 @@
             @if (latest != null)
             {
                 <div class="big">@latest.WeightKg.ToString("0.0")<small>kg</small></div>
+                <p class="mb-2">Starting weight: @Model.StartingWeightKg?.ToString("0.0") kg</p>
+                @if (Model.MetricCount == 1)
+                {
+                    <p class="mb-2">Log your next weigh-in to start seeing a trend. <a asp-controller="HealthMetrics" asp-action="Create">Add a weigh-in</a></p>
+                }
 
                 <div class="ht-bmi">
                     <div class="ht-bmi-head">
@@ -96,6 +102,16 @@
 
     <div class="col-lg-7">
         <div class="row g-3 h-100">
+            @if (!Model.RecentWorkouts.Any() && !Model.RecentMeals.Any())
+            {
+                <div class="col-12">
+                    <section class="ht-card">
+                        <div class="ht-card-body d-flex flex-wrap align-items-center gap-3">
+                            <span class="text-muted flex-grow-1">Get started by logging your first workout or meal to see your weekly totals.</span>
+                        </div>
+                    </section>
+                </div>
+            }
             <div class="col-sm-6">
                 <div class="ht-card ht-tile">
                     <div class="ht-tile-top"><span class="ht-overline">Workouts this week</span><span class="ht-glyph saffron"><i class="bi bi-lightning-charge"></i></span></div>
@@ -123,6 +139,64 @@
         </div>
     </div>
 </div>
+
+<div class="row g-3 mb-3">
+    <div class="col-lg-6">
+        <section class="ht-card h-100">
+            <div class="ht-card-head"><h2>Today's targets</h2><span class="ht-overline">From your assigned plans</span></div>
+            <div class="ht-card-body">
+                <ul class="ht-bars-list">
+                    <li>
+                        <div class="row-top">
+                            <span>Calories eaten</span>
+                            @if (Model.DietTargetKcal is int kcalTarget)
+                            {
+                                <strong>@Model.CaloriesConsumedToday.ToString("N0") / @kcalTarget.ToString("N0") kcal</strong>
+                            }
+                            else { <span class="text-muted">No active diet plan</span> }
+                        </div>
+                        @if (Model.DietTargetKcal is int target && target > 0)
+                        {
+                            var kcalPercent = Math.Min(100, Model.CaloriesConsumedToday * 100 / target);
+                            <div class="ht-bar @(Model.CaloriesConsumedToday > target ? "over" : "")" role="progressbar" aria-valuenow="@kcalPercent" aria-valuemin="0" aria-valuemax="100" aria-label="Calories eaten against target"><span style="width: @(kcalPercent)%"></span></div>
+                        }
+                    </li>
+                    <li>
+                        <div class="row-top">
+                            <span>Planned workouts done</span>
+                            @if (Model.PlannedWorkoutsToday > 0) { <strong>@Model.DoneWorkoutsToday / @Model.PlannedWorkoutsToday</strong> }
+                            else { <span class="text-muted">Nothing planned today</span> }
+                        </div>
+                        @if (Model.PlannedWorkoutsToday > 0)
+                        {
+                            var workoutPercent = Math.Min(100, Model.DoneWorkoutsToday * 100 / Model.PlannedWorkoutsToday);
+                            <div class="ht-bar" role="progressbar" aria-valuenow="@workoutPercent" aria-valuemin="0" aria-valuemax="100" aria-label="Planned workouts completed"><span style="width: @(workoutPercent)%"></span></div>
+                        }
+                    </li>
+                </ul>
+            </div>
+        </section>
+    </div>
+    <div class="col-lg-6">
+        <section class="ht-card h-100">
+            <div class="ht-card-head"><h2>Streak &amp; badges</h2><span class="ht-overline">Workout days</span></div>
+            <div class="ht-card-body">
+                <div class="d-flex gap-4 mb-3">
+                    <div><div class="ht-streak"><i class="bi bi-fire"></i>@Model.Achievements.CurrentStreak</div><div class="small text-muted">Current streak (days)</div></div>
+                    <div><div class="ht-streak muted"><i class="bi bi-trophy"></i>@Model.Achievements.LongestStreak</div><div class="small text-muted">Longest streak</div></div>
+                </div>
+                <div class="ht-badges">
+                    @foreach (var badge in Model.Achievements.Badges)
+                    {
+                        <span class="ht-badge @(badge.Earned ? "earned" : "")" title="@badge.Description"><i class="bi @badge.Icon"></i>@badge.Title</span>
+                    }
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+
+<partial name="_AssignedPlanSummaries" model="Model" />
 
 <div class="row g-3">
     <div class="col-lg-7">
@@ -239,7 +313,7 @@
             }
             else
             {
-                <div class="ht-card-body text-muted">No meals logged yet. <a asp-controller="MealLogs" asp-action="Create">Log one now</a>.</div>
+                <partial name="_EmptyState" model="noMeals" />
             }
         </section>
     </div>

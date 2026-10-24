@@ -1,0 +1,57 @@
+@model ProviderRatingsViewModel
+@{ ViewData["Title"] = "Consultation ratings"; }
+
+<a class="ht-back" asp-action="Reports"><i class="bi bi-arrow-left"></i>Reports</a>
+<div class="ht-head">
+    <div>
+        <h1 class="ht-title">Consultation ratings</h1>
+        <p class="ht-lede">How clients rated completed consultations with trainers and healthcare professionals.</p>
+    </div>
+</div>
+
+@if (!Model.Providers.Any())
+{
+    <section class="ht-card"><div class="ht-card-body"><p class="text-muted mb-0">No ratings yet. Clients can rate a consultation from its details page once it has ended.</p></div></section>
+}
+else
+{
+    <section class="ht-card mb-3">
+        <div class="ht-card-head"><h2>Average rating</h2></div>
+        <div class="table-responsive">
+            <table class="table ht-table align-middle mb-0">
+                <thead><tr><th>Provider</th><th>Type</th><th>Average</th><th>Ratings</th></tr></thead>
+                <tbody>
+                    @foreach (var row in Model.Providers)
+                    {
+                        <tr>
+                            <td>@row.Name<div class="small text-muted">@row.Specialty</div></td>
+                            <td><span class="ht-pill">@row.Kind</span></td>
+                            <td>
+                                @for (var star = 1; star <= 5; star++) { <i class="bi @(star <= Math.Round(row.Average) ? "bi-star-fill" : "bi-star") text-warning"></i> }
+                                <strong class="ms-1">@row.Average.ToString("0.0")</strong>
+                            </td>
+                            <td>@row.Count</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="ht-card">
+        <div class="ht-card-head"><h2>Recent ratings</h2></div>
+        <div class="ht-card-body">
+            @foreach (var rating in Model.Recent)
+            {
+                <article class="border-bottom pb-3 mb-3">
+                    <div class="d-flex justify-content-between gap-2">
+                        <strong>@rating.ProviderName</strong>
+                        <span>@for (var star = 1; star <= 5; star++) { <i class="bi @(star <= rating.Rating ? "bi-star-fill" : "bi-star") text-warning"></i> }</span>
+                    </div>
+                    <div class="small text-muted">@rating.ClientName · @rating.RatedAt.ToString("d MMM yyyy")</div>
+                    @if (!string.IsNullOrWhiteSpace(rating.Comment)) { <p class="mb-0 mt-1">@rating.Comment</p> }
+                </article>
+            }
+        </div>
+    </section>
+}

@@ -141,7 +141,7 @@ public class AppointmentsController : ClientBaseController
             .Include(a => a.Client).Include(a => a.Slot).ThenInclude(s => s.Provider)
             .SingleOrDefaultAsync(a => a.Id == id && a.ClientId == CurrentUserId);
         if (record == null) return NotFound();
-        if (record.Status != AppointmentStatus.Approved || record.Slot.Provider.PersonId == null)
+        if (record.Status != AppointmentStatus.Approved || record.Slot.Provider.PersonId == null || record.Slot.StartUtc <= _clock.GetUtcNow().UtcDateTime)
         {
             TempData["Error"] = "A change request can only be sent for an approved trainer appointment.";
             return RedirectToAction(nameof(Details), new { id });
@@ -255,10 +255,11 @@ public class AppointmentsController : ClientBaseController
         model.RescheduleTrainerNote = latest?.TrainerNote;
 
         var isUpcoming = record.Slot.StartUtc > _clock.GetUtcNow().UtcDateTime;
+        model.IsUpcoming = isUpcoming;
         var isOpen = latest?.Status is RescheduleRequestStatus.Pending or RescheduleRequestStatus.Accepted;
         model.CanRequestReschedule = record.Status == AppointmentStatus.Approved && isUpcoming && !isOpen
             && record.Slot.Provider.Kind == ConsultationProviderKind.Trainer && record.Slot.Provider.PersonId != null;
-        model.CanReschedule = record.Status == AppointmentStatus.Pending
+        model.CanReschedule = (record.Status == AppointmentStatus.Pending && isUpcoming)
             || (record.Status == AppointmentStatus.Approved && isUpcoming && latest?.Status == RescheduleRequestStatus.Accepted);
         return model;
     }

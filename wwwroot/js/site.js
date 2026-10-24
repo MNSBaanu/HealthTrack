@@ -100,3 +100,28 @@ try {
         document.querySelectorAll('a.ht-back, .ht-form-actions a.btn-line').forEach(link => link.setAttribute('href', target));
     }
 } catch { }
+
+document.querySelectorAll('form.ht-filter, form[data-autofilter]').forEach(form => {
+    const key = 'ht.filterFocus.' + location.pathname;
+    let timer;
+    form.addEventListener('input', event => {
+        if (event.target.type !== 'search') return;
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+            try { sessionStorage.setItem(key, event.target.name); } catch { }
+            form.requestSubmit();
+        }, 400);
+    });
+    form.addEventListener('change', event => {
+        if (event.target.type !== 'search') form.requestSubmit();
+    });
+    try {
+        const name = sessionStorage.getItem(key);
+        sessionStorage.removeItem(key);
+        const field = name && form.querySelector('input[type="search"][name="' + name + '"]');
+        if (field) {
+            field.focus();
+            field.setSelectionRange(field.value.length, field.value.length);
+        }
+    } catch { }
+});

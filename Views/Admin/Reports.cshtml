@@ -37,7 +37,6 @@
     <input id="report-from" type="date" name="from" value="@from?.ToString("yyyy-MM-dd")" class="form-control" />
     <label class="form-label mb-0" for="report-to">To</label>
     <input id="report-to" type="date" name="to" value="@to?.ToString("yyyy-MM-dd")" class="form-control" />
-    <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i>Apply</button>
     @if (from.HasValue || to.HasValue)
     {
         <a class="btn btn-line" asp-action="Reports">Clear</a>

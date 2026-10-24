@@ -29,9 +29,7 @@ namespace HealthTrack.Models.Data
         public DbSet<DietPlan> DietPlans { get; set; }
         public DbSet<DietPlanMeal> DietPlanMeals { get; set; }
         public DbSet<TrainerFeedback> TrainerFeedbacks { get; set; }
-        public DbSet<WeeklyCheckIn> WeeklyCheckIns { get; set; }
-        public DbSet<LoginHistory> LoginHistories { get; set; }
-        public DbSet<TrainerAssignmentHistory> TrainerAssignmentHistories { get; set; }
+        public DbSet<RescheduleRequest> RescheduleRequests { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -67,6 +65,14 @@ namespace HealthTrack.Models.Data
                 .HasFilter("[Status] <> 2");
             builder.Entity<Appointment>().ToTable("Appointments", table =>
                 table.HasCheckConstraint("CK_Appointments_Status", "[Status] IN (0, 1, 2, 3)"));
+
+            // Only one open (Pending or Accepted) reschedule request per appointment.
+            builder.Entity<RescheduleRequest>().HasOne(r => r.Appointment).WithMany()
+                .HasForeignKey(r => r.AppointmentId).OnDelete(DeleteBehavior.Cascade);
+            builder.Entity<RescheduleRequest>().HasIndex(r => r.AppointmentId).IsUnique()
+                .HasFilter("[Status] IN (0, 1)");
+            builder.Entity<RescheduleRequest>().ToTable("RescheduleRequests", table =>
+                table.HasCheckConstraint("CK_RescheduleRequests_Status", "[Status] IN (0, 1, 2, 3, 4)"));
 
             builder.Entity<Person>().ToTable("Users");
             builder.Entity<IdentityRole>().ToTable("Roles");

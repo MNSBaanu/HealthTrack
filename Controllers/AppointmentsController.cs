@@ -263,7 +263,7 @@ public class AppointmentsController : ClientBaseController
         return model;
     }
 
-    private async Task<BookingPageViewModel> LoadPage(BookingForm form, int? providerId)
+    private async Task<BookingPageViewModel> LoadPage(BookingForm form, int? providerId, ConsultationProviderKind? kind)
     {
         var now = _clock.GetUtcNow().UtcDateTime;
         var clientId = CurrentUserId;

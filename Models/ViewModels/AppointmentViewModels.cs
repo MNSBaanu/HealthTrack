@@ -55,6 +55,7 @@ public class AppointmentViewModel
     public string? RescheduleReason { get; set; }
     public string? RescheduleTrainerNote { get; set; }
     public bool CanRequestReschedule { get; set; }
+    public bool IsUpcoming { get; set; }
     public bool CanReschedule { get; set; }
 }
 

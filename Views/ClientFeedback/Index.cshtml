@@ -62,7 +62,7 @@
     </section>
 }
 <section class="ht-card">
-    <div class="ht-card-body">
+    <div class="ht-card-body" data-filterable>
     @if (!Model.Any()) { <p class="text-muted mb-0">No feedback yet. Feedback from your Trainer will appear here.</p> }
     @foreach (var item in Model)
     {

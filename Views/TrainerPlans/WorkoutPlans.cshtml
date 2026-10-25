@@ -17,7 +17,7 @@
     <div class="col-12">
         <section class="ht-card">
             <div class="ht-card-body p-3">
-                <form method="get" class="row g-2 align-items-center">
+                <form method="get" class="row g-2 align-items-center" data-autofilter>
                     <div class="col-auto">
                         <label class="form-label mb-0 fw-semibold">Filter by client:</label>
                     </div>
@@ -27,7 +27,6 @@
                         </select>
                     </div>
                     <div class="col-auto">
-                        <button type="submit" class="btn btn-sm btn-line">Filter</button>
                         @if (!string.IsNullOrEmpty(Model.SelectedClientId))
                         {
                             <a asp-action="WorkoutPlans" class="btn btn-sm btn-link text-muted">Clear</a>

@@ -8,13 +8,14 @@
 <div class="ht-head">
     <div>
         <h1 class="ht-title">Meal diary</h1>
-        <p class="ht-lede">Record what you eat here. <a asp-controller="ClientPlans" asp-action="Index">View assigned meal plans from your Trainer</a>.</p>
+        <p class="ht-lede"><a asp-controller="ClientPlans" asp-action="Index">View assigned meal plans</a></p>
     </div>
     <div class="ht-head-actions">
         <a class="btn btn-primary" asp-action="Create"><i class="bi bi-plus-lg"></i>Log meal</a>
     </div>
 </div>
 
+<partial name="_JournalFilters" model="@((JournalFilterViewModel)ViewData["JournalFilter"]!)" />
 @if (Model.Any())
 {
     var todaysMeals = Model.Where(m => m.LoggedAt >= today).ToList();
@@ -40,7 +41,7 @@
 
     <section class="ht-card">
         <div class="table-responsive">
-            <table class="ht-table">
+            <table class="ht-table client-record-table">
                 <thead>
                     <tr>
                         <th>Date</th>
@@ -54,15 +55,16 @@
                     @foreach (var meal in Model)
                     {
                         <tr>
-                            <td>
+                            <td data-label="Date">
                                 <span class="fw-semibold text-dark">@meal.LoggedAt.ToString("d MMM yyyy")</span>
                                 <span class="sub">@meal.LoggedAt.ToString("dddd, HH:mm")</span>
                             </td>
-                            <td><partial name="_MealTypePill" model="meal.MealType" /></td>
-                            <td class="text-muted">@(string.IsNullOrWhiteSpace(meal.FoodItems) ? "—" : meal.FoodItems)</td>
-                            <td class="num">@meal.Calories.ToString("N0") <small>kcal</small></td>
-                            <td>
+                            <td data-label="Meal"><partial name="_MealTypePill" model="meal.MealType" /></td>
+                            <td data-label="Food" class="text-muted">@(string.IsNullOrWhiteSpace(meal.FoodItems) ? "—" : meal.FoodItems)</td>
+                            <td data-label="Calories" class="num"><span>@meal.Calories.ToString("N0") <small>kcal</small></span></td>
+                            <td data-label="Actions">
                                 <div class="ht-row-actions">
+                                    <a class="btn-icon" asp-action="Create" asp-route-repeatId="@meal.MealLogId" title="Repeat as a new meal" aria-label="Repeat meal"><i class="bi bi-copy"></i></a>
                                     <a class="btn-icon" asp-action="Edit" asp-route-id="@meal.MealLogId" title="Edit" aria-label="Edit meal"><i class="bi bi-pencil"></i></a>
                                     <a class="btn-icon danger" asp-action="Delete" asp-route-id="@meal.MealLogId" title="Delete" aria-label="Delete meal"><i class="bi bi-trash3"></i></a>
                                 </div>
@@ -77,6 +79,7 @@
 else
 {
     <section class="ht-card">
-        <partial name="_EmptyState" model="emptyState" />
+        @if (((JournalFilterViewModel)ViewData["JournalFilter"]!).HasFilters) { <div class="ht-card-body"><p class="mb-0">No meals match these filters. Adjust the dates, food, or meal type, or clear the filters.</p></div> }
+        else { <partial name="_EmptyState" model="emptyState" /> }
     </section>
 }

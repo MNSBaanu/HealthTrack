@@ -23,12 +23,16 @@ namespace HealthTrack.Controllers
                 .FirstOrDefaultAsync(m => m.MetricId == id && m.ClientId == CurrentUserId);
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(DateTime? from = null, DateTime? to = null)
         {
+            if (!SetJournalFilters(from, to)) return View(new List<HealthMetric>());
             var metrics = await Context.HealthMetrics
                 .Include(m => m.Client)
                 .Where(m => m.ClientId == CurrentUserId)
+                .Where(m => (!from.HasValue || m.RecordedAt.Date >= from.Value.Date)
+                    && (!to.HasValue || m.RecordedAt.Date <= to.Value.Date))
                 .OrderByDescending(m => m.RecordedAt)
+                .ThenByDescending(m => m.MetricId)
                 .ToListAsync();
             return View(metrics);
         }
@@ -36,9 +40,10 @@ namespace HealthTrack.Controllers
         [HttpGet]
         public async Task<IActionResult> Create()
         {
-            var last = await Context.HealthMetrics
+            var last = await Context.HealthMetrics.AsNoTracking()
                 .Where(m => m.ClientId == CurrentUserId)
                 .OrderByDescending(m => m.RecordedAt)
+                .ThenByDescending(m => m.MetricId)
                 .FirstOrDefaultAsync();
             return View(new HealthMetric
             {
@@ -47,7 +52,9 @@ namespace HealthTrack.Controllers
                 BodyFatPercent = last?.BodyFatPercent,
                 RestingHeartRate = last?.RestingHeartRate,
                 SystolicBp = last?.SystolicBp,
-                DiastolicBp = last?.DiastolicBp
+                DiastolicBp = last?.DiastolicBp,
+                Steps = last?.Steps,
+                SleepHours = last?.SleepHours
             });
         }
 

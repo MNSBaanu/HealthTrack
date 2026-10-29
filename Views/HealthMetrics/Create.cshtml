@@ -1,13 +1,14 @@
 @model HealthMetric
 @{
     ViewData["FormPage"] = "standard";
-    ViewData["Title"] = "Record weight";
+    ViewData["Title"] = "Record health measurements";
 }
 
 <a class="ht-back" asp-action="Index"><i class="bi bi-arrow-left"></i>Health metrics</a>
 <div class="ht-head">
     <div>
-        <h1 class="ht-title">Record a weigh-in</h1>
+        <h1 class="ht-title">Record health measurements</h1>
+        <p class="text-muted">Prefilled from your latest record. Save to add a new entry.</p>
     </div>
 </div>
 

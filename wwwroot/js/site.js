@@ -101,19 +101,35 @@ try {
     }
 } catch { }
 
-document.querySelectorAll('form.ht-filter, form[data-autofilter]').forEach(form => {
+document.querySelectorAll('form.ht-filter, form[data-autofilter], form[data-journal-filter]').forEach(form => {
     const key = 'ht.filterFocus.' + location.pathname;
+    const journal = form.hasAttribute('data-journal-filter');
     let timer;
-    form.addEventListener('input', event => {
-        if (event.target.type !== 'search') return;
+    let submitting = false;
+    const ready = field => {
+        const type = field.dataset.calendarType || field.type;
+        return !journal || type !== 'date' || !field.value || /^\d{4}-\d{2}-\d{2}$/.test(field.value);
+    };
+    const apply = field => {
         clearTimeout(timer);
-        timer = setTimeout(() => {
-            try { sessionStorage.setItem(key, event.target.name); } catch { }
-            form.requestSubmit();
-        }, 400);
+        if (submitting || !ready(field)) return;
+        if (field.type === 'search') {
+            try { sessionStorage.setItem(key, field.name); } catch { }
+        }
+        form.requestSubmit();
+    };
+    form.addEventListener('submit', () => {
+        clearTimeout(timer);
+        submitting = true;
+    });
+    form.addEventListener('input', event => {
+        const field = event.target;
+        if (field.type !== 'search' && !journal) return;
+        clearTimeout(timer);
+        if (ready(field)) timer = setTimeout(() => apply(field), 400);
     });
     form.addEventListener('change', event => {
-        if (event.target.type !== 'search') form.requestSubmit();
+        if (event.target.type !== 'search') apply(event.target);
     });
     try {
         const name = sessionStorage.getItem(key);
@@ -127,7 +143,7 @@ document.querySelectorAll('form.ht-filter, form[data-autofilter]').forEach(form 
 });
 
 (function () {
-    const serverFiltered = !!document.querySelector('form.ht-filter, form[data-autofilter]');
+    const serverFiltered = !!document.querySelector('form.ht-filter, form[data-autofilter], form[data-journal-filter]');
     const pageSize = 10;
     const text = el => el.textContent.replace(/\s+/g, ' ').trim();
     const lists = [];

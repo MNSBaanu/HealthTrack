@@ -1,0 +1,22 @@
+.client-journal-filters { padding: 1rem; display: flex; flex-wrap: wrap; align-items: end; gap: .75rem; }
+.client-journal-filters > div:not(.validation-summary-valid):not(.validation-summary-errors) { min-width: 140px; }
+.client-journal-filters .validation-summary-valid { display: none; }
+.client-journal-filters .validation-summary-errors ul { margin: 0; }
+.client-journal-filters .form-label { margin-bottom: .35rem; }
+@media (max-width: 767px) {
+    .client-journal-filters > div:not(.w-100) { flex: 1 1 100%; }
+    .client-record-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+    .client-record-table, .client-record-table tbody { display: block; width: 100%; }
+    .client-record-table tbody { padding: .75rem; }
+    .client-record-table tr { display: block; margin-bottom: .75rem; border: 1px solid #e4dccf; border-radius: 12px; padding: .75rem; background: #fffdf9; }
+    .client-record-table tr:last-child { margin-bottom: 0; }
+    .client-record-table td { display: grid; grid-template-columns: minmax(95px, .8fr) minmax(0, 1.2fr); align-items: start; gap: .5rem; padding: .45rem .25rem; border: 0; white-space: normal; overflow-wrap: anywhere; text-align: left; }
+    .client-record-table td::before { content: attr(data-label); color: #756b5e; font-size: .85rem; font-weight: 500; }
+    .client-record-table td:first-child { display: block; padding-bottom: .75rem; border-bottom: 1px solid #e4dccf; margin-bottom: .25rem; }
+    .client-record-table td:first-child::before { display: none; }
+    .client-record-table .ht-row-actions { justify-content: flex-start; flex-wrap: wrap; }
+    .client-workout-list .ht-entry.with-actions { grid-template-columns: auto minmax(0, 1fr); }
+    .client-workout-list .ht-entry .figure { grid-column: 2; text-align: left; }
+    .client-workout-list .ht-entry.with-actions .ht-row-actions { grid-column: 2; justify-content: flex-start; flex-wrap: wrap; }
+    .client-workout-list .title { overflow-wrap: anywhere; }
+}

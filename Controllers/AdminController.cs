@@ -145,12 +145,20 @@ namespace HealthTrack.Controllers
         {
             var trainer = await Context.Trainers
                 .Include(t => t.ClientAssignments).ThenInclude(a => a.Client)
-                .Include(t => t.WorkoutPlans.OrderByDescending(p => p.CreatedAtUtc)).ThenInclude(p => p.Client)
-                .Include(t => t.Feedbacks)
+                .Include(t => t.WorkoutPlans)
+                .Include(t => t.DietPlans)
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(t => t.Id == id);
             if (trainer == null) return NotFound();
-            await AuditAsync("Viewed", "TrainerDetails", id);
+
+            var provider = await Context.ConsultationProviders
+                .FirstOrDefaultAsync(p => p.PersonId == id);
+
+            var appointmentCount = await Context.Appointments
+                .CountAsync(a => a.Slot.Provider.PersonId == id);
+
+            ViewData["Provider"] = provider;
+            ViewData["AppointmentCount"] = appointmentCount;
             return View(trainer);
         }
 

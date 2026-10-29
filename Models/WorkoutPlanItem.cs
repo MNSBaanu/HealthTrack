@@ -11,6 +11,12 @@ public class WorkoutPlanItem
 
     public DayOfWeek? DayOfWeek { get; set; }
 
+    public bool CanCompleteOn(DateTime date) =>
+        WorkoutPlan is { IsActive: true } plan
+        && date.Date >= plan.StartDate.Date
+        && (!plan.EndDate.HasValue || date.Date <= plan.EndDate.Value.Date)
+        && (!DayOfWeek.HasValue || DayOfWeek.Value == date.DayOfWeek);
+
     [Required]
     [StringLength(100)]
     public string ExerciseName { get; set; } = string.Empty;

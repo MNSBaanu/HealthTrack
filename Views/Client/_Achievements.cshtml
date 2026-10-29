@@ -1,0 +1,22 @@
+@model HealthTrack.Services.AchievementSummary
+@{ var showAll = ViewData["ShowAllBadges"] is true; }
+<section class="ht-card mb-3">
+    <div class="ht-card-head"><h2>@(showAll ? "Streaks & achievements" : "Your streak")</h2>
+        @if (!showAll) { <a asp-action="Progress" asp-fragment="achievements">All achievements</a> }
+    </div>
+    <div class="ht-card-body">
+        <div class="d-flex flex-wrap gap-4">
+            <div><div class="ht-streak"><i class="bi bi-fire"></i>@Model.CurrentStreak</div><div class="small text-muted">Current streak (days)</div></div>
+            <div><div class="ht-streak muted"><i class="bi bi-trophy"></i>@Model.LongestStreak</div><div class="small text-muted">Longest streak</div></div>
+        </div>
+        @if (showAll || Model.Badges.Any(b => b.Earned))
+        {
+            <div class="ht-badges mt-3">
+                @foreach (var badge in Model.Badges.Where(b => showAll || b.Earned))
+                {
+                    <span class="ht-badge @(badge.Earned ? "earned" : "")" title="@badge.Description"><i class="bi @badge.Icon"></i>@badge.Title</span>
+                }
+            </div>
+        }
+    </div>
+</section>

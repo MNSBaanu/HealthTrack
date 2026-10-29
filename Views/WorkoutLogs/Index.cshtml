@@ -7,13 +7,14 @@
 <div class="ht-head">
     <div>
         <h1 class="ht-title">Training journal</h1>
-        <p class="ht-lede">Record workouts you complete here. <a asp-controller="ClientPlans" asp-action="Index">View assigned workout plans from your Trainer</a>.</p>
+        <p class="ht-lede"><a asp-controller="ClientPlans" asp-action="Index">View assigned workout plans</a></p>
     </div>
     <div class="ht-head-actions">
         <a class="btn btn-primary" asp-action="Create"><i class="bi bi-plus-lg"></i>Log workout</a>
     </div>
 </div>
 
+<partial name="_JournalFilters" model="@((JournalFilterViewModel)ViewData["JournalFilter"]!)" />
 @if (Model.Any())
 {
     var topActivity = Model.GroupBy(w => w.Activity, StringComparer.OrdinalIgnoreCase)
@@ -39,7 +40,7 @@
     </div>
 
     <section class="ht-card">
-        <ul class="ht-journal">
+        <ul class="ht-journal client-workout-list">
             @foreach (var workout in Model)
             {
                 <li class="ht-entry with-actions">
@@ -50,6 +51,7 @@
                     </div>
                     <div class="figure">@workout.CaloriesBurned.ToString("N0")<small>kcal</small></div>
                     <div class="ht-row-actions">
+                        <a class="btn-icon" asp-action="Create" asp-route-repeatId="@workout.WorkoutLogId" title="Repeat as a new workout" aria-label="Repeat workout"><i class="bi bi-copy"></i></a>
                         <a class="btn-icon" asp-action="Edit" asp-route-id="@workout.WorkoutLogId" title="Edit" aria-label="Edit workout"><i class="bi bi-pencil"></i></a>
                         <a class="btn-icon danger" asp-action="Delete" asp-route-id="@workout.WorkoutLogId" title="Delete" aria-label="Delete workout"><i class="bi bi-trash3"></i></a>
                     </div>
@@ -61,6 +63,7 @@
 else
 {
     <section class="ht-card">
-        <partial name="_EmptyState" model="emptyState" />
+        @if (((JournalFilterViewModel)ViewData["JournalFilter"]!).HasFilters) { <div class="ht-card-body"><p class="mb-0">No workouts match these filters. Adjust the dates or activity, or clear the filters.</p></div> }
+        else { <partial name="_EmptyState" model="emptyState" /> }
     </section>
 }

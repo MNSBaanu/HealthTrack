@@ -8,6 +8,7 @@
 <div class="ht-head">
     <div>
         <h1 class="ht-title">Log a workout</h1>
+        @if (ViewData["IsRepeat"] is true) { <p class="text-muted">Copied from your previous workout. Adjust the values and save a new session.</p> }
     </div>
 </div>
 

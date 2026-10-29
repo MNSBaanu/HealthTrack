@@ -29,11 +29,17 @@ namespace HealthTrack.Controllers
             return Context.WorkoutLogs.FirstOrDefaultAsync(w => w.WorkoutLogId == id && w.ClientId == CurrentUserId);
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(DateTime? from = null, DateTime? to = null, string? q = null)
         {
+            q = q?.Trim();
+            if (!SetJournalFilters(from, to, q)) return View(new List<WorkoutLog>());
             var logs = await Context.WorkoutLogs
                 .Where(w => w.ClientId == CurrentUserId)
+                .Where(w => (!from.HasValue || w.LoggedAt.Date >= from.Value.Date)
+                    && (!to.HasValue || w.LoggedAt.Date <= to.Value.Date)
+                    && (string.IsNullOrEmpty(q) || w.Activity.Contains(q)))
                 .OrderByDescending(w => w.LoggedAt)
+                .ThenByDescending(w => w.WorkoutLogId)
                 .ToListAsync();
             return View(logs);
         }
@@ -45,9 +51,19 @@ namespace HealthTrack.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Create(int? planItemId)
+        public async Task<IActionResult> Create(int? planItemId, int? repeatId = null)
         {
             var log = new WorkoutLog { LoggedAt = LocalNow };
+            if (repeatId.HasValue)
+            {
+                if (planItemId.HasValue) return BadRequest();
+                var previous = await FindOwnedAsync(repeatId.Value);
+                if (previous == null) return NotFound();
+                log.Activity = previous.Activity;
+                log.DurationMinutes = previous.DurationMinutes;
+                log.CaloriesBurned = previous.CaloriesBurned;
+                ViewData["IsRepeat"] = true;
+            }
             if (planItemId.HasValue)
             {
                 var item = await FindOwnedPlanItemAsync(planItemId.Value);

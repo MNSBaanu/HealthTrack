@@ -23,12 +23,16 @@ namespace HealthTrack.Controllers
                 .FirstOrDefaultAsync(m => m.MetricId == id && m.ClientId == CurrentUserId);
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(DateTime? from = null, DateTime? to = null)
         {
+            if (!SetJournalFilters(from, to)) return View(new List<HealthMetric>());
             var metrics = await Context.HealthMetrics
                 .Include(m => m.Client)
                 .Where(m => m.ClientId == CurrentUserId)
+                .Where(m => (!from.HasValue || m.RecordedAt.Date >= from.Value.Date)
+                    && (!to.HasValue || m.RecordedAt.Date <= to.Value.Date))
                 .OrderByDescending(m => m.RecordedAt)
+                .ThenByDescending(m => m.MetricId)
                 .ToListAsync();
             return View(metrics);
         }

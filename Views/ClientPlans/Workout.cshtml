@@ -18,13 +18,42 @@
 <section class="ht-card" data-workout-checklist>
     <div class="ht-card-head"><div><h2>Weekly workout checklist</h2><p class="text-muted small mb-0 mt-1">@Model.WeekStart.ToString("d MMM") – @Model.WeekStart.AddDays(6).ToString("d MMM yyyy") · Today: @Model.Today.ToString("dddd, d MMM")</p></div></div>
     <div class="ht-card-body">
+        <nav class="d-flex flex-wrap align-items-center gap-2 mb-3" aria-label="Workout plan week">
+            <a class="btn btn-line btn-sm" asp-route-id="@plan.Id" asp-route-date="@Model.DisplayDate.AddDays(-7).ToString("yyyy-MM-dd")">Previous week</a>
+            <a class="btn btn-line btn-sm" asp-route-id="@plan.Id">This week</a>
+            <a class="btn btn-line btn-sm" asp-route-id="@plan.Id" asp-route-date="@Model.DisplayDate.AddDays(7).ToString("yyyy-MM-dd")">Next week</a>
+        </nav>
+        <form method="get" class="d-flex align-items-end flex-wrap gap-2 mb-3">
+            <input type="hidden" name="id" value="@plan.Id" />
+            <div><label for="plan-date" class="form-label">View a date</label><input id="plan-date" class="form-control" type="date" name="date" min="1900-01-01" max="9998-12-24" value="@Model.DisplayDate.ToString("yyyy-MM-dd")" /></div>
+            <button class="btn btn-line" type="submit">View week</button>
+        </form>
+        @if (total > 0)
+        {
         <div class="workout-checklist-summary" aria-live="polite" aria-atomic="true">
             <div class="d-flex justify-content-between flex-wrap gap-2"><strong><span data-completed-count>@done</span> of @total completed</strong><span class="text-muted"><span data-remaining-count>@(total - done)</span> remaining</span></div>
             <progress class="workout-checklist-progress" max="@(Math.Max(total, 1))" value="@done" aria-label="Weekly workout completion">@percentage%</progress>
         </div>
-        <p class="small text-muted mt-3">Check off today's exercises as you finish them. Completed tasks stay crossed out for this week. Tasks without a set day are tracked for today.</p>
+        }
+        else { <p class="text-muted">No exercises scheduled for this week.</p> }
+        @if (plan.Items.Any(i => Model.ScheduledDate(i) == Model.Today && i.CanCompleteOn(Model.Today)))
+        { <p class="small text-muted mt-3">Complete today's exercises. Progress saves automatically.</p> }
+        @if (plan.Items.Any(i => !i.DayOfWeek.HasValue)) { <p class="small text-muted">Flexible exercises: showing @Model.DisplayDate.ToString("d MMM yyyy").</p> }
         <div class="ht-flash error" role="alert" data-checklist-error hidden></div>
         <span class="visually-hidden" role="status" data-checklist-status></span>
+        <div class="workout-week-days" aria-label="Weekly schedule summary">
+            @for (var offset = 0; offset < 7; offset++)
+            {
+                var dayDate = Model.WeekStart.AddDays(offset);
+                var dayItems = plan.Items.Where(i => i.DayOfWeek == dayDate.DayOfWeek && Model.IsInPlanDates(i)).ToList();
+                var dayDone = dayItems.Count(i => Model.CompletedItemIds.Contains(i.Id));
+                var withinPlan = dayDate >= plan.StartDate.Date && (!plan.EndDate.HasValue || dayDate <= plan.EndDate.Value.Date);
+                <div class="workout-week-day @(dayDate == Model.Today ? "is-today" : "")" data-week-date="@dayDate.ToString("yyyy-MM-dd")">
+                    <strong>@dayDate.ToString("ddd")</strong><span class="small">@dayDate.ToString("d MMM")</span>
+                    <span class="small" data-week-summary>@(!withinPlan ? "Outside plan" : dayItems.Count > 0 ? $"{dayDone}/{dayItems.Count} done" : plan.Items.Any(i => !i.DayOfWeek.HasValue) ? "Flexible day" : "Rest day")</span>
+                </div>
+            }
+        </div>
         @if (!plan.Items.Any()) { <p class="text-muted">No exercises have been added to this plan yet.</p> }
         @foreach (var group in plan.Items.OrderBy(i => i.DayOfWeek.HasValue ? ((int)i.DayOfWeek.Value + 6) % 7 : 7).ThenBy(i => i.Id).GroupBy(i => i.DayOfWeek))
         {
@@ -32,7 +61,7 @@
             var groupTotal = group.Count(Model.IsInPlanDates);
             <section class="workout-checklist-day">
                 <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
-                    <h3 class="h5 mb-0">@(group.Key?.ToString() ?? "Any day") @if (group.Key == Model.Today.DayOfWeek) { <span class="ht-pill ms-2">Today</span> }</h3>
+                    <h3 class="h5 mb-0">@(group.Key?.ToString() ?? "Any day") @if (group.Any(i => Model.ScheduledDate(i) == Model.Today)) { <span class="ht-pill ms-2">Today</span> }</h3>
                     <span class="small text-muted"><span data-day-completed>@groupDone</span> / @groupTotal done</span>
                 </div>
                 @foreach (var item in group)
@@ -41,11 +70,11 @@
                     var journal = Model.JournalItemIds.Contains(item.Id);
                     var scheduledDate = Model.ScheduledDate(item);
                     var inDates = Model.IsInPlanDates(item);
-                    var editable = item.CanCompleteOn(Model.Today) && !journal;
-                    var status = completed ? "Completed" : !inDates ? "Outside plan dates"
+                    var editable = scheduledDate == Model.Today && item.CanCompleteOn(Model.Today) && !journal;
+                    var status = completed ? "Completed" : !inDates ? "Outside plan dates" : scheduledDate < Model.Today ? "Missed"
                         : ClientPlanStatus.Get(plan.IsActive, plan.StartDate, plan.EndDate, Model.Today) != "Active" ? "Plan is not active today"
-                        : editable ? "To do today" : scheduledDate < Model.Today ? "Not completed" : $"Scheduled for {item.DayOfWeek}";
-                    <article class="workout-checklist-item @(completed ? "is-complete" : "")" data-task data-counted="@(inDates ? "true" : "false")" data-completed="@(completed ? "true" : "false")">
+                        : editable ? "To do today" : "Upcoming";
+                    <article class="workout-checklist-item @(completed ? "is-complete" : "")" data-task data-counted="@(inDates ? "true" : "false")" data-completed="@(completed ? "true" : "false")" data-task-date="@(item.DayOfWeek.HasValue ? scheduledDate.ToString("yyyy-MM-dd") : "")">
                         <form asp-action="SetWorkoutCompletion" method="post" class="workout-checklist-form">
                             <input type="hidden" name="itemId" value="@item.Id" />
                             <input class="workout-task-checkbox" type="checkbox" name="completed" value="true" id="workout-task-@item.Id" checked="@completed" disabled="@(!editable)" aria-describedby="workout-state-@item.Id" />
@@ -73,7 +102,7 @@
         }
     </div>
 </section>
-<p class="text-muted mt-3">You can update checkboxes only on the scheduled day while the plan is active. To record duration, calories, or other sessions, use your <a asp-controller="WorkoutLogs" asp-action="Index">workout journal</a>.</p>
+<p class="small text-muted mt-3">Record duration and calories in your <a asp-controller="WorkoutLogs" asp-action="Index">workout journal</a>.</p>
 @section Scripts {
     <script src="~/js/workout-checklist.js" asp-append-version="true"></script>
 }

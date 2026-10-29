@@ -9,10 +9,11 @@
         <h1 class="ht-title">Health metrics</h1>
     </div>
     <div class="ht-head-actions">
-        <a class="btn btn-primary" asp-action="Create"><i class="bi bi-plus-lg"></i>Record weight</a>
+        <a class="btn btn-primary" asp-action="Create"><i class="bi bi-plus-lg"></i>Record health measurements</a>
     </div>
 </div>
 
+<partial name="_JournalFilters" model="@((JournalFilterViewModel)ViewData["JournalFilter"]!)" />
 @if (Model.Any())
 {
     var latest = Model.First();
@@ -23,7 +24,7 @@
             <div class="hint">@latest.RecordedAt.ToString("d MMM yyyy")</div>
         </div>
         <div>
-            <div class="ht-overline">Current BMI</div>
+            <div class="ht-overline">Latest recorded BMI</div>
             <div class="value">@(latest.Bmi?.ToString("0.0") ?? "–")</div>
             <div class="hint">@latest.BmiCategory</div>
         </div>
@@ -43,7 +44,7 @@
 
     <section class="ht-card">
         <div class="table-responsive">
-            <table class="ht-table">
+            <table class="ht-table client-record-table">
                 <thead>
                     <tr>
                         <th>Date</th>
@@ -62,19 +63,19 @@
                     @foreach (var metric in Model)
                     {
                         <tr>
-                            <td>
+                            <td data-label="Date">
                                 <span class="fw-semibold text-dark">@metric.RecordedAt.ToString("d MMM yyyy")</span>
                                 <span class="sub">@metric.RecordedAt.ToString("dddd, HH:mm")</span>
                             </td>
-                            <td class="num">@metric.WeightKg.ToString("0.0") <small>kg</small></td>
-                            <td class="num">@(metric.Bmi?.ToString("0.0") ?? "–")</td>
-                            <td><partial name="_BmiPill" model="metric.BmiCategory" /></td>
-                            <td class="num">@(metric.BodyFatPercent.HasValue ? metric.BodyFatPercent.Value.ToString("0.0") + " %" : "–")</td>
-                            <td class="num">@(metric.RestingHeartRate.HasValue ? metric.RestingHeartRate + " bpm" : "–")</td>
-                            <td class="num">@(metric.SystolicBp.HasValue && metric.DiastolicBp.HasValue ? $"{metric.SystolicBp}/{metric.DiastolicBp}" : "–")</td>
-                            <td class="num">@(metric.Steps?.ToString("N0") ?? "–")</td>
-                            <td class="num">@(metric.SleepHours.HasValue ? metric.SleepHours.Value.ToString("0.#") + " h" : "–")</td>
-                            <td>
+                            <td data-label="Weight" class="num"><span>@metric.WeightKg.ToString("0.0") <small>kg</small></span></td>
+                            <td data-label="BMI" class="num">@(metric.Bmi?.ToString("0.0") ?? "–")</td>
+                            <td data-label="Category"><partial name="_BmiPill" model="metric.BmiCategory" /></td>
+                            <td data-label="Body fat" class="num">@(metric.BodyFatPercent.HasValue ? metric.BodyFatPercent.Value.ToString("0.0") + " %" : "–")</td>
+                            <td data-label="Heart rate" class="num">@(metric.RestingHeartRate.HasValue ? metric.RestingHeartRate + " bpm" : "–")</td>
+                            <td data-label="Blood pressure" class="num">@(metric.SystolicBp.HasValue && metric.DiastolicBp.HasValue ? $"{metric.SystolicBp}/{metric.DiastolicBp}" : "–")</td>
+                            <td data-label="Steps" class="num">@(metric.Steps?.ToString("N0") ?? "–")</td>
+                            <td data-label="Sleep" class="num">@(metric.SleepHours.HasValue ? metric.SleepHours.Value.ToString("0.#") + " h" : "–")</td>
+                            <td data-label="Actions">
                                 <div class="ht-row-actions">
                                     <a class="btn-icon" asp-action="Edit" asp-route-id="@metric.MetricId" title="Edit" aria-label="Edit measurement"><i class="bi bi-pencil"></i></a>
                                     <a class="btn-icon danger" asp-action="Delete" asp-route-id="@metric.MetricId" title="Delete" aria-label="Delete measurement"><i class="bi bi-trash3"></i></a>
@@ -90,6 +91,7 @@
 else
 {
     <section class="ht-card">
-        <partial name="_EmptyState" model="emptyState" />
+        @if (((JournalFilterViewModel)ViewData["JournalFilter"]!).HasFilters) { <div class="ht-card-body"><p class="mb-0">No measurements match these dates. Adjust the dates or clear the filters.</p></div> }
+        else { <partial name="_EmptyState" model="emptyState" /> }
     </section>
 }

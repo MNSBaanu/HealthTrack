@@ -38,14 +38,16 @@ public class ClientPlansController : ClientBaseController
     }
 
     [HttpGet]
-    public async Task<IActionResult> Workout(int id)
+    public async Task<IActionResult> Workout(int id, DateTime? date = null)
     {
         var plan = await Context.WorkoutPlans.AsNoTracking().Include(p => p.Trainer).Include(p => p.Items)
             .FirstOrDefaultAsync(p => p.Id == id && p.ClientId == CurrentUserId);
         if (plan == null) return NotFound();
         var itemIds = plan.Items.Select(i => i.Id).ToList();
         var today = Today;
-        var model = new ClientWorkoutPlanViewModel { Plan = plan, Today = today };
+        // Leave room for week navigation and avoid DateTime boundary overflow.
+        if (date.HasValue && (date.Value.Year < 1900 || date.Value.Year > 9998)) return BadRequest();
+        var model = new ClientWorkoutPlanViewModel { Plan = plan, Today = today, SelectedDate = date };
         var weekEnd = model.WeekStart.AddDays(7);
         var logs = await Context.WorkoutLogs.AsNoTracking()
             .Where(l => l.ClientId == CurrentUserId && l.WorkoutPlanItemId != null && itemIds.Contains(l.WorkoutPlanItemId.Value)
@@ -57,9 +59,9 @@ public class ClientPlansController : ClientBaseController
             .Select(c => new { ItemId = c.WorkoutPlanItemId, Date = c.CompletedOn }).ToListAsync();
         foreach (var item in plan.Items.Where(model.IsInPlanDates))
         {
-            var date = model.ScheduledDate(item);
-            if (logs.Any(l => l.ItemId == item.Id && l.Date == date)) model.JournalItemIds.Add(item.Id);
-            if (model.JournalItemIds.Contains(item.Id) || checks.Any(c => c.ItemId == item.Id && c.Date == date))
+            var scheduledDate = model.ScheduledDate(item);
+            if (logs.Any(l => l.ItemId == item.Id && l.Date == scheduledDate)) model.JournalItemIds.Add(item.Id);
+            if (model.JournalItemIds.Contains(item.Id) || checks.Any(c => c.ItemId == item.Id && c.Date == scheduledDate))
                 model.CompletedItemIds.Add(item.Id);
         }
         return View(model);

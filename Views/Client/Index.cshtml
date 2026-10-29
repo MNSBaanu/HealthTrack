@@ -20,30 +20,19 @@
             {
                 <span><i class="bi bi-flag me-1"></i>Working towards: <strong class="text-dark">@Model.Client.FitnessGoal</strong></span>
             }
-            else
-            {
-                <span>Here's where you stand today.</span>
-            }
+
         </p>
+        <p class="small text-muted mb-0">Trainer: <strong>@(Model.Client.TrainerAssignment?.Trainer.Name ?? "Not assigned yet")</strong></p>
     </div>
     <div class="ht-head-actions">
-        <a class="btn btn-line" asp-controller="HealthMetrics" asp-action="Create"><i class="bi bi-plus-lg"></i>Weigh-in</a>
+        <a class="btn btn-line" asp-controller="HealthMetrics" asp-action="Create"><i class="bi bi-plus-lg"></i>Measurements</a>
         <a class="btn btn-line" asp-controller="MealLogs" asp-action="Create"><i class="bi bi-plus-lg"></i>Meal</a>
         <a class="btn btn-primary" asp-controller="WorkoutLogs" asp-action="Create"><i class="bi bi-plus-lg"></i>Log workout</a>
     </div>
 </div>
 
+<partial name="_TodayTasks" model="Model" />
 <div class="row g-3 mb-3">
-    <div class="col-12"><section class="ht-card">
-        <div class="ht-card-head"><h2>Your Trainer</h2></div>
-        <div class="ht-card-body">
-            @if (Model.Client.TrainerAssignment is { } assignment)
-            {
-                <strong>@assignment.Trainer.Name</strong>
-            }
-            else { <span class="text-muted">No Trainer is assigned to your account yet.</span> }
-        </div>
-    </section></div>
     <div class="col-lg-5">
         <section class="ht-card ink ht-hero-tile h-100">
             <div class="d-flex justify-content-between align-items-center">
@@ -102,16 +91,6 @@
 
     <div class="col-lg-7">
         <div class="row g-3 h-100">
-            @if (!Model.RecentWorkouts.Any() && !Model.RecentMeals.Any())
-            {
-                <div class="col-12">
-                    <section class="ht-card">
-                        <div class="ht-card-body d-flex flex-wrap align-items-center gap-3">
-                            <span class="text-muted flex-grow-1">Get started by logging your first workout or meal to see your weekly totals.</span>
-                        </div>
-                    </section>
-                </div>
-            }
             <div class="col-sm-6">
                 <div class="ht-card ht-tile">
                     <div class="ht-tile-top"><span class="ht-overline">Workouts this week</span><span class="ht-glyph saffron"><i class="bi bi-lightning-charge"></i></span></div>
@@ -134,67 +113,19 @@
                 <div class="ht-card ht-tile">
                     <div class="ht-tile-top"><span class="ht-overline">Eaten today</span><span class="ht-glyph success"><i class="bi bi-cup-hot"></i></span></div>
                     <div class="value">@Model.CaloriesConsumedToday.ToString("N0")<small>kcal</small></div>
+                    @if (Model.DietTargetKcal is int target && target > 0)
+                    {
+                        var kcalPercent = Math.Min(100, Model.CaloriesConsumedToday * 100 / target);
+                        <p class="small text-muted mt-2 mb-2">Target: @target.ToString("N0") kcal</p>
+                        <div class="ht-bar @(Model.CaloriesConsumedToday > target ? "over" : "")" role="progressbar" aria-valuenow="@kcalPercent" aria-valuemin="0" aria-valuemax="100" aria-label="Calories eaten against target"><span style="width: @(kcalPercent)%"></span></div>
+                    }
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="row g-3 mb-3">
-    <div class="col-lg-6">
-        <section class="ht-card h-100">
-            <div class="ht-card-head"><h2>Today's targets</h2><span class="ht-overline">From your assigned plans</span></div>
-            <div class="ht-card-body">
-                <ul class="ht-bars-list">
-                    <li>
-                        <div class="row-top">
-                            <span>Calories eaten</span>
-                            @if (Model.DietTargetKcal is int kcalTarget)
-                            {
-                                <strong>@Model.CaloriesConsumedToday.ToString("N0") / @kcalTarget.ToString("N0") kcal</strong>
-                            }
-                            else { <span class="text-muted">No active diet plan</span> }
-                        </div>
-                        @if (Model.DietTargetKcal is int target && target > 0)
-                        {
-                            var kcalPercent = Math.Min(100, Model.CaloriesConsumedToday * 100 / target);
-                            <div class="ht-bar @(Model.CaloriesConsumedToday > target ? "over" : "")" role="progressbar" aria-valuenow="@kcalPercent" aria-valuemin="0" aria-valuemax="100" aria-label="Calories eaten against target"><span style="width: @(kcalPercent)%"></span></div>
-                        }
-                    </li>
-                    <li>
-                        <div class="row-top">
-                            <span>Planned workouts done</span>
-                            @if (Model.PlannedWorkoutsToday > 0) { <strong>@Model.DoneWorkoutsToday / @Model.PlannedWorkoutsToday</strong> }
-                            else { <span class="text-muted">Nothing planned today</span> }
-                        </div>
-                        @if (Model.PlannedWorkoutsToday > 0)
-                        {
-                            var workoutPercent = Math.Min(100, Model.DoneWorkoutsToday * 100 / Model.PlannedWorkoutsToday);
-                            <div class="ht-bar" role="progressbar" aria-valuenow="@workoutPercent" aria-valuemin="0" aria-valuemax="100" aria-label="Planned workouts completed"><span style="width: @(workoutPercent)%"></span></div>
-                        }
-                    </li>
-                </ul>
-            </div>
-        </section>
-    </div>
-    <div class="col-lg-6">
-        <section class="ht-card h-100">
-            <div class="ht-card-head"><h2>Streak &amp; badges</h2><span class="ht-overline">Workout days</span></div>
-            <div class="ht-card-body">
-                <div class="d-flex gap-4 mb-3">
-                    <div><div class="ht-streak"><i class="bi bi-fire"></i>@Model.Achievements.CurrentStreak</div><div class="small text-muted">Current streak (days)</div></div>
-                    <div><div class="ht-streak muted"><i class="bi bi-trophy"></i>@Model.Achievements.LongestStreak</div><div class="small text-muted">Longest streak</div></div>
-                </div>
-                <div class="ht-badges">
-                    @foreach (var badge in Model.Achievements.Badges)
-                    {
-                        <span class="ht-badge @(badge.Earned ? "earned" : "")" title="@badge.Description"><i class="bi @badge.Icon"></i>@badge.Title</span>
-                    }
-                </div>
-            </div>
-        </section>
-    </div>
-</div>
+<partial name="_Achievements" model="Model.Achievements" />
 
 <partial name="_AssignedPlanSummaries" model="Model" />
 
@@ -257,7 +188,7 @@
         </section>
         <section class="ht-card">
             <div class="ht-card-head">
-                <h2>Reminders</h2>
+                <h2>Today's reminders</h2>
                 @if (Model.Notifications.Any())
                 {
                     <span class="ht-pill saffron">@Model.Notifications.Count new</span>
@@ -285,8 +216,9 @@
             {
                 <div class="ht-card-body d-flex align-items-center gap-3">
                     <span class="ht-glyph success"><i class="bi bi-check2"></i></span>
-                    <span class="text-muted">You're all caught up.</span>
+                    <span class="text-muted">No reminders for today.</span>
                 </div>
+                <div class="px-4 pb-3"><a class="small fw-semibold" asp-controller="Notifications" asp-action="Index">All notifications</a></div>
             }
         </section>
 
@@ -318,3 +250,7 @@
         </section>
     </div>
 </div>
+
+@section Scripts {
+    <script src="~/js/workout-checklist.js" asp-append-version="true"></script>
+}

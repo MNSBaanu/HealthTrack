@@ -20,9 +20,11 @@ public class ClientWorkoutPlanViewModel
     public DateTime Today { get; set; }
     public HashSet<int> CompletedItemIds { get; set; } = new();
     public HashSet<int> JournalItemIds { get; set; } = new();
-    public DateTime WeekStart => Today.Date.AddDays(-((int)Today.DayOfWeek + 6) % 7);
+    public DateTime? SelectedDate { get; set; }
+    public DateTime DisplayDate => (SelectedDate ?? Today).Date;
+    public DateTime WeekStart => DisplayDate.AddDays(-((int)DisplayDate.DayOfWeek + 6) % 7);
     public DateTime ScheduledDate(WorkoutPlanItem item) => item.DayOfWeek.HasValue
-        ? WeekStart.AddDays(((int)item.DayOfWeek.Value + 6) % 7) : Today.Date;
+        ? WeekStart.AddDays(((int)item.DayOfWeek.Value + 6) % 7) : DisplayDate;
     public bool IsInPlanDates(WorkoutPlanItem item) => ScheduledDate(item) >= Plan.StartDate.Date
         && (!Plan.EndDate.HasValue || ScheduledDate(item) <= Plan.EndDate.Value.Date);
 }

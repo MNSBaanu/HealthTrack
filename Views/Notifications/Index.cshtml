@@ -2,6 +2,8 @@
 @{
     ViewData["Title"] = "Notifications";
     var unreadCount = Model.Count(n => !n.IsRead);
+    var isTrainer = User.IsInRole("Trainer");
+    var isAdmin = User.IsInRole("Admin");
 }
 
 <div class="ht-head">
@@ -25,13 +27,52 @@
         <ul class="ht-notes">
             @foreach (var note in Model)
             {
+                @* Derive the target URL from the notification type and available IDs *@
+                string? linkUrl = null;
+                string? linkLabel = null;
+
+                if (note.AppointmentId.HasValue)
+                {
+                    linkUrl = isTrainer
+                        ? Url.Action("Index", "TrainerSchedule")
+                        : Url.Action("Details", "Appointments", new { id = note.AppointmentId.Value });
+                    linkLabel = isTrainer ? "View schedule" : "View appointment";
+                }
+                else if (note.Type == NotificationType.Appointment)
+                {
+                    linkUrl = isTrainer
+                        ? Url.Action("Index", "TrainerSchedule")
+                        : Url.Action("Index", "Appointments");
+                    linkLabel = isTrainer ? "View schedule" : "View appointments";
+                }
+                else if (note.Type == NotificationType.Workout && !isTrainer && !isAdmin)
+                {
+                    linkUrl = Url.Action("Index", "WorkoutLogs");
+                    linkLabel = "View workout logs";
+                }
+                else if (note.Type == NotificationType.Meal && !isTrainer && !isAdmin)
+                {
+                    linkUrl = Url.Action("Index", "MealLogs");
+                    linkLabel = "View meal logs";
+                }
+                else if (note.Type == NotificationType.Workout && isTrainer)
+                {
+                    linkUrl = Url.Action("WorkoutPlans", "TrainerPlans");
+                    linkLabel = "View workout plans";
+                }
+                else if (note.Type == NotificationType.Meal && isTrainer)
+                {
+                    linkUrl = Url.Action("DietPlans", "TrainerPlans");
+                    linkLabel = "View diet plans";
+                }
+
                 <li class="ht-note @(note.IsRead ? "read" : "unread")">
                     <partial name="_NotificationIcon" model="note.Type" />
                     <div class="body">
                         <div class="message">@note.Message</div>
-                        @if (note.AppointmentId is int appointmentId)
+                        @if (linkUrl != null)
                         {
-                            <a asp-controller="Appointments" asp-action="Details" asp-route-id="@appointmentId">View appointment</a>
+                            <a href="@linkUrl">@linkLabel</a>
                         }
                         <div class="time">@note.Type &middot; @((note.ScheduledFor ?? note.CreatedAt).ToString("dddd d MMM, HH:mm"))</div>
                     </div>

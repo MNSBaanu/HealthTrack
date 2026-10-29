@@ -604,7 +604,11 @@ namespace HealthTrack.Controllers
             var completions = await Context.WorkoutLogs
                 .Where(w => w.WorkoutPlanItemId != null
                     && (start == null || w.LoggedAt >= start) && (end == null || w.LoggedAt < end))
-                .GroupBy(w => w.WorkoutPlanItemId!.Value)
+                .Select(w => new { ItemId = w.WorkoutPlanItemId!.Value, w.ClientId, Date = w.LoggedAt.Date })
+                .Union(Context.WorkoutPlanCompletions
+                    .Where(c => (start == null || c.CompletedOn >= start) && (end == null || c.CompletedOn < end))
+                    .Select(c => new { ItemId = c.WorkoutPlanItemId, c.ClientId, Date = c.CompletedOn }))
+                .GroupBy(w => w.ItemId)
                 .Select(g => new { ItemId = g.Key, Total = g.Count() })
                 .ToDictionaryAsync(x => x.ItemId, x => x.Total);
             var items = await Context.WorkoutPlanItems.AsNoTracking()

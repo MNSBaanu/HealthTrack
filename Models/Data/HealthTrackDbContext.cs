@@ -26,6 +26,7 @@ namespace HealthTrack.Models.Data
         public DbSet<Appointment> Appointments { get; set; }
         public DbSet<WorkoutPlan> WorkoutPlans { get; set; }
         public DbSet<WorkoutPlanItem> WorkoutPlanItems { get; set; }
+        public DbSet<WorkoutPlanCompletion> WorkoutPlanCompletions { get; set; }
         public DbSet<DietPlan> DietPlans { get; set; }
         public DbSet<DietPlanMeal> DietPlanMeals { get; set; }
         public DbSet<TrainerFeedback> TrainerFeedbacks { get; set; }
@@ -108,6 +109,12 @@ namespace HealthTrack.Models.Data
 
             builder.Entity<WorkoutPlanItem>().HasOne(i => i.WorkoutPlan).WithMany(p => p.Items)
                 .HasForeignKey(i => i.WorkoutPlanId).OnDelete(DeleteBehavior.Cascade);
+            builder.Entity<WorkoutPlanCompletion>().HasKey(c => new { c.WorkoutPlanItemId, c.ClientId, c.CompletedOn });
+            builder.Entity<WorkoutPlanCompletion>().Property(c => c.CompletedOn).HasColumnType("date");
+            builder.Entity<WorkoutPlanCompletion>().HasOne(c => c.WorkoutPlanItem).WithMany()
+                .HasForeignKey(c => c.WorkoutPlanItemId).OnDelete(DeleteBehavior.Cascade);
+            builder.Entity<WorkoutPlanCompletion>().HasOne(c => c.Client).WithMany()
+                .HasForeignKey(c => c.ClientId).OnDelete(DeleteBehavior.NoAction);
             builder.Entity<WorkoutLog>().HasOne(l => l.WorkoutPlanItem).WithMany()
                 .HasForeignKey(l => l.WorkoutPlanItemId).OnDelete(DeleteBehavior.ClientSetNull);
             builder.Entity<MealLog>().HasOne(l => l.DietPlanMeal).WithMany()

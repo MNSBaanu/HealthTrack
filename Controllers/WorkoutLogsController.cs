@@ -1,5 +1,6 @@
 using HealthTrack.Models;
 using HealthTrack.Models.Data;
+using HealthTrack.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -9,12 +10,19 @@ namespace HealthTrack.Controllers
     public class WorkoutLogsController : ClientBaseController
     {
         private readonly ILogger<WorkoutLogsController> _logger;
+        private readonly AppointmentTime _time;
+        private readonly TimeProvider _clock;
 
-        public WorkoutLogsController(ILogger<WorkoutLogsController> logger, HealthTrackDbContext context, UserManager<Person> userManager)
+        public WorkoutLogsController(ILogger<WorkoutLogsController> logger, HealthTrackDbContext context, UserManager<Person> userManager,
+            AppointmentTime time, TimeProvider clock)
             : base(context, userManager)
         {
             _logger = logger;
+            _time = time;
+            _clock = clock;
         }
+
+        private DateTime LocalNow => _time.ToLocal(_clock.GetUtcNow().UtcDateTime);
 
         private Task<WorkoutLog?> FindOwnedAsync(int id)
         {
@@ -32,20 +40,26 @@ namespace HealthTrack.Controllers
 
         private Task<WorkoutPlanItem?> FindOwnedPlanItemAsync(int id)
         {
-            return Context.WorkoutPlanItems.AsNoTracking()
+            return Context.WorkoutPlanItems.AsNoTracking().Include(i => i.WorkoutPlan)
                 .FirstOrDefaultAsync(i => i.Id == id && i.WorkoutPlan!.ClientId == CurrentUserId);
         }
 
         [HttpGet]
         public async Task<IActionResult> Create(int? planItemId)
         {
-            var log = new WorkoutLog { LoggedAt = DateTime.Now };
+            var log = new WorkoutLog { LoggedAt = LocalNow };
             if (planItemId.HasValue)
             {
                 var item = await FindOwnedPlanItemAsync(planItemId.Value);
                 if (item == null)
                 {
                     return NotFound();
+                }
+
+                if (!item.CanCompleteOn(log.LoggedAt))
+                {
+                    TempData["Error"] = "This exercise can only be marked as done on its scheduled day while the plan is active.";
+                    return RedirectToAction("Workout", "ClientPlans", new { id = item.WorkoutPlanId });
                 }
 
                 log.WorkoutPlanItemId = item.Id;
@@ -68,6 +82,12 @@ namespace HealthTrack.Controllers
                 if (planItem == null)
                 {
                     return NotFound();
+                }
+                var today = LocalNow.Date;
+                if (!planItem.CanCompleteOn(today) || log.LoggedAt.Date != today)
+                {
+                    ModelState.AddModelError(nameof(log.LoggedAt),
+                        "Planned exercises can only be marked as done for today, on their scheduled day while the plan is active.");
                 }
             }
             if (!ModelState.IsValid)
@@ -103,6 +123,18 @@ namespace HealthTrack.Controllers
 
             ModelState.Remove(nameof(WorkoutLog.ClientId));
             ValidateNotInFuture(input.LoggedAt, nameof(input.LoggedAt));
+            if (log.WorkoutPlanItemId.HasValue)
+            {
+                var item = await FindOwnedPlanItemAsync(log.WorkoutPlanItemId.Value);
+                if (item == null) return NotFound();
+                if ((item.DayOfWeek.HasValue && item.DayOfWeek.Value != input.LoggedAt.DayOfWeek)
+                    || input.LoggedAt.Date < item.WorkoutPlan!.StartDate.Date
+                    || (item.WorkoutPlan.EndDate.HasValue && input.LoggedAt.Date > item.WorkoutPlan.EndDate.Value.Date))
+                {
+                    ModelState.AddModelError(nameof(input.LoggedAt),
+                        "The workout date must match the exercise's scheduled day and fall within the plan's active dates.");
+                }
+            }
             if (!ModelState.IsValid)
             {
                 input.WorkoutLogId = id;

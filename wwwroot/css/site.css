@@ -38,12 +38,6 @@ html {
   font-size: 15px;
 }
 
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
-
 body {
   font-family: var(--ht-font-body);
   background-color: var(--ht-paper);
@@ -98,7 +92,7 @@ a:hover {
 }
 
 .ht-title {
-  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
   line-height: 1.15;
   margin: 0.4rem 0 0;
 }
@@ -715,7 +709,7 @@ a:hover {
 }
 
 .ht-card-head h2 {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   margin: 0;
 }
 
@@ -765,7 +759,7 @@ a:hover {
 .ht-tile .value {
   font-family: var(--ht-font-display);
   font-variant-numeric: lining-nums tabular-nums;
-  font-size: 2.3rem;
+  font-size: 1.9rem;
   font-weight: 600;
   line-height: 1;
   color: var(--ht-ink);
@@ -820,7 +814,7 @@ a:hover {
 .ht-hero-tile .big {
   font-family: var(--ht-font-display);
   font-variant-numeric: lining-nums tabular-nums;
-  font-size: clamp(3.5rem, 7vw, 5rem);
+  font-size: clamp(2.75rem, 5vw, 3.75rem);
   font-weight: 600;
   line-height: 1;
   color: var(--ht-on-ink);
@@ -931,7 +925,7 @@ a:hover {
 .ht-ledger .value {
   font-family: var(--ht-font-display);
   font-variant-numeric: lining-nums tabular-nums;
-  font-size: 2rem;
+  font-size: 1.75rem;
   font-weight: 600;
   color: var(--ht-ink);
   line-height: 1.1;
@@ -1342,7 +1336,7 @@ a:hover {
 
 .ht-auth-quote {
   font-family: var(--ht-font-display);
-  font-size: clamp(2.2rem, 3.4vw, 3.2rem);
+  font-size: clamp(1.9rem, 3vw, 2.6rem);
   font-weight: 600;
   line-height: 1.08;
   letter-spacing: -0.02em;
@@ -1395,7 +1389,7 @@ a:hover {
 }
 
 .ht-auth-form h1 {
-  font-size: clamp(2.2rem, 4vw, 2.8rem);
+  font-size: clamp(1.75rem, 3vw, 2.1rem);
   line-height: 1.05;
   margin: 0.5rem 0 0.75rem;
 }
@@ -1469,7 +1463,7 @@ a:hover {
 }
 
 .ht-title.sm {
-  font-size: 1.9rem;
+  font-size: 1.65rem;
 }
 
 .ht-profile-name {
@@ -1563,14 +1557,37 @@ input[type="password"]::-ms-reveal,
 input[type="password"]::-ms-clear {
   display: none;
 }
-#togglePassword:focus {
-  box-shadow: none;
-  outline: none;
+.ht-password-field {
+  position: relative;
 }
 
-#togglePassword:focus-visible {
-  outline: 2px solid var(--ht-ink);
-  outline-offset: -4px;
+.ht-password-field .form-control {
+  padding-right: 3.25rem;
+}
+
+.ht-password-toggle {
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  right: 2px;
+  width: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ht-muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.ht-password-toggle:hover { color: var(--ht-ink); background: var(--ht-paper); }
+.ht-password-toggle:focus-visible { outline: 2px solid var(--ht-saffron-deep); outline-offset: -3px; }
+.ht-password-toggle:disabled { cursor: default; opacity: .5; }
+@media (max-width: 767px) {
+  /* Keep native mobile form text readable without focus zoom. */
+  .form-control, .form-select { font-size: 16px; }
 }
 /* Center dedicated form pages and keep their headings aligned with the cards. */
 .ht-page > .container-xl.ht-form-page {
@@ -1818,7 +1835,7 @@ input[list]::-webkit-calendar-picker-indicator {
   align-items: center;
   gap: 0.4rem;
   font-family: var(--ht-font-display);
-  font-size: 1.9rem;
+  font-size: 1.6rem;
   font-weight: 700;
   color: var(--ht-saffron-deep);
 }

@@ -18,6 +18,8 @@ namespace HealthTrack.Models
         public DateTime? LastLoginAt { get; set; }
 
         public bool EmailNotificationsEnabled { get; set; } = true;
+        public bool MustChangePassword { get; set; }
+        public DateTime? TemporaryPasswordExpiresAtUtc { get; set; }
 
         public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 

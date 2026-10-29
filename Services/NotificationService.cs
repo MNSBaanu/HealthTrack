@@ -40,43 +40,55 @@ namespace HealthTrack.Services
 
         public async Task SendAsync(string personId, string message, NotificationType type, DateTime? scheduledFor = null)
         {
-            _context.Notifications.Add(new Notification
+            var notification = new Notification
             {
                 PersonId = personId,
                 Message = message.Length > 300 ? message[..300] : message,
                 Type = type,
                 ScheduledFor = scheduledFor
-            });
+            };
+            AddScheduledEmail(notification, scheduledFor);
+            _context.Notifications.Add(notification);
             await _context.SaveChangesAsync();
-            await EmailAsync(new[] { personId }, message, scheduledFor);
+            if (!scheduledFor.HasValue) await EmailAsync(new[] { personId }, message);
         }
 
         public async Task SendToAllClientsAsync(string message, NotificationType type, DateTime? scheduledFor = null)
         {
             var clientIds = await _context.Clients.Select(c => c.Id).ToListAsync();
-            _context.Notifications.AddRange(clientIds.Select(id => new Notification
+            var notifications = clientIds.Select(id => new Notification
             {
                 PersonId = id,
                 Message = message,
                 Type = type,
                 ScheduledFor = scheduledFor
-            }));
+            }).ToList();
+            foreach (var notification in notifications) AddScheduledEmail(notification, scheduledFor);
+            _context.Notifications.AddRange(notifications);
             await _context.SaveChangesAsync();
-            await EmailAsync(clientIds, message, scheduledFor);
+            if (!scheduledFor.HasValue) await EmailAsync(clientIds, message);
         }
 
         public async Task SendToAllTrainersAsync(string message, NotificationType type, DateTime? scheduledFor = null)
         {
             var trainerIds = await _context.Trainers.Select(t => t.Id).ToListAsync();
-            _context.Notifications.AddRange(trainerIds.Select(id => new Notification
+            var notifications = trainerIds.Select(id => new Notification
             {
                 PersonId = id,
                 Message = message,
                 Type = type,
                 ScheduledFor = scheduledFor
-            }));
+            }).ToList();
+            foreach (var notification in notifications) AddScheduledEmail(notification, scheduledFor);
+            _context.Notifications.AddRange(notifications);
             await _context.SaveChangesAsync();
-            await EmailAsync(trainerIds, message, scheduledFor);
+            if (!scheduledFor.HasValue) await EmailAsync(trainerIds, message);
+        }
+
+        private void AddScheduledEmail(Notification notification, DateTime? scheduledFor)
+        {
+            if (scheduledFor.HasValue)
+                notification.EmailDelivery = new NotificationEmail { DueAtUtc = _appointmentTime.ToUtc(scheduledFor.Value) };
         }
 
         public async Task<List<Notification>> GetVisibleAsync(string personId, bool unreadOnly)

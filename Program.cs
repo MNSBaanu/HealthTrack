@@ -80,6 +80,8 @@ builder.Services.AddScoped<ITrainerScheduleService, TrainerScheduleService>();
 builder.Services.AddHostedService<AppointmentReminderWorker>();
 builder.Services.AddHostedService<DailyReminderWorker>();
 builder.Services.AddHostedService<DataRetentionWorker>();
+builder.Services.AddScoped<NotificationEmailDispatcher>();
+builder.Services.AddHostedService<NotificationEmailWorker>();
 
 var app = builder.Build();
 
@@ -116,6 +118,7 @@ app.UseRouting();
 app.UseRateLimiter();
 
 app.UseAuthentication();
+app.UseMiddleware<TemporaryPasswordMiddleware>();
 app.UseAuthorization();
 
 app.MapControllerRoute(

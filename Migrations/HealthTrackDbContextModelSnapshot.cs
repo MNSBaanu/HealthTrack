@@ -22,6 +22,53 @@ namespace HealthTrack.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("HealthTrack.Models.AdminBroadcast", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<int>("RecipientCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RecipientDescription")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.Property<DateTime?>("ScheduledFor")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("SenderId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("SenderName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAtUtc");
+
+                    b.ToTable("AdminBroadcasts");
+                });
+
             modelBuilder.Entity("HealthTrack.Models.Appointment", b =>
                 {
                     b.Property<int>("Id")
@@ -461,6 +508,9 @@ namespace HealthTrack.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("NotificationId"));
 
+                    b.Property<int?>("AdminBroadcastId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("AppointmentId")
                         .HasColumnType("int");
 
@@ -495,6 +545,8 @@ namespace HealthTrack.Migrations
 
                     b.HasKey("NotificationId");
 
+                    b.HasIndex("AdminBroadcastId");
+
                     b.HasIndex("AppointmentId")
                         .IsUnique()
                         .HasFilter("[AppointmentId] IS NOT NULL");
@@ -502,6 +554,37 @@ namespace HealthTrack.Migrations
                     b.HasIndex("PersonId");
 
                     b.ToTable("Notifications");
+                });
+
+            modelBuilder.Entity("HealthTrack.Models.NotificationEmail", b =>
+                {
+                    b.Property<int>("NotificationId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("CancelledAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DueAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<DateTime?>("LeaseUntilUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("SentAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("NotificationId");
+
+                    b.HasIndex("SentAtUtc", "CancelledAtUtc", "DueAtUtc");
+
+                    b.ToTable("NotificationEmails");
                 });
 
             modelBuilder.Entity("HealthTrack.Models.Person", b =>
@@ -541,6 +624,9 @@ namespace HealthTrack.Migrations
                     b.Property<DateTimeOffset?>("LockoutEnd")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<bool>("MustChangePassword")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -570,6 +656,9 @@ namespace HealthTrack.Migrations
 
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("TemporaryPasswordExpiresAtUtc")
+                        .HasColumnType("datetime2");
 
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("bit");
@@ -1241,6 +1330,11 @@ namespace HealthTrack.Migrations
 
             modelBuilder.Entity("HealthTrack.Models.Notification", b =>
                 {
+                    b.HasOne("HealthTrack.Models.AdminBroadcast", "AdminBroadcast")
+                        .WithMany("Notifications")
+                        .HasForeignKey("AdminBroadcastId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("HealthTrack.Models.Appointment", "Appointment")
                         .WithMany()
                         .HasForeignKey("AppointmentId")
@@ -1252,9 +1346,22 @@ namespace HealthTrack.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("AdminBroadcast");
+
                     b.Navigation("Appointment");
 
                     b.Navigation("Person");
+                });
+
+            modelBuilder.Entity("HealthTrack.Models.NotificationEmail", b =>
+                {
+                    b.HasOne("HealthTrack.Models.Notification", "Notification")
+                        .WithOne("EmailDelivery")
+                        .HasForeignKey("HealthTrack.Models.NotificationEmail", "NotificationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Notification");
                 });
 
             modelBuilder.Entity("HealthTrack.Models.RescheduleRequest", b =>
@@ -1442,6 +1549,11 @@ namespace HealthTrack.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("HealthTrack.Models.AdminBroadcast", b =>
+                {
+                    b.Navigation("Notifications");
+                });
+
             modelBuilder.Entity("HealthTrack.Models.AvailabilitySlot", b =>
                 {
                     b.Navigation("Appointments");
@@ -1455,6 +1567,11 @@ namespace HealthTrack.Migrations
             modelBuilder.Entity("HealthTrack.Models.DietPlan", b =>
                 {
                     b.Navigation("Meals");
+                });
+
+            modelBuilder.Entity("HealthTrack.Models.Notification", b =>
+                {
+                    b.Navigation("EmailDelivery");
                 });
 
             modelBuilder.Entity("HealthTrack.Models.Person", b =>

@@ -28,5 +28,8 @@ namespace HealthTrack.Models
         public Appointment? Appointment { get; set; }
         public DateTime? AppointmentStartUtc { get; set; }
         public bool IsDismissed { get; set; }
+        public int? AdminBroadcastId { get; set; }
+        public AdminBroadcast? AdminBroadcast { get; set; }
+        public NotificationEmail? EmailDelivery { get; set; }
     }
 }

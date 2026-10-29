@@ -1,6 +1,10 @@
 @model Trainer
 @{
     ViewData["Title"] = Model.Name;
+    var provider = ViewData["Provider"] as ConsultationProvider;
+    var appointmentCount = (int)(ViewData["AppointmentCount"] ?? 0);
+    var activeWorkoutPlans = Model.WorkoutPlans.Count(p => p.IsActive);
+    var activeDietPlans = Model.DietPlans.Count(p => p.IsActive);
 }
 
 <a class="ht-back" asp-action="Users"><i class="bi bi-arrow-left"></i>All users</a>
@@ -15,6 +19,10 @@
             <div class="facts">
                 <span class="ht-pill on-ink"><i class="bi bi-calendar3"></i>Joined @Model.CreatedAt.ToString("d MMM yyyy")</span>
                 <span class="ht-pill on-ink"><i class="bi bi-clock-history"></i>Last active @(Model.LastLoginAt?.ToString("d MMM, HH:mm") ?? "never")</span>
+                @if (!string.IsNullOrWhiteSpace(provider?.Specialty))
+                {
+                    <span class="ht-pill saffron"><i class="bi bi-award"></i>@provider.Specialty</span>
+                }
             </div>
         </div>
     </div>
@@ -22,36 +30,53 @@
 
 <div class="ht-ledger">
     <div>
-        <div class="ht-overline">Clients</div>
+        <div class="ht-overline">Assigned clients</div>
         <div class="value">@Model.ClientAssignments.Count</div>
     </div>
     <div>
-        <div class="ht-overline">Workout plans</div>
-        <div class="value">@Model.WorkoutPlans.Count</div>
-        <div class="hint">@Model.WorkoutPlans.Count(p => p.IsActive) active</div>
+        <div class="ht-overline">Active workout plans</div>
+        <div class="value">@activeWorkoutPlans</div>
+        <div class="hint">@Model.WorkoutPlans.Count total</div>
     </div>
     <div>
-        <div class="ht-overline">Feedback sent</div>
-        <div class="value">@Model.Feedbacks.Count</div>
+        <div class="ht-overline">Active diet plans</div>
+        <div class="value">@activeDietPlans</div>
+        <div class="hint">@Model.DietPlans.Count total</div>
+    </div>
+    <div>
+        <div class="ht-overline">Consultations</div>
+        <div class="value">@appointmentCount</div>
+    </div>
+    <div>
+        <div class="ht-overline">Consultation slot status</div>
+        <div class="value">@(provider?.IsActive == true ? "Active" : "Inactive")</div>
     </div>
 </div>
 
 <div class="row g-3">
-    <div class="col-lg-5">
+    <!-- Assigned clients -->
+    <div class="col-lg-7">
         <section class="ht-card h-100">
-            <div class="ht-card-head"><h2>Assigned clients</h2></div>
+            <div class="ht-card-head">
+                <h2>Assigned clients</h2>
+                <span class="ht-overline">@Model.ClientAssignments.Count clients</span>
+            </div>
             @if (Model.ClientAssignments.Any())
             {
                 <table class="ht-table">
                     <thead>
-                        <tr><th>Client</th><th>Since</th></tr>
+                        <tr><th>Name</th><th>Email</th><th>Assigned</th><th></th></tr>
                     </thead>
                     <tbody>
                         @foreach (var assignment in Model.ClientAssignments.OrderBy(a => a.Client.Name))
                         {
                             <tr>
-                                <td><a asp-action="ClientDetails" asp-route-id="@assignment.ClientId">@assignment.Client.Name</a></td>
-                                <td class="text-nowrap">@assignment.AssignedAtUtc.ToString("d MMM yyyy")</td>
+                                <td><strong>@assignment.Client.Name</strong></td>
+                                <td class="text-muted small">@assignment.Client.Email</td>
+                                <td class="text-nowrap text-muted small">@assignment.AssignedAtUtc.ToString("d MMM yyyy")</td>
+                                <td>
+                                    <a class="btn-icon" asp-action="ClientDetails" asp-route-id="@assignment.ClientId" title="View client"><i class="bi bi-eye"></i></a>
+                                </td>
                             </tr>
                         }
                     </tbody>
@@ -59,30 +84,79 @@
             }
             else
             {
-                <div class="ht-card-body text-muted">No clients assigned.</div>
+                <div class="ht-card-body text-muted">No clients assigned yet.</div>
             }
         </section>
     </div>
-    <div class="col-lg-7">
+
+    <!-- Consultation provider info -->
+    <div class="col-lg-5">
         <section class="ht-card h-100">
             <div class="ht-card-head">
-                <h2>Recent workout plans</h2>
-                <span class="ht-overline">Latest 8</span>
+                <h2>Consultation provider</h2>
             </div>
-            @if (Model.WorkoutPlans.Any())
+            <div class="ht-card-body">
+                @if (provider != null)
+                {
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5">Display name</dt>
+                        <dd class="col-sm-7">@provider.Name</dd>
+                        <dt class="col-sm-5">Specialty</dt>
+                        <dd class="col-sm-7">@(string.IsNullOrWhiteSpace(provider.Specialty) ? "—" : provider.Specialty)</dd>
+                        <dt class="col-sm-5">Status</dt>
+                        <dd class="col-sm-7">
+                            @if (provider.IsActive)
+                            {
+                                <span class="ht-pill success">Active</span>
+                            }
+                            else
+                            {
+                                <span class="ht-pill danger">Inactive</span>
+                            }
+                        </dd>
+                        <dt class="col-sm-5">Total consultations</dt>
+                        <dd class="col-sm-7">@appointmentCount</dd>
+                    </dl>
+                }
+                else
+                {
+                    <p class="text-muted mb-0">No consultation provider profile linked.</p>
+                }
+            </div>
+        </section>
+    </div>
+
+    <!-- Plans summary -->
+    <div class="col-12">
+        <section class="ht-card">
+            <div class="ht-card-head">
+                <h2>Prescribed plans</h2>
+                <span class="ht-overline">@Model.WorkoutPlans.Count workout &middot; @Model.DietPlans.Count diet</span>
+            </div>
+            @if (Model.WorkoutPlans.Any() || Model.DietPlans.Any())
             {
                 <div class="table-responsive">
                     <table class="ht-table">
                         <thead>
-                            <tr><th>Plan</th><th>Client</th><th>Created</th></tr>
+                            <tr><th>Plan</th><th>Type</th><th>Status</th><th>Created</th></tr>
                         </thead>
                         <tbody>
-                            @foreach (var plan in Model.WorkoutPlans.Take(8))
+                            @foreach (var plan in Model.WorkoutPlans.OrderByDescending(p => p.CreatedAtUtc).Take(10))
                             {
                                 <tr>
-                                    <td>@plan.Title</td>
-                                    <td>@plan.Client?.Name</td>
-                                    <td class="text-nowrap">@plan.CreatedAtUtc.ToString("d MMM yyyy")</td>
+                                    <td><strong>@plan.Title</strong></td>
+                                    <td><span class="ht-pill info">Workout</span></td>
+                                    <td>@if (plan.IsActive) { <span class="ht-pill success">Active</span> } else { <span class="ht-pill">Archived</span> }</td>
+                                    <td class="text-muted small">@plan.CreatedAtUtc.ToString("d MMM yyyy")</td>
+                                </tr>
+                            }
+                            @foreach (var plan in Model.DietPlans.OrderByDescending(p => p.CreatedAtUtc).Take(10))
+                            {
+                                <tr>
+                                    <td><strong>@plan.Title</strong></td>
+                                    <td><span class="ht-pill saffron">Diet</span></td>
+                                    <td>@if (plan.IsActive) { <span class="ht-pill success">Active</span> } else { <span class="ht-pill">Archived</span> }</td>
+                                    <td class="text-muted small">@plan.CreatedAtUtc.ToString("d MMM yyyy")</td>
                                 </tr>
                             }
                         </tbody>
@@ -91,7 +165,7 @@
             }
             else
             {
-                <div class="ht-card-body text-muted">No workout plans created.</div>
+                <div class="ht-card-body text-muted">No plans prescribed yet.</div>
             }
         </section>
     </div>

@@ -24,7 +24,7 @@
     </div>
     <select name="action" class="form-select" aria-label="Filter by action">
         <option value="">All actions</option>
-        @foreach (var option in new[] { "Viewed", "Exported", "Created", "Updated", "Deleted" })
+        @foreach (var option in new[] { "Viewed", "Exported", "Created", "Updated", "Deleted", "Imported", "Locked", "Unlocked", "PasswordReset" })
         {
             <option value="@option" selected="@(action == option)">@option</option>
         }

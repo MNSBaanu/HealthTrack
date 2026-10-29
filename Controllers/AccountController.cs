@@ -1,6 +1,7 @@
 using HealthTrack.Models;
 using HealthTrack.Models.Data;
 using HealthTrack.Models.ViewModels;
+using HealthTrack.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -12,13 +13,15 @@ namespace HealthTrack.Controllers
     {
         private readonly ILogger<AccountController> _logger;
         private readonly SignInManager<Person> _signInManager;
+        private readonly TimeProvider _clock;
 
         public AccountController(ILogger<AccountController> logger, HealthTrackDbContext context,
-            UserManager<Person> userManager, SignInManager<Person> signInManager)
+            UserManager<Person> userManager, SignInManager<Person> signInManager, TimeProvider clock)
             : base(context, userManager)
         {
             _logger = logger;
             _signInManager = signInManager;
+            _clock = clock;
         }
 
         [HttpGet]
@@ -67,9 +70,11 @@ namespace HealthTrack.Controllers
         }
 
         [HttpGet]
-        public IActionResult Login(string? returnUrl = null)
+        public IActionResult Login(string? returnUrl = null, bool temporaryPasswordExpired = false)
         {
             ViewData["ReturnUrl"] = returnUrl;
+            if (temporaryPasswordExpired)
+                ModelState.AddModelError(string.Empty, "Your temporary password has expired. Ask an administrator for a new one.");
             return View();
         }
 
@@ -83,8 +88,16 @@ namespace HealthTrack.Controllers
                 return View(model);
             }
 
-            var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: true);
             var user = await UserManager.FindByEmailAsync(model.Email);
+            var expired = user != null && TemporaryPasswordPolicy.IsExpired(user, _clock.GetUtcNow().UtcDateTime);
+            var temporaryPasswordExpired = false;
+            Microsoft.AspNetCore.Identity.SignInResult result;
+            if (expired)
+            {
+                result = await _signInManager.CheckPasswordSignInAsync(user!, model.Password, lockoutOnFailure: true);
+                if (result.Succeeded) { temporaryPasswordExpired = true; result = Microsoft.AspNetCore.Identity.SignInResult.NotAllowed; }
+            }
+            else result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: true);
             if (user != null)
             {
                 var agent = Request.Headers.UserAgent.ToString();
@@ -106,12 +119,14 @@ namespace HealthTrack.Controllers
             }
             if (!result.Succeeded)
             {
-                ModelState.AddModelError(string.Empty, "Invalid email or password.");
+                ModelState.AddModelError(string.Empty, temporaryPasswordExpired
+                    ? "Your temporary password has expired. Ask an administrator for a new one." : "Invalid email or password.");
                 return View(model);
             }
 
             user!.LastLoginAt = DateTime.Now;
             await UserManager.UpdateAsync(user);
+            if (user.MustChangePassword) return RedirectToAction(nameof(ChangePassword));
 
             if (Url.IsLocalUrl(returnUrl))
             {
@@ -130,8 +145,9 @@ namespace HealthTrack.Controllers
 
         [HttpGet]
         [Authorize]
-        public IActionResult ChangePassword()
+        public async Task<IActionResult> ChangePassword()
         {
+            ViewData["RequiredPasswordChange"] = (await UserManager.GetUserAsync(User))?.MustChangePassword == true;
             return View(new ChangePasswordViewModel());
         }
 
@@ -139,22 +155,31 @@ namespace HealthTrack.Controllers
         [Authorize]
         public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
         {
-            if (!ModelState.IsValid) return View(model);
-
             var user = await UserManager.GetUserAsync(User);
             if (user == null) return RedirectToAction(nameof(Login));
+            var required = user.MustChangePassword;
+            ViewData["RequiredPasswordChange"] = required;
+            if (required && model.CurrentPassword == model.NewPassword)
+                ModelState.AddModelError(nameof(model.NewPassword), "Choose a different password from your temporary password.");
+            if (!ModelState.IsValid) return View(model);
 
+            await using var operation = await AtomicOperation.BeginAsync(Context);
             var result = await UserManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
             if (!result.Succeeded)
             {
                 foreach (var error in result.Errors) ModelState.AddModelError(string.Empty, error.Description);
                 return View(model);
             }
+            user.MustChangePassword = false;
+            user.TemporaryPasswordExpiresAtUtc = null;
+            result = await UserManager.UpdateAsync(user);
+            if (!result.Succeeded) { AddErrors(result); return View(model); }
+            await operation.CommitAsync();
 
             await _signInManager.RefreshSignInAsync(user);
             _logger.LogInformation("User {UserId} changed their password", user.Id);
             TempData["Success"] = "Password changed.";
-            return RedirectToAction(nameof(ChangePassword));
+            return required ? RedirectToAction("Index", user.DashboardController) : RedirectToAction(nameof(ChangePassword));
         }
 
         [HttpGet]

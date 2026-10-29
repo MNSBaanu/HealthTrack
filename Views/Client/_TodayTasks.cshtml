@@ -1,0 +1,59 @@
+@model ClientDashboardViewModel
+@{
+    var counted = Model.TodayTasks.Where(t => t.CountsTowardsProgress).ToList();
+    var done = counted.Count(t => t.Completed);
+}
+<link rel="stylesheet" href="~/css/workout-checklist.css" asp-append-version="true" />
+<section class="ht-card mb-3" data-workout-checklist data-dashboard-checklist>
+    <div class="ht-card-head"><h2>Today's tasks</h2><span class="small text-muted">@Model.PlanToday.ToString("dddd, d MMM")</span></div>
+    <div class="ht-card-body">
+        @if (counted.Any())
+        {
+        <div class="workout-checklist-summary" aria-live="polite" aria-atomic="true">
+            <div class="d-flex justify-content-between flex-wrap gap-2"><strong><span data-completed-count>@done</span> of @counted.Count planned tasks completed</strong><span><span data-remaining-count>@(counted.Count - done)</span> remaining</span></div>
+            <progress class="workout-checklist-progress" value="@done" max="@Math.Max(counted.Count, 1)" aria-label="Today's planned tasks completed"></progress>
+        </div>
+        }
+        else { <p class="text-muted mb-3">No planned tasks today.</p> }
+        <div class="ht-flash error" role="alert" data-checklist-error hidden></div>
+        <span class="visually-hidden" role="status" data-checklist-status></span>
+        @foreach (var task in Model.TodayTasks)
+        {
+            var taskId = $"today-{task.Kind}-{task.Id}";
+            <article class="workout-checklist-item @(task.Completed ? "is-complete" : "")" data-task data-counted="@(task.CountsTowardsProgress ? "true" : "false")" data-completed="@(task.Completed ? "true" : "false")" data-kind="@task.Kind">
+                @if (task.CanToggle)
+                {
+                    <form asp-controller="ClientPlans" asp-action="SetWorkoutCompletion" method="post" class="workout-checklist-form">
+                        <input type="hidden" name="itemId" value="@task.Id" />
+                        <input class="workout-task-checkbox" id="@taskId" type="checkbox" name="completed" value="true" checked="@task.Completed" aria-describedby="@(taskId)-state" />
+                        <input type="hidden" name="completed" value="false" />
+                        <noscript><button class="btn btn-line btn-sm" type="submit">Save</button></noscript>
+                    </form>
+                }
+                else
+                {
+                    <input class="workout-task-checkbox" id="@taskId" type="checkbox" checked="@task.Completed" disabled aria-describedby="@(taskId)-state" />
+                }
+                <div class="workout-task-content">
+                    <div class="d-flex flex-wrap justify-content-between gap-2"><label class="workout-task-title h6 mb-1" for="@taskId">@task.Title</label><span class="workout-task-state small" id="@(taskId)-state" data-task-state>@(task.Completed ? "Completed" : task.Kind == "Measurement" ? "Optional" : "To do today")</span></div>
+                    <p class="small text-muted mb-1">@task.Detail</p>
+                    @if (task.Kind == "Workout")
+                    {
+                        <a class="small" asp-controller="ClientPlans" asp-action="Workout" asp-route-id="@task.PlanId">View workout plan</a>
+                        @if (task.JournalEntry) { <span class="small text-muted"> · Recorded in workout journal</span> }
+                    }
+                    else if (task.Kind == "Meal")
+                    {
+                        @if (!task.Completed) { <a class="btn btn-line btn-sm" asp-controller="MealLogs" asp-action="Create" asp-route-planMealId="@task.Id">Log this meal</a> }
+                        else { <a class="small" asp-controller="MealLogs" asp-action="Index">View meal entry</a> }
+                    }
+                    else
+                    {
+                        <a class="btn btn-line btn-sm" asp-controller="HealthMetrics" asp-action="@(task.Completed ? "Index" : "Create")">@(task.Completed ? "View measurements" : "Record measurements")</a>
+                    }
+                </div>
+            </article>
+        }
+        @if (counted.Any()) { <p class="small text-muted mt-3 mb-0">Complete today's tasks. Progress saves automatically.</p> }
+    </div>
+</section>

@@ -1,0 +1,20 @@
+@model JournalFilterViewModel
+<form asp-action="Index" method="get" class="client-journal-filters ht-card mb-3" data-journal-filter>
+    <div><label for="journal-from" class="form-label">From</label><input id="journal-from" name="from" type="date" class="form-control" value="@Model.From?.ToString("yyyy-MM-dd")" /></div>
+    <div><label for="journal-to" class="form-label">To</label><input id="journal-to" name="to" type="date" class="form-control" value="@Model.To?.ToString("yyyy-MM-dd")" /></div>
+    @if (ViewContext.RouteData.Values["controller"]?.ToString() != "HealthMetrics")
+    {
+        <div class="flex-grow-1"><label for="journal-search" class="form-label">@(Model.IsMealJournal ? "Food" : "Activity")</label><input id="journal-search" name="q" type="search" class="form-control" value="@Model.Q" placeholder="@(Model.IsMealJournal ? "Search food items" : "Search activities")" /></div>
+    }
+    @if (Model.IsMealJournal)
+    {
+        <div><label for="journal-type" class="form-label">Meal type</label><select id="journal-type" name="mealType" class="form-select">
+            <option value="">All meals</option>
+            @foreach (var type in Enum.GetValues<MealType>()) { <option value="@type" selected="@(Model.MealType == type)">@type</option> }
+        </select></div>
+    }
+    <a asp-action="Index" class="btn btn-line">Clear</a>
+    <p class="small text-muted mb-0 w-100">Filters apply automatically.</p>
+    <div asp-validation-summary="All" class="text-danger w-100" role="alert"></div>
+    @if (Model.HasFilters) { <p class="small text-muted mb-0 w-100">Totals below reflect the filtered records.</p> }
+</form>

@@ -13,6 +13,11 @@ public class DietPlanMeal
 
     public DayOfWeek? Day { get; set; }
 
+    public bool CanLogOn(DateTime date) => DietPlan is { IsActive: true } plan
+        && date.Date >= plan.StartDate.Date
+        && (!plan.EndDate.HasValue || date.Date <= plan.EndDate.Value.Date)
+        && (!Day.HasValue || Day.Value == date.DayOfWeek);
+
     public TimeOnly? Time { get; set; }
 
     [Required]

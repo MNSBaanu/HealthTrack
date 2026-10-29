@@ -13,6 +13,10 @@
         list.querySelectorAll('.workout-checklist-day').forEach(day => {
             day.querySelector('[data-day-completed]').textContent = day.querySelectorAll('[data-task][data-completed="true"]').length;
         });
+        list.querySelectorAll('[data-week-date]').forEach(day => {
+            const dayTasks = tasks.filter(task => task.dataset.taskDate === day.dataset.weekDate);
+            if (dayTasks.length) day.querySelector('[data-week-summary]').textContent = `${dayTasks.filter(task => task.dataset.completed === 'true').length}/${dayTasks.length} done`;
+        });
     };
     list.querySelectorAll('.workout-checklist-form').forEach(form => {
         const checkbox = form.querySelector('input[type="checkbox"]');

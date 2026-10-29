@@ -54,18 +54,14 @@ namespace HealthTrack.Controllers
                 .Where(w => w.ClientId == clientId && w.LoggedAt >= weekStart)
                 .ToListAsync();
 
-            var todayDay = planToday.DayOfWeek;
-            var plannedItemIds = await Context.WorkoutPlans.AsNoTracking()
-                .Where(p => p.ClientId == clientId && p.IsActive && p.StartDate.Date <= planToday && (!p.EndDate.HasValue || p.EndDate.Value.Date >= planToday))
-                .SelectMany(p => p.Items).Where(i => i.DayOfWeek == null || i.DayOfWeek == todayDay)
-                .Select(i => i.Id).ToListAsync();
-            var doneItemCount = await Context.WorkoutLogs.AsNoTracking()
-                .Where(w => w.ClientId == clientId && w.WorkoutPlanItemId != null && plannedItemIds.Contains(w.WorkoutPlanItemId.Value)
-                    && w.LoggedAt >= planToday && w.LoggedAt < planToday.AddDays(1))
-                .Select(w => w.WorkoutPlanItemId!.Value)
-                .Union(Context.WorkoutPlanCompletions
-                    .Where(c => c.ClientId == clientId && plannedItemIds.Contains(c.WorkoutPlanItemId) && c.CompletedOn == planToday)
-                    .Select(c => c.WorkoutPlanItemId)).CountAsync();
+            var todayTasks = await ClientTaskQueries.LoadAsync(Context, clientId, planToday);
+            var mealLoggedToday = await Context.MealLogs.AnyAsync(m => m.ClientId == clientId
+                && m.LoggedAt >= planToday && m.LoggedAt < planToday.AddDays(1));
+            var todayReminders = (await _notificationService.GetVisibleAsync(clientId, unreadOnly: true))
+                .Where(n => (n.ScheduledFor ?? n.CreatedAt).Date == planToday)
+                .Where(n => n.Type != NotificationType.Workout || todayTasks.Any(t => t.Kind == "Workout" && !t.Completed))
+                .Where(n => n.Type != NotificationType.Meal || !mealLoggedToday)
+                .ToList();
             var dietTarget = await Context.DietPlans.AsNoTracking()
                 .Where(p => p.ClientId == clientId && p.IsActive && p.StartDate.Date <= planToday && (!p.EndDate.HasValue || p.EndDate.Value.Date >= planToday))
                 .OrderByDescending(p => p.StartDate).Select(p => (int?)p.DailyCalorieTarget).FirstOrDefaultAsync();
@@ -77,9 +73,10 @@ namespace HealthTrack.Controllers
             {
                 Client = client,
                 PlanToday = planToday,
+                TodayTasks = todayTasks,
                 DietTargetKcal = dietTarget,
-                PlannedWorkoutsToday = plannedItemIds.Count,
-                DoneWorkoutsToday = doneItemCount,
+                PlannedWorkoutsToday = todayTasks.Count(t => t.Kind == "Workout"),
+                DoneWorkoutsToday = todayTasks.Count(t => t.Kind == "Workout" && t.Completed),
                 Achievements = ClientAchievements.Compute(workoutDates, planToday, mealCount, metrics.Count, goalReached),
                 AssignedWorkoutPlans = await Context.WorkoutPlans.AsNoTracking().Include(p => p.Trainer)
                     .Where(p => p.ClientId == clientId)
@@ -104,14 +101,14 @@ namespace HealthTrack.Controllers
                 RecentWorkouts = await Context.WorkoutLogs
                     .Where(w => w.ClientId == clientId)
                     .OrderByDescending(w => w.LoggedAt)
-                    .Take(5)
+                    .Take(3)
                     .ToListAsync(),
                 RecentMeals = await Context.MealLogs
                     .Where(m => m.ClientId == clientId)
                     .OrderByDescending(m => m.LoggedAt)
-                    .Take(5)
+                    .Take(3)
                     .ToListAsync(),
-                Notifications = await _notificationService.GetVisibleAsync(clientId, unreadOnly: true)
+                Notifications = todayReminders
             };
             return View(model);
         }
@@ -216,6 +213,12 @@ namespace HealthTrack.Controllers
                 .Where(m => m.ClientId == client.Id).OrderBy(m => m.RecordedAt).ToListAsync();
             ViewData["Goal"] = GoalProgressViewModel.Create(client, metrics);
             ViewData["HasGoal"] = client.TargetWeightKg.HasValue;
+            var workoutDates = await Context.WorkoutLogs.AsNoTracking().Where(w => w.ClientId == client.Id)
+                .Select(w => w.LoggedAt).ToListAsync();
+            var meals = await Context.MealLogs.CountAsync(m => m.ClientId == client.Id);
+            var today = _appointmentTime.ToLocal(_clock.GetUtcNow().UtcDateTime).Date;
+            ViewData["Achievements"] = ClientAchievements.Compute(workoutDates, today, meals, metrics.Count,
+                (ViewData["Goal"] as GoalProgressViewModel)?.Reached == true);
             return View();
         }
 

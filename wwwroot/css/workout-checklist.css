@@ -16,5 +16,9 @@
 .is-complete .workout-task-title { text-decoration: line-through; color: #5b6e59; }
 .is-complete .workout-task-state { color: #32734c; font-weight: 600; }
 .workout-checklist-item[aria-busy="true"] { opacity: .65; }
+.workout-week-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: .5rem; margin-top: 1rem; }
+.workout-week-day { display: flex; flex-direction: column; gap: .25rem; padding: .75rem .5rem; background: #f4efe6; border: 1px solid transparent; border-radius: 10px; text-align: center; }
+.workout-week-day.is-today { border-color: #e9a21b; background: #fff4d9; }
+@media (max-width: 767px) { .workout-week-days { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 576px) { .workout-checklist-item { gap: .75rem; padding: .85rem; } }
 @media (prefers-reduced-motion: reduce) { .workout-checklist-item, .workout-checklist-progress::-webkit-progress-value { transition: none; } }

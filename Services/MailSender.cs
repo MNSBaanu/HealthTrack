@@ -28,36 +28,37 @@ namespace HealthTrack.Services
                 return;
             }
 
-            _ = Task.Run(() => SendAsync(toAddress, toName, message));
+            _ = Task.Run(async () =>
+            {
+                try { await SendNotificationAsync(toAddress, toName, message); }
+                catch (Exception ex) { _logger.LogWarning(ex, "Could not send notification email"); }
+            });
         }
 
-        private async Task SendAsync(string toAddress, string toName, string message)
+        public async Task SendNotificationAsync(string toAddress, string toName, string message, CancellationToken cancellationToken = default)
         {
-            try
+            if (!IsConfigured) throw new InvalidOperationException("Email is not configured.");
+            var mail = new MimeMessage();
+            mail.From.Add(new MailboxAddress(_options.FromName, _options.FromAddress));
+            mail.To.Add(new MailboxAddress(toName, toAddress));
+            mail.Subject = "New notification from HealthTrack";
+            mail.Body = new BodyBuilder
             {
-                var mail = new MimeMessage();
-                mail.From.Add(new MailboxAddress(_options.FromName, _options.FromAddress));
-                mail.To.Add(new MailboxAddress(toName, toAddress));
-                mail.Subject = "New notification from HealthTrack";
-                mail.Body = new BodyBuilder
-                {
-                    HtmlBody = BuildHtml(toName, message),
-                    TextBody = $"Hi {toName},\n\n{message}\n\nOpen HealthTrack to see more."
-                }.ToMessageBody();
+                HtmlBody = BuildHtml(toName, message),
+                TextBody = $"Hi {toName},\n\n{message}\n\nOpen HealthTrack to see more."
+            }.ToMessageBody();
 
-                using var client = new SmtpClient();
-                await client.ConnectAsync(_options.Host, _options.Port, SecureSocketOptions.Auto);
-                if (!string.IsNullOrWhiteSpace(_options.Username))
-                {
-                    await client.AuthenticateAsync(_options.Username, _options.Password);
-                }
-                await client.SendAsync(mail);
-                await client.DisconnectAsync(true);
-            }
-            catch (Exception ex)
+            using var client = new SmtpClient();
+            client.Timeout = 30000;
+            await client.ConnectAsync(_options.Host, _options.Port, SecureSocketOptions.Auto, cancellationToken);
+            if (!string.IsNullOrWhiteSpace(_options.Username))
             {
-                _logger.LogWarning(ex, "Could not send notification email");
+                await client.AuthenticateAsync(_options.Username, _options.Password, cancellationToken);
             }
+            await client.SendAsync(mail, cancellationToken);
+            // A disconnect error after SMTP accepted the message must not cause a duplicate retry.
+            try { await client.DisconnectAsync(true, cancellationToken); }
+            catch (Exception ex) { _logger.LogDebug(ex, "SMTP disconnect failed after the notification was accepted"); }
         }
 
         private string BuildHtml(string name, string message)

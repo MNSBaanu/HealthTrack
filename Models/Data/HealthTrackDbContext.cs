@@ -19,6 +19,8 @@ namespace HealthTrack.Models.Data
         public DbSet<WorkoutLog> WorkoutLogs { get; set; }
         public DbSet<MealLog> MealLogs { get; set; }
         public DbSet<Notification> Notifications { get; set; }
+        public DbSet<AdminBroadcast> AdminBroadcasts { get; set; }
+        public DbSet<NotificationEmail> NotificationEmails { get; set; }
         public DbSet<ChatQuestion> ChatQuestions { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
         public DbSet<ConsultationProvider> ConsultationProviders { get; set; }
@@ -38,6 +40,13 @@ namespace HealthTrack.Models.Data
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+            builder.Entity<Notification>().HasOne(n => n.AdminBroadcast).WithMany(b => b.Notifications)
+                .HasForeignKey(n => n.AdminBroadcastId).OnDelete(DeleteBehavior.SetNull);
+            builder.Entity<NotificationEmail>().HasKey(e => e.NotificationId);
+            builder.Entity<NotificationEmail>().HasOne(e => e.Notification).WithOne(n => n.EmailDelivery)
+                .HasForeignKey<NotificationEmail>(e => e.NotificationId).OnDelete(DeleteBehavior.Cascade);
+            builder.Entity<NotificationEmail>().HasIndex(e => new { e.SentAtUtc, e.CancelledAtUtc, e.DueAtUtc });
+            builder.Entity<AdminBroadcast>().HasIndex(b => b.CreatedAtUtc);
 
             builder.Entity<Notification>().HasOne(n => n.Appointment).WithMany()
                 .HasForeignKey(n => n.AppointmentId).OnDelete(DeleteBehavior.NoAction);

@@ -83,6 +83,7 @@
                                     }
                                     @if (!isSelf)
                                     {
+                                        <a class="btn-icon" asp-action="ResetPassword" asp-route-id="@user.Id" title="Reset temporary password" aria-label="Reset temporary password for @user.Name"><i class="bi bi-key"></i></a>
                                         <form asp-action="ToggleLock" asp-route-id="@user.Id" method="post"
                                               data-confirm="@(user.IsLocked ? $"Unlock {user.Name}'s account?" : $"Lock {user.Name}'s account? They will be signed out and unable to sign in.")">
                                             <button type="submit" class="btn-icon" title="@(user.IsLocked ? "Unlock" : "Lock")" aria-label="@(user.IsLocked ? "Unlock" : "Lock") @user.Name">

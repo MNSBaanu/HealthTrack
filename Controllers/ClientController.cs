@@ -62,7 +62,10 @@ namespace HealthTrack.Controllers
             var doneItemCount = await Context.WorkoutLogs.AsNoTracking()
                 .Where(w => w.ClientId == clientId && w.WorkoutPlanItemId != null && plannedItemIds.Contains(w.WorkoutPlanItemId.Value)
                     && w.LoggedAt >= planToday && w.LoggedAt < planToday.AddDays(1))
-                .Select(w => w.WorkoutPlanItemId).Distinct().CountAsync();
+                .Select(w => w.WorkoutPlanItemId!.Value)
+                .Union(Context.WorkoutPlanCompletions
+                    .Where(c => c.ClientId == clientId && plannedItemIds.Contains(c.WorkoutPlanItemId) && c.CompletedOn == planToday)
+                    .Select(c => c.WorkoutPlanItemId)).CountAsync();
             var dietTarget = await Context.DietPlans.AsNoTracking()
                 .Where(p => p.ClientId == clientId && p.IsActive && p.StartDate.Date <= planToday && (!p.EndDate.HasValue || p.EndDate.Value.Date >= planToday))
                 .OrderByDescending(p => p.StartDate).Select(p => (int?)p.DailyCalorieTarget).FirstOrDefaultAsync();

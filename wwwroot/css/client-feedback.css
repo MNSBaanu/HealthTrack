@@ -1,0 +1,17 @@
+.feedback-thread { padding: 1.25rem 0; border-bottom: 1px solid #e4dccf; }
+.feedback-thread:first-of-type { padding-top: 0; }
+.feedback-thread:last-of-type { border-bottom: 0; padding-bottom: 0; }
+.feedback-message { padding: 1rem 1.25rem; border: 1px solid; border-left-width: 4px; border-radius: 12px; }
+.feedback-from-trainer { background: #fff7e6; border-color: #e7ce91; }
+.feedback-from-client { background: #eef6f0; border-color: #b9d5c1; margin-top: 1rem; margin-left: 2.5rem; }
+.feedback-message-heading { display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: .5rem 1rem; margin-bottom: .8rem; }
+.feedback-speaker { display: flex; align-items: center; gap: .4rem; font-size: .75rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: #765414; }
+.feedback-from-client .feedback-speaker { color: #2e6542; }
+.feedback-author { display: block; margin-top: .25rem; font-size: .9rem; }
+.feedback-message-text { white-space: pre-line; overflow-wrap: anywhere; margin: 0; }
+.feedback-reply-form { margin-top: 1rem; margin-left: 2.5rem; padding: 1rem; border: 1px dashed #c7bca9; border-radius: 12px; }
+@media (max-width: 576px) {
+    .feedback-from-client, .feedback-reply-form { margin-left: .75rem; }
+    .feedback-message { padding: .9rem; }
+    .feedback-message-heading time { flex-basis: 100%; }
+}

@@ -3,6 +3,7 @@ using System.Net.Mail;
 using System.Security.Cryptography;
 using System.Text;
 using HealthTrack.Models;
+using HealthTrack.Models.Data;
 using Microsoft.AspNetCore.Identity;
 
 namespace HealthTrack.Services
@@ -30,10 +31,14 @@ namespace HealthTrack.Services
         private static readonly string[] RequiredColumns = { "name", "email", "role", "dateofbirth" };
 
         private readonly UserManager<Person> _users;
+        private readonly HealthTrackDbContext _context;
+        private readonly TimeProvider _clock;
 
-        public UserImportService(UserManager<Person> users)
+        public UserImportService(UserManager<Person> users, HealthTrackDbContext context, TimeProvider clock)
         {
             _users = users;
+            _context = context;
+            _clock = clock;
         }
 
         public async Task<UserImportResult> ImportAsync(Stream stream)
@@ -143,15 +148,16 @@ namespace HealthTrack.Services
             person.EmailConfirmed = true;
             person.Name = name;
             person.DateOfBirth = born;
+            person.MustChangePassword = true;
+            person.TemporaryPasswordExpiresAtUtc = _clock.GetUtcNow().UtcDateTime.AddHours(48);
 
-            var created = await _users.CreateAsync(person, password);
+            var roleName = isClient ? AppRoles.Client : AppRoles.Trainer;
+            var created = await AccountProvisioner.CreateAsync(_context, _users, person, password, roleName);
             if (!created.Succeeded)
             {
                 return string.Join(" ", created.Errors.Select(e => e.Description));
             }
 
-            var roleName = isClient ? AppRoles.Client : AppRoles.Trainer;
-            await _users.AddToRoleAsync(person, roleName);
             result.Imported.Add(new ImportedUser(name, email, roleName, providedPassword.Length > 0 ? null : password));
             return null;
         }

@@ -62,12 +62,27 @@ public class AuditSaveChangesInterceptor(IHttpContextAccessor accessor) : SaveCh
                 MealLog l => l.ClientId,
                 _ => null
             };
-            if (subject == null) continue;
+            var adminRecord = user.IsInRole(AppRoles.Admin)
+                && entry.Entity is Person or ClientTrainerAssignment or ConsultationProvider or AvailabilitySlot or AdminBroadcast;
+            if (subject == null && !adminRecord) continue;
+            if (entry.Entity is Client client) subject = client.Id;
+            if (entry.Entity is ClientTrainerAssignment assignment) subject = assignment.ClientId;
 
             var action = entry.State switch { EntityState.Added => "Created", EntityState.Modified => "Updated", _ => "Deleted" };
+            if (entry.Entity is Person && entry.State == EntityState.Modified)
+            {
+                var password = entry.Property(nameof(Person.PasswordHash));
+                var lockout = entry.Property(nameof(Person.LockoutEnd));
+                if (password.IsModified && !Equals(password.OriginalValue, password.CurrentValue)) action = "PasswordReset";
+                else if (lockout.IsModified && !Equals(lockout.OriginalValue, lockout.CurrentValue))
+                    action = entry.Property(nameof(Person.LockoutEnd)).CurrentValue == null ? "Unlocked" : "Locked";
+            }
             var detail = entry.State == EntityState.Modified
                 ? "Changed: " + string.Join(", ", entry.Properties.Where(p => p.IsModified).Select(p => p.Metadata.Name))
                 : null;
+            if (entry.Entity is Person person) detail = $"Account {person.Id}";
+            else if (entry.Entity is ClientTrainerAssignment link) detail = $"Trainer {link.TrainerId}";
+            else if (entry.Entity is AdminBroadcast broadcast) detail = $"{broadcast.RecipientDescription}; {broadcast.RecipientCount} recipients";
             logs.Add(Build(user, action, entry.Entity.GetType().Name, subject, detail));
         }
         if (logs.Count > 0) context.Set<AuditLog>().AddRange(logs);

@@ -37,9 +37,9 @@ namespace HealthTrack.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var now = DateTimeOffset.Now;
-            var weekStart = DateTime.Today.AddDays(-6);
-            var weekStartUtc = weekStart.ToUniversalTime();
+            var now = _clock.GetUtcNow();
+            var weekStart = _time.ToLocal(now.UtcDateTime).Date.AddDays(-6);
+            var weekStartUtc = _time.ToUtc(weekStart);
 
             var model = new AdminDashboardViewModel
             {
@@ -81,18 +81,18 @@ namespace HealthTrack.Controllers
         public async Task<IActionResult> UsageData(int days = 14)
         {
             days = Math.Clamp(days, 7, 90);
-            var from = DateTime.Today.AddDays(-(days - 1));
+            var from = _time.ToLocal(_clock.GetUtcNow().UtcDateTime).Date.AddDays(-(days - 1));
 
             var workouts = await CountPerDayAsync(Context.WorkoutLogs.Where(w => w.LoggedAt >= from).Select(w => w.LoggedAt));
             var meals = await CountPerDayAsync(Context.MealLogs.Where(m => m.LoggedAt >= from).Select(m => m.LoggedAt));
             var metrics = await CountPerDayAsync(Context.HealthMetrics.Where(m => m.RecordedAt >= from).Select(m => m.RecordedAt));
             var registrations = await CountPerDayAsync(Context.Users.Where(u => u.CreatedAt >= from).Select(u => u.CreatedAt));
-            var fromUtc = from.ToUniversalTime();
-            var appointments = await CountPerDayAsync(Context.Appointments.Where(a => a.RequestedAtUtc >= fromUtc).Select(a => a.RequestedAtUtc));
+            var fromUtc = _time.ToUtc(from);
+            var appointments = await CountUtcPerDayAsync(Context.Appointments.Where(a => a.RequestedAtUtc >= fromUtc).Select(a => a.RequestedAtUtc));
             var notifications = await CountPerDayAsync(Context.Notifications.Where(n => n.CreatedAt >= from).Select(n => n.CreatedAt));
-            var workoutPlans = await CountPerDayAsync(Context.WorkoutPlans.Where(p => p.CreatedAtUtc >= fromUtc).Select(p => p.CreatedAtUtc));
-            var dietPlans = await CountPerDayAsync(Context.DietPlans.Where(p => p.CreatedAtUtc >= fromUtc).Select(p => p.CreatedAtUtc));
-            var feedback = await CountPerDayAsync(Context.TrainerFeedbacks.Where(f => f.CreatedAtUtc >= fromUtc).Select(f => f.CreatedAtUtc));
+            var workoutPlans = await CountUtcPerDayAsync(Context.WorkoutPlans.Where(p => p.CreatedAtUtc >= fromUtc).Select(p => p.CreatedAtUtc));
+            var dietPlans = await CountUtcPerDayAsync(Context.DietPlans.Where(p => p.CreatedAtUtc >= fromUtc).Select(p => p.CreatedAtUtc));
+            var feedback = await CountUtcPerDayAsync(Context.TrainerFeedbacks.Where(f => f.CreatedAtUtc >= fromUtc).Select(f => f.CreatedAtUtc));
 
             var dates = Enumerable.Range(0, days).Select(i => from.AddDays(i)).ToList();
             var model = new UsageDataViewModel
@@ -290,14 +290,13 @@ namespace HealthTrack.Controllers
                 DateOfBirth = model.DateOfBirth!.Value
             };
 
-            var result = await UserManager.CreateAsync(admin, model.Password);
+            var result = await AccountProvisioner.CreateAsync(Context, UserManager, admin, model.Password, AppRoles.Admin);
             if (!result.Succeeded)
             {
                 AddErrors(result);
                 return View(model);
             }
 
-            await UserManager.AddToRoleAsync(admin, AppRoles.Admin);
             _logger.LogInformation("Admin {AdminId} created administrator {Email}", CurrentUserId, admin.Email);
             TempData["Success"] = $"Administrator {admin.Name} created.";
             return RedirectToAction(nameof(Users));
@@ -327,25 +326,12 @@ namespace HealthTrack.Controllers
                 DateOfBirth = model.DateOfBirth!.Value
             };
 
-            var result = await UserManager.CreateAsync(trainer, model.Password);
+            var result = await AccountProvisioner.CreateAsync(Context, UserManager, trainer, model.Password, AppRoles.Trainer, model.Specialty);
             if (!result.Succeeded)
             {
                 AddErrors(result);
                 return View(model);
             }
-
-            await UserManager.AddToRoleAsync(trainer, AppRoles.Trainer);
-
-            var provider = new ConsultationProvider
-            {
-                Name = trainer.Name,
-                Specialty = string.IsNullOrWhiteSpace(model.Specialty) ? "Fitness & Strength Coaching" : model.Specialty.Trim(),
-                Kind = ConsultationProviderKind.Trainer,
-                IsActive = true,
-                PersonId = trainer.Id
-            };
-            Context.ConsultationProviders.Add(provider);
-            await Context.SaveChangesAsync();
 
             _logger.LogInformation("Admin {AdminId} created trainer {Email}", CurrentUserId, trainer.Email);
             TempData["Success"] = $"Trainer {trainer.Name} created successfully.";
@@ -368,9 +354,16 @@ namespace HealthTrack.Controllers
             }
 
             var isLocked = await UserManager.IsLockedOutAsync(user);
-            await UserManager.SetLockoutEnabledAsync(user, true);
-            await UserManager.SetLockoutEndDateAsync(user, isLocked ? null : DateTimeOffset.MaxValue);
-            await UserManager.UpdateSecurityStampAsync(user);
+            await using var operation = await AtomicOperation.BeginAsync(Context);
+            var result = await UserManager.SetLockoutEnabledAsync(user, true);
+            if (result.Succeeded) result = await UserManager.SetLockoutEndDateAsync(user, isLocked ? null : DateTimeOffset.MaxValue);
+            if (result.Succeeded) result = await UserManager.UpdateSecurityStampAsync(user);
+            if (!result.Succeeded)
+            {
+                TempData["Error"] = string.Join(" ", result.Errors.Select(e => e.Description));
+                return RedirectToAction(nameof(Users));
+            }
+            await operation.CommitAsync();
 
             _logger.LogInformation("Admin {AdminId} {Action} user {UserId}", CurrentUserId, isLocked ? "unlocked" : "locked", id);
             TempData["Success"] = $"{user.Name} has been {(isLocked ? "unlocked" : "locked")}.";
@@ -397,7 +390,7 @@ namespace HealthTrack.Controllers
                 TempData["Error"] = "Reassign or remove this Trainer's Client assignments before deleting the account.";
                 return RedirectToAction(nameof(Users));
             }
-            await using var transaction = await Context.Database.BeginTransactionAsync();
+            await using var transaction = await AtomicOperation.BeginAsync(Context);
             if (user is Trainer)
             {
                 var provider = await Context.ConsultationProviders.Include(p => p.Slots).FirstOrDefaultAsync(p => p.PersonId == id);
@@ -430,6 +423,41 @@ namespace HealthTrack.Controllers
 
             _logger.LogInformation("Admin {AdminId} deleted user {UserId}", CurrentUserId, id);
             TempData["Success"] = $"{user.Name} has been deleted.";
+            return RedirectToAction(nameof(Users));
+        }
+
+        [HttpGet]
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+        public async Task<IActionResult> ResetPassword(string id)
+        {
+            if (id == CurrentUserId) return BadRequest("Use Change password for your own account.");
+            var user = await UserManager.FindByIdAsync(id);
+            if (user == null) return NotFound();
+            ViewData["TargetUserId"] = id;
+            ViewData["TargetUserName"] = user.Name;
+            return View(new ResetUserPasswordViewModel());
+        }
+
+        [HttpPost]
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+        public async Task<IActionResult> ResetPassword(string id, ResetUserPasswordViewModel model)
+        {
+            if (id == CurrentUserId) return BadRequest("Use Change password for your own account.");
+            var user = await UserManager.FindByIdAsync(id);
+            if (user == null) return NotFound();
+            ViewData["TargetUserId"] = id;
+            ViewData["TargetUserName"] = user.Name;
+            if (!ModelState.IsValid) return View(model);
+            await using var operation = await AtomicOperation.BeginAsync(Context);
+            var token = await UserManager.GeneratePasswordResetTokenAsync(user);
+            var result = await UserManager.ResetPasswordAsync(user, token, model.Password);
+            if (!result.Succeeded) { AddErrors(result); return View(model); }
+            user.MustChangePassword = true;
+            user.TemporaryPasswordExpiresAtUtc = _clock.GetUtcNow().UtcDateTime.AddHours(48);
+            result = await UserManager.UpdateAsync(user);
+            if (!result.Succeeded) { AddErrors(result); return View(model); }
+            await operation.CommitAsync();
+            TempData["Success"] = $"Temporary password reset for {user.Name}. Share it securely; it expires in 48 hours and must be changed on sign-in.";
             return RedirectToAction(nameof(Users));
         }
 
@@ -554,20 +582,12 @@ namespace HealthTrack.Controllers
                 return View(model);
             }
 
-            if (string.IsNullOrEmpty(model.RecipientId))
-            {
-                await _notificationService.SendToAllClientsAsync(model.Message.Trim(), model.Type, model.ScheduledFor);
-            }
-            else if (allTrainers)
-            {
-                await _notificationService.SendToAllTrainersAsync(model.Message.Trim(), model.Type, model.ScheduledFor);
-            }
-            else
-            {
-                await _notificationService.SendAsync(model.RecipientId, model.Message.Trim(), model.Type, model.ScheduledFor);
-            }
+            var sender = await UserManager.GetUserAsync(User);
+            if (sender == null) return Challenge();
+            await new AdminBroadcastService(Context, _time, _clock).SendAsync(sender.Id, sender.Name,
+                model.RecipientId, model.Message, model.Type, model.ScheduledFor);
 
-            TempData["Success"] = "Notification sent.";
+            TempData["Success"] = model.ScheduledFor.HasValue ? "Notification scheduled." : "Notification published. Email delivery is queued for eligible recipients.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -717,6 +737,9 @@ namespace HealthTrack.Controllers
 
         private const string AllTrainersRecipient = "all-trainers";
 
+        private async Task<Dictionary<DateTime, int>> CountUtcPerDayAsync(IQueryable<DateTime> dates) =>
+            (await dates.ToListAsync()).GroupBy(d => _time.ToLocal(d).Date).ToDictionary(g => g.Key, g => g.Count());
+
         private async Task LoadRecipientsAsync()
         {
             var clients = new SelectListGroup { Name = "Clients" };
@@ -730,14 +753,20 @@ namespace HealthTrack.Controllers
                 .Select(t => new SelectListItem { Value = t.Id, Text = t.Name + " (" + t.Email + ")", Group = trainers })
                 .ToListAsync());
             ViewData["Recipients"] = recipients;
-            ViewData["History"] = (await Context.Notifications.AsNoTracking()
-                    .Where(n => n.AppointmentId == null)
-                    .OrderByDescending(n => n.CreatedAt).Take(1000)
-                    .Select(n => new { n.Message, n.Type, n.ScheduledFor, n.CreatedAt, n.Person!.Name })
-                    .ToListAsync())
-                .GroupBy(n => new { n.Message, n.Type, n.ScheduledFor, Sent = new DateTime(n.CreatedAt.Ticks - n.CreatedAt.Ticks % TimeSpan.TicksPerMinute) })
-                .Select(g => new BroadcastHistoryItem(g.Key.Sent, g.Key.Type, g.Key.Message, g.Key.ScheduledFor, g.Count(), g.Count() == 1 ? g.First().Name : null))
-                .Take(50).ToList();
+            var broadcasts = await Context.AdminBroadcasts.AsNoTracking().OrderByDescending(b => b.CreatedAtUtc).Take(50)
+                .Select(b => new
+                {
+                    b.CreatedAtUtc, b.Type, b.Message, b.ScheduledFor, b.RecipientCount, b.RecipientDescription, b.SenderName,
+                    Sent = b.Notifications.Count(n => n.EmailDelivery != null && n.EmailDelivery.SentAtUtc != null),
+                    Pending = b.Notifications.Count(n => n.EmailDelivery != null && n.EmailDelivery.SentAtUtc == null
+                        && n.EmailDelivery.CancelledAtUtc == null && n.EmailDelivery.Attempts < 5),
+                    Failed = b.Notifications.Count(n => n.EmailDelivery != null && n.EmailDelivery.SentAtUtc == null
+                        && n.EmailDelivery.CancelledAtUtc == null && n.EmailDelivery.Attempts >= 5)
+                }).ToListAsync();
+            var now = _time.ToLocal(_clock.GetUtcNow().UtcDateTime);
+            ViewData["History"] = broadcasts.Select(b => new BroadcastHistoryItem(_time.ToLocal(b.CreatedAtUtc), b.Type,
+                b.Message, b.ScheduledFor, b.RecipientCount, b.RecipientDescription, b.SenderName,
+                b.ScheduledFor > now ? "Scheduled" : "Available in app", b.Sent, b.Pending, b.Failed)).ToList();
         }
 
         public async Task<IActionResult> Providers()

@@ -60,24 +60,26 @@
 </div>
 
 <section class="ht-card mt-3">
-    <div class="ht-card-head"><h2>Sent history</h2></div>
+    <div class="ht-card-head"><h2>Broadcast history</h2><span class="small text-muted">Broadcasts created since this update</span></div>
     @if (!history.Any())
     {
-        <div class="ht-card-body text-muted">No notifications have been sent yet.</div>
+        <div class="ht-card-body text-muted">No recorded broadcasts yet.</div>
     }
     else
     {
         <div class="table-responsive">
             <table class="ht-table">
-                <thead><tr><th scope="col">Sent</th><th scope="col">Type</th><th scope="col">Message</th><th scope="col">Recipients</th></tr></thead>
+                <thead><tr><th scope="col">Created</th><th scope="col">Sender</th><th scope="col">Type</th><th scope="col">Message</th><th scope="col">Recipients</th><th scope="col">Delivery</th></tr></thead>
                 <tbody>
                     @foreach (var item in history)
                     {
                         <tr>
                             <td>@item.SentAt.ToString("d MMM yyyy, HH:mm")@if (item.ScheduledFor.HasValue) { <div class="small text-muted">Scheduled @item.ScheduledFor.Value.ToString("d MMM yyyy, HH:mm")</div> }</td>
+                            <td>@item.SenderName</td>
                             <td>@item.Type</td>
                             <td>@item.Message</td>
-                            <td>@(item.RecipientName ?? $"{item.Recipients} recipients")</td>
+                            <td>@item.RecipientName <span class="small text-muted">(@item.Recipients)</span></td>
+                            <td><span class="ht-pill">@item.Status</span><div class="small text-muted mt-1">Email: @item.EmailsSent sent · @item.EmailsPending pending · @item.EmailsFailed failed</div></td>
                         </tr>
                     }
                 </tbody>

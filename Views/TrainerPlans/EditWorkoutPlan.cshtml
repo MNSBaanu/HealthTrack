@@ -132,7 +132,7 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script>
+    <script nonce="@HealthTrack.Services.CspNonce.Get(Context)">
         document.getElementById('addExerciseBtn').addEventListener('click', function () {
             const tbody = document.querySelector('#exercisesTable tbody');
             const rowCount = tbody.querySelectorAll('tr').length;

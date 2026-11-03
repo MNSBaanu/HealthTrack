@@ -119,7 +119,7 @@
 </div>
 
 @section Scripts {
-    <script>
+    <script nonce="@HealthTrack.Services.CspNonce.Get(Context)">
         document.getElementById("faqModal").addEventListener("show.bs.modal", event => {
             const trigger = event.relatedTarget;
             document.getElementById("faqQuestion").value = trigger?.dataset.faqQuestion || "";

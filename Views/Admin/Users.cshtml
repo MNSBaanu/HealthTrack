@@ -245,7 +245,7 @@
 </div>
 
 @section Scripts {
-    <script>
+    <script nonce="@HealthTrack.Services.CspNonce.Get(Context)">
         (() => {
             const bulk = document.getElementById("bulkUsers");
             if (!bulk) return;

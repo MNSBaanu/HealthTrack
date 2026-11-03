@@ -103,7 +103,7 @@
                                                         <i class="@(plan.IsActive ? "icon-archive" : "icon-circle-check")"></i>
                                                     </button>
                                                 </form>
-                                                <form asp-action="DeleteWorkoutPlan" asp-route-id="@plan.Id" method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this workout plan? This action cannot be undone.');">
+                                                <form asp-action="DeleteWorkoutPlan" asp-route-id="@plan.Id" method="post" class="d-inline" data-confirm="Are you sure you want to delete this workout plan? This action cannot be undone.">
                                                     <button type="submit" class="btn btn-sm btn-line-danger" title="Delete plan">
                                                         <i class="icon-trash"></i>
                                                     </button>

@@ -1935,6 +1935,8 @@ tr[hidden], li[hidden], article[hidden] {
 }
 
 .ht-date-range {
+  display: flex;
+  align-items: center;
   flex-wrap: nowrap;
   gap: 0.4rem;
   padding: 0;

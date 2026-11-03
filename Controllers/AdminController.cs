@@ -438,7 +438,9 @@ namespace HealthTrack.Controllers
                 Email = model.Email,
                 EmailConfirmed = true,
                 Name = model.Name.Trim(),
-                DateOfBirth = model.DateOfBirth!.Value
+                DateOfBirth = model.DateOfBirth!.Value,
+                MustChangePassword = true,
+                TemporaryPasswordExpiresAtUtc = await TemporaryPasswordExpiryAsync()
             };
 
             var result = await AccountProvisioner.CreateAsync(Context, UserManager, admin, model.Password, AppRoles.Admin);
@@ -449,7 +451,7 @@ namespace HealthTrack.Controllers
             }
 
             _logger.LogInformation("Admin {AdminId} created administrator {Email}", CurrentUserId, admin.Email);
-            TempData["Success"] = $"Administrator {admin.Name} created.";
+            TempData["Success"] = $"Administrator {admin.Name} created. They must choose a new password at first sign-in.";
             return RedirectToAction(nameof(Users));
         }
 
@@ -474,7 +476,9 @@ namespace HealthTrack.Controllers
                 Email = model.Email,
                 EmailConfirmed = true,
                 Name = model.Name.Trim(),
-                DateOfBirth = model.DateOfBirth!.Value
+                DateOfBirth = model.DateOfBirth!.Value,
+                MustChangePassword = true,
+                TemporaryPasswordExpiresAtUtc = await TemporaryPasswordExpiryAsync()
             };
 
             var result = await AccountProvisioner.CreateAsync(Context, UserManager, trainer, model.Password, AppRoles.Trainer, model.Specialty);
@@ -485,7 +489,7 @@ namespace HealthTrack.Controllers
             }
 
             _logger.LogInformation("Admin {AdminId} created trainer {Email}", CurrentUserId, trainer.Email);
-            TempData["Success"] = $"Trainer {trainer.Name} created successfully.";
+            TempData["Success"] = $"Trainer {trainer.Name} created. They must choose a new password at first sign-in.";
             return RedirectToAction(nameof(Users));
         }
 
@@ -695,6 +699,9 @@ namespace HealthTrack.Controllers
             if (skipped.Count > 0) TempData["Error"] = $"Skipped: {string.Join(", ", skipped)}.";
             return RedirectToAction(nameof(Users));
         }
+
+        private async Task<DateTime> TemporaryPasswordExpiryAsync() =>
+            _clock.GetUtcNow().UtcDateTime.AddHours((await SystemSettings.LoadAsync(Context)).TemporaryPasswordHours);
 
         private async Task<IdentityResult> SetLockAsync(Person user, bool lockAccount)
         {

@@ -3,7 +3,7 @@
     ViewData["FormPage"] = "standard"; ViewData["Title"] = "Manage Trainer assignment"; }
 <a class="ht-back" asp-action="Index"><i class="icon-arrow-left"></i>Trainer assignments</a>
 <div class="ht-head"><div><h1 class="ht-title">@Model.ClientName</h1><p class="ht-lede">@Model.ClientEmail</p></div></div>
-<div class="row"><div class="col-lg-8"><section class="ht-card"><div class="ht-card-body">
+<div class="row"><div class="col-lg-8"><section class="ht-card"><div class="ht-card-body" data-modal-content>
     <p><strong>Current Trainer:</strong> @(Model.CurrentTrainerName ?? "Unassigned")</p>
     <p class="text-muted">Each Client has one current Trainer. Reassignment or removal preserves existing plans and appointments under their original Trainer.</p>
     <form asp-action="Edit" method="post">
@@ -28,7 +28,7 @@
         </form>
     }
 </div></section></div></div>
-<div class="row"><div class="col-lg-8"><section class="ht-card mt-4"><div class="ht-card-head"><h2>Assignment history</h2></div>
+<div class="row"><div class="col-lg-8"><section class="ht-card mt-4" data-modal-content><div class="ht-card-head"><h2>Assignment history</h2></div>
     @if (Model.History.Any())
     {
         <div class="table-responsive"><table class="ht-table">

@@ -9,7 +9,7 @@
 <div class="row g-3">
     <div class="col-lg-8 col-xl-7">
         <section class="ht-card">
-            <div class="ht-card-body">
+            <div class="ht-card-body" data-modal-content>
                 <form asp-action="@(isEdit ? "EditProvider" : "CreateProvider")" asp-route-id="@Model.Id" novalidate>
                     <div asp-validation-summary="ModelOnly" class="ht-flash error" role="alert"></div>
                     <fieldset class="ht-fieldset mb-4">

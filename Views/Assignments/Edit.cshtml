@@ -13,6 +13,7 @@
         {
             <div class="mb-3"><label asp-for="TrainerId" class="form-label"></label>
                 <select asp-for="TrainerId" asp-items="Model.Trainers" class="form-select"><option value="">Select a Trainer</option></select>
+                @if (Model.SuggestedTrainerName != null) { <div class="form-text">Least busy: @Model.SuggestedTrainerName</div> }
                 <span asp-validation-for="TrainerId" class="text-danger"></span></div>
             <div class="ht-form-actions"><button type="submit" class="btn btn-primary">Save assignment</button><a class="btn btn-line" asp-action="Index">Cancel</a>
                 @if (Model.CurrentTrainerName != null) { <button type="submit" form="removeAssignment" class="btn btn-line">Remove assignment</button> }</div>

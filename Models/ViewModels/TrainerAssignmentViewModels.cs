@@ -36,6 +36,7 @@ public class AssignmentEditViewModel : AssignmentForm
     public string ClientName { get; set; } = string.Empty;
     public string ClientEmail { get; set; } = string.Empty;
     public string? CurrentTrainerName { get; set; }
+    public string? SuggestedTrainerName { get; set; }
     public List<SelectListItem> Trainers { get; set; } = new();
     public List<TrainerAssignmentHistory> History { get; set; } = new();
 }

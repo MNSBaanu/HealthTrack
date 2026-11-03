@@ -1,4 +1,5 @@
 @model SystemSettings
+@inject HealthTrack.Services.AppointmentTime Time
 @{
     ViewData["FormPage"] = "standard";
     ViewData["Title"] = "Settings";
@@ -70,8 +71,8 @@
                             <label asp-for="WeeklyReportEnabled" class="form-check-label"></label>
                         </div>
                         <div class="form-text">
-                            Every Monday from 8 am, the General report for the past 7 days is emailed as a PDF to all admins.
-                            @(Model.WeeklyReportSentAtUtc is DateTime sent ? $"Last sent {sent.ToLocalTime():d MMM yyyy, HH:mm}." : "Not sent yet.")
+                            Every Monday from 8 am, a client performance summary for the past 7 days is emailed as a PDF to all admins. It leaves out the audit log and chat questions.
+                            @(Model.WeeklyReportSentAtUtc is DateTime sent ? $"Last sent {Time.ToLocal(sent):d MMM yyyy, HH:mm}." : "Not sent yet.")
                             @if (!mailConfigured) { <strong class="text-danger">Email is not configured, so nothing will be sent.</strong> }
                         </div>
                     </fieldset>

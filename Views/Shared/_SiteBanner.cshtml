@@ -1,0 +1,6 @@
+@inject HealthTrack.Models.Data.HealthTrackDbContext BannerDb
+@{ var site = await SystemSettings.LoadAsync(BannerDb); }
+@if (site.BannerEnabled && !string.IsNullOrWhiteSpace(site.BannerMessage))
+{
+    <div class="ht-site-banner" role="status"><i class="icon-megaphone"></i><span>@site.BannerMessage</span></div>
+}

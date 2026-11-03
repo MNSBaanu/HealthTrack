@@ -65,6 +65,7 @@
         </div>
     </header>
 
+    <partial name="_SiteBanner" />
     <main class="ht-page" role="main">
         <div class="container-xl @(ViewData["FormPage"] is string formWidth ? "ht-form-page " + (formWidth == "wide" ? "ht-form-page-wide" : "") : "")">
             @if (TempData["Success"] is string success)

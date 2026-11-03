@@ -207,6 +207,47 @@ namespace HealthTrack.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> Settings()
+        {
+            ViewData["MailConfigured"] = HttpContext.RequestServices.GetRequiredService<IMailSender>().IsConfigured;
+            return View(await SystemSettings.LoadAsync(Context));
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Settings(SystemSettings model)
+        {
+            if (model.BannerEnabled && string.IsNullOrWhiteSpace(model.BannerMessage))
+            {
+                ModelState.AddModelError(nameof(model.BannerMessage), "Enter a message to show the banner.");
+            }
+            if (!ModelState.IsValid)
+            {
+                ViewData["MailConfigured"] = HttpContext.RequestServices.GetRequiredService<IMailSender>().IsConfigured;
+                return View(model);
+            }
+
+            var settings = await Context.SystemSettings.FirstOrDefaultAsync();
+            if (settings == null)
+            {
+                settings = new SystemSettings();
+                Context.SystemSettings.Add(settings);
+            }
+            settings.BannerEnabled = model.BannerEnabled;
+            settings.BannerMessage = string.IsNullOrWhiteSpace(model.BannerMessage) ? null : model.BannerMessage.Trim();
+            settings.TemporaryPasswordHours = model.TemporaryPasswordHours;
+            settings.MaxFailedAccessAttempts = model.MaxFailedAccessAttempts;
+            settings.LockoutMinutes = model.LockoutMinutes;
+            settings.ImportMaxRows = model.ImportMaxRows;
+            settings.WeeklyReportEnabled = model.WeeklyReportEnabled;
+            await Context.SaveChangesAsync();
+            settings.ApplyLockout(UserManager.Options);
+
+            await AuditAsync("Updated", "SystemSettings");
+            TempData["Success"] = "Settings saved.";
+            return RedirectToAction(nameof(Settings));
+        }
+
+        [HttpGet]
         public async Task<IActionResult> SystemHealth()
         {
             var now = DateTime.Now;
@@ -671,12 +712,13 @@ namespace HealthTrack.Controllers
             var token = await UserManager.GeneratePasswordResetTokenAsync(user);
             var result = await UserManager.ResetPasswordAsync(user, token, model.Password);
             if (!result.Succeeded) { AddErrors(result); return View(model); }
+            var hours = (await SystemSettings.LoadAsync(Context)).TemporaryPasswordHours;
             user.MustChangePassword = true;
-            user.TemporaryPasswordExpiresAtUtc = _clock.GetUtcNow().UtcDateTime.AddHours(48);
+            user.TemporaryPasswordExpiresAtUtc = _clock.GetUtcNow().UtcDateTime.AddHours(hours);
             result = await UserManager.UpdateAsync(user);
             if (!result.Succeeded) { AddErrors(result); return View(model); }
             await operation.CommitAsync();
-            TempData["Success"] = $"Temporary password reset for {user.Name}. Share it securely; it expires in 48 hours and must be changed on sign-in.";
+            TempData["Success"] = $"Temporary password reset for {user.Name}. Share it securely; it expires in {hours} hours and must be changed on sign-in.";
             return RedirectToAction(nameof(Users));
         }
 

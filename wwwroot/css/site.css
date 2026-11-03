@@ -2034,3 +2034,20 @@ tr[hidden], li[hidden], article[hidden] {
   width: 1%;
   padding-right: 0;
 }
+
+.ht-site-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  background: var(--ht-saffron-soft);
+  color: var(--ht-ink);
+  font-weight: 600;
+  text-align: center;
+}
+
+.ht-auth-body .ht-site-banner {
+  margin-bottom: 1rem;
+  border-radius: 0.5rem;
+}

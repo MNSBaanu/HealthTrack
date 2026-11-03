@@ -22,6 +22,7 @@
         @if (User.IsInRole(AppRoles.Admin))
         {
             <li><a class="dropdown-item" asp-controller="Admin" asp-action="CreateAdmin"><i class="icon-shield-plus me-2"></i>New admin</a></li>
+            <li><a class="dropdown-item" asp-controller="Admin" asp-action="Settings"><i class="icon-settings me-2"></i>Settings</a></li>
         }
         <li><hr class="dropdown-divider" /></li>
         <li>

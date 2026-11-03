@@ -18,6 +18,7 @@
         <main class="ht-auth-main" role="main">
             <a class="ht-wordmark dark @(splitAuth ? "d-lg-none" : "")" asp-controller="Account" asp-action="Login"><span class="dot"></span>Health<em>Track</em></a>
             <div class="ht-auth-body">
+                <partial name="_SiteBanner" />
                 @RenderBody()
             </div>
         </main>

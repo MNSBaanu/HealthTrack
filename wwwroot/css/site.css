@@ -1933,3 +1933,13 @@ tr[hidden], li[hidden], article[hidden] {
 .ht-auth-form.wide .form-check .text-danger {
   width: 100%;
 }
+
+.ht-date-range {
+  flex-wrap: nowrap;
+  gap: 0.4rem;
+  padding: 0;
+}
+
+.ht-date-range .form-control {
+  width: 9.5rem;
+}

@@ -12,15 +12,39 @@
     </div>
 </div>
 
-<div class="row g-3 mb-3">
-    <div class="col-6 col-lg-3"><div class="ht-card ht-tile"><div class="ht-tile-top"><span class="ht-overline">Active users (7 days)</span><span class="ht-glyph success"><i class="bi bi-people"></i></span></div><div class="value">@Model.ActiveUsers7d</div></div></div>
-    <div class="col-6 col-lg-3"><div class="ht-card ht-tile"><div class="ht-tile-top"><span class="ht-overline">New accounts (7 days)</span><span class="ht-glyph saffron"><i class="bi bi-person-plus"></i></span></div><div class="value">@Model.NewUsers7d</div></div></div>
-    <div class="col-6 col-lg-3"><div class="ht-card ht-tile"><div class="ht-tile-top"><span class="ht-overline">Failed sign-ins (24 h)</span><span class="ht-glyph clay"><i class="bi bi-shield-exclamation"></i></span></div><div class="value">@Model.FailedLogins24h<small>@Model.FailedLogins7d this week</small></div></div></div>
-    <div class="col-6 col-lg-3"><div class="ht-card ht-tile"><div class="ht-tile-top"><span class="ht-overline">Locked accounts</span><span class="ht-glyph slate"><i class="bi bi-lock"></i></span></div><div class="value">@Model.LockedAccounts</div></div></div>
-    <div class="col-6 col-lg-3"><div class="ht-card ht-tile"><div class="ht-tile-top"><span class="ht-overline">Pending appointments</span><span class="ht-glyph saffron"><i class="bi bi-calendar-check"></i></span></div><div class="value">@Model.PendingAppointments</div></div></div>
-    <div class="col-6 col-lg-3"><div class="ht-card ht-tile"><div class="ht-tile-top"><span class="ht-overline">Unread notifications</span><span class="ht-glyph slate"><i class="bi bi-bell"></i></span></div><div class="value">@Model.UnreadNotifications</div></div></div>
-    <div class="col-6 col-lg-3"><div class="ht-card ht-tile"><div class="ht-tile-top"><span class="ht-overline">Exports (7 days)</span><span class="ht-glyph success"><i class="bi bi-download"></i></span></div><div class="value">@Model.Exports7d</div></div></div>
-    <div class="col-6 col-lg-3"><div class="ht-card ht-tile"><div class="ht-tile-top"><span class="ht-overline">Imports (30 days)</span><span class="ht-glyph slate"><i class="bi bi-file-earmark-arrow-up"></i></span></div><div class="value">@Model.Imports30d</div></div></div>
+<div class="ht-ledger mb-3">
+    <div>
+        <div class="ht-overline">Active users (7 days)</div>
+        <div class="value">@Model.ActiveUsers7d</div>
+    </div>
+    <div>
+        <div class="ht-overline">New accounts (7 days)</div>
+        <div class="value">@Model.NewUsers7d</div>
+    </div>
+    <div>
+        <div class="ht-overline">Failed sign-ins (24 h)</div>
+        <div class="value">@Model.FailedLogins24h<small>@Model.FailedLogins7d this week</small></div>
+    </div>
+    <div>
+        <div class="ht-overline">Locked accounts</div>
+        <div class="value">@Model.LockedAccounts</div>
+    </div>
+    <div>
+        <div class="ht-overline">Pending appointments</div>
+        <div class="value">@Model.PendingAppointments</div>
+    </div>
+    <div>
+        <div class="ht-overline">Unread notifications</div>
+        <div class="value">@Model.UnreadNotifications</div>
+    </div>
+    <div>
+        <div class="ht-overline">Exports (7 days)</div>
+        <div class="value">@Model.Exports7d</div>
+    </div>
+    <div>
+        <div class="ht-overline">Imports (30 days)</div>
+        <div class="value">@Model.Imports30d</div>
+    </div>
 </div>
 
 <div class="row g-3">

@@ -19,29 +19,42 @@
 
 <div class="ht-head">
     <div>
-        <h1 class="ht-title">Client performance</h1>
+        <h1 class="ht-title">Reports</h1>
     </div>
     <div class="ht-head-actions">
-        <a class="btn btn-line" asp-action="SystemHealth"><i class="bi bi-activity"></i>System health</a>
-        <a class="btn btn-line" asp-action="Ratings"><i class="bi bi-star"></i>Ratings</a>
-        <a class="btn btn-line" asp-action="AuditLog"><i class="bi bi-shield-check"></i>Audit log</a>
-        <a class="btn btn-line" asp-action="ChatQuestions"><i class="bi bi-chat-dots"></i>Chat questions</a>
-        <a class="btn btn-line" asp-action="ExportReport" asp-route-format="csv" asp-route-from="@from" asp-route-to="@to"><i class="bi bi-filetype-csv"></i>Export CSV</a>
-        <a class="btn btn-line" asp-action="ExportReport" asp-route-format="xlsx" asp-route-from="@from" asp-route-to="@to"><i class="bi bi-file-earmark-excel"></i>Export Excel</a>
-        <a class="btn btn-primary" asp-action="ExportReport" asp-route-format="pdf" asp-route-from="@from" asp-route-to="@to"><i class="bi bi-file-earmark-pdf"></i>Export PDF</a>
+        <form asp-action="Reports" method="get" class="ht-filter ht-date-range">
+            <input id="report-from" type="date" name="from" value="@from?.ToString("yyyy-MM-dd")" class="form-control" placeholder="From" aria-label="From date" />
+            <span class="text-muted">&ndash;</span>
+            <input id="report-to" type="date" name="to" value="@to?.ToString("yyyy-MM-dd")" class="form-control" placeholder="To" aria-label="To date" />
+            @if (from.HasValue || to.HasValue)
+            {
+                <a class="btn-icon" asp-action="Reports" title="Clear dates" aria-label="Clear dates"><i class="bi bi-x-lg"></i></a>
+            }
+        </form>
+        <div class="dropdown">
+            <button class="btn btn-line dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-funnel"></i>Filter
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end ht-menu">
+                <li><a class="dropdown-item active" asp-action="Reports" aria-current="page"><i class="bi bi-bar-chart me-2"></i>General</a></li>
+                <li><a class="dropdown-item" asp-action="SystemHealth"><i class="bi bi-activity me-2"></i>System health</a></li>
+                <li><a class="dropdown-item" asp-action="Ratings"><i class="bi bi-star me-2"></i>Ratings</a></li>
+                <li><a class="dropdown-item" asp-action="AuditLog"><i class="bi bi-shield-check me-2"></i>Audit log</a></li>
+                <li><a class="dropdown-item" asp-action="ChatQuestions"><i class="bi bi-chat-dots me-2"></i>Chat questions</a></li>
+            </ul>
+        </div>
+        <div class="dropdown">
+            <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-download"></i>Export
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end ht-menu">
+                <li><a class="dropdown-item" asp-action="ExportReport" asp-route-format="pdf" asp-route-from="@from" asp-route-to="@to"><i class="bi bi-file-earmark-pdf me-2"></i>PDF report</a></li>
+                <li><a class="dropdown-item" asp-action="ExportReport" asp-route-format="xlsx" asp-route-from="@from" asp-route-to="@to"><i class="bi bi-file-earmark-excel me-2"></i>Excel spreadsheet</a></li>
+                <li><a class="dropdown-item" asp-action="ExportReport" asp-route-format="csv" asp-route-from="@from" asp-route-to="@to"><i class="bi bi-filetype-csv me-2"></i>CSV spreadsheet</a></li>
+            </ul>
+        </div>
     </div>
 </div>
-
-<form asp-action="Reports" method="get" class="ht-card ht-filter mb-3">
-    <label class="form-label mb-0" for="report-from">From</label>
-    <input id="report-from" type="date" name="from" value="@from?.ToString("yyyy-MM-dd")" class="form-control" />
-    <label class="form-label mb-0" for="report-to">To</label>
-    <input id="report-to" type="date" name="to" value="@to?.ToString("yyyy-MM-dd")" class="form-control" />
-    @if (from.HasValue || to.HasValue)
-    {
-        <a class="btn btn-line" asp-action="Reports">Clear</a>
-    }
-</form>
 
 <div class="ht-ledger">
     <div>
@@ -61,9 +74,6 @@
         <div class="ht-overline">Avg. workouts</div>
         <div class="value">@averageWorkouts.ToString("0.#")<small>per client</small></div>
     </div>
-</div>
-
-<div class="ht-ledger mt-3">
     <div>
         <div class="ht-overline">Logged meals</div>
         <div class="value">@mealLoggers</div>
@@ -84,135 +94,68 @@
     </div>
 </div>
 
-<section class="ht-card my-3">
-    <div class="ht-card-head">
-        <h2>Performance by client</h2>
-        <span class="ht-overline">Sorted by name</span>
-    </div>
-    @if (Model.Any())
-    {
-        <div class="table-responsive">
-            <table class="ht-table">
-                <thead>
-                    <tr>
-                        <th>Client</th>
-                        <th>Start</th>
-                        <th>Current</th>
-                        <th>Change</th>
-                        <th>BMI</th>
-                        <th>Workouts</th>
-                        <th>Burned</th>
-                        <th>Meals</th>
-                        <th>Weigh-ins</th>
-                        <th>Appts</th>
-                        <th>Active days</th>
-                        <th>Last active</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var client in Model)
-                    {
-                        <tr>
-                            <td>
-                                <div class="ht-member">
-                                    <span class="ht-monogram muted">@Person.GetInitials(client.Name)</span>
-                                    <div>
-                                        <div class="name">@client.Name</div>
-                                        <span class="sub">@client.Email</span>
-                                    </div>
+<div class="row g-3 my-0">
+    <div class="col-lg-6">
+        <section class="ht-card h-100">
+            <div class="ht-card-head">
+                <h2>Popular routines</h2>
+                <span class="ht-overline">Top 10 by sessions</span>
+            </div>
+            <div class="ht-card-body">
+                @if (activities.Any())
+                {
+                    <ol class="ht-bars-list">
+                        @foreach (var activity in activities)
+                        {
+                            var width = topSessions == 0 ? 0 : activity.Sessions * 100.0 / topSessions;
+                            <li>
+                                <div class="row-top">
+                                    <strong>@activity.Activity</strong>
+                                    <span class="text-muted">@activity.Sessions sessions &middot; @activity.TotalMinutes min &middot; @(activity.ClientCount == 1 ? "1 client" : $"{activity.ClientCount} clients")</span>
                                 </div>
-                            </td>
-                            <td class="num">@(client.StartWeightKg?.ToString("0.0") ?? "–")</td>
-                            <td class="num">@(client.CurrentWeightKg?.ToString("0.0") ?? "–")</td>
-                            <td>
-                                @if (client.WeightChangeKg is double change && change != 0)
-                                {
-                                    <span class="ht-pill @(change < 0 ? "success" : "clay")">@(change < 0 ? "▼" : "▲") @Math.Abs(change).ToString("0.0") kg</span>
-                                }
-                                else
-                                {
-                                    <span class="text-muted">–</span>
-                                }
-                            </td>
-                            <td class="num">@(client.CurrentBmi?.ToString("0.0") ?? "–")</td>
-                            <td class="num">@client.WorkoutCount <span class="sub">@client.TotalMinutes min</span></td>
-                            <td class="num">@client.TotalCaloriesBurned.ToString("N0") <small>kcal</small></td>
-                            <td class="num">@client.MealLogCount</td>
-                            <td class="num">@client.WeightLogCount</td>
-                            <td class="num">@client.AppointmentCount</td>
-                            <td class="num">@client.ActiveDays</td>
-                            <td class="text-nowrap">@(client.LastLoginAt?.ToString("d MMM yyyy") ?? "Never")</td>
-                            <td><a class="btn-icon" asp-action="ClientDetails" asp-route-id="@client.ClientId" title="View client" aria-label="View @client.Name"><i class="bi bi-arrow-right"></i></a></td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    }
-    else
-    {
-        <div class="ht-card-body text-muted">No clients have registered yet.</div>
-    }
-</section>
-
-<section class="ht-card">
-    <div class="ht-card-head">
-        <h2>Popular routines</h2>
-        <span class="ht-overline">Top 10 by sessions</span>
-    </div>
-    <div class="ht-card-body">
-        @if (activities.Any())
-        {
-            <ol class="ht-bars-list">
-                @foreach (var activity in activities)
-                {
-                    var width = topSessions == 0 ? 0 : activity.Sessions * 100.0 / topSessions;
-                    <li>
-                        <div class="row-top">
-                            <strong>@activity.Activity</strong>
-                            <span class="text-muted">@activity.Sessions sessions &middot; @activity.TotalMinutes min &middot; @(activity.ClientCount == 1 ? "1 client" : $"{activity.ClientCount} clients")</span>
-                        </div>
-                        <div class="ht-bar"><span style="width: @width.ToString("0.#", CultureInfo.InvariantCulture)%"></span></div>
-                    </li>
+                                <div class="ht-bar"><span style="width: @width.ToString("0.#", CultureInfo.InvariantCulture)%"></span></div>
+                            </li>
+                        }
+                    </ol>
                 }
-            </ol>
-        }
-        else
-        {
-            <p class="text-muted mb-0">No workouts have been logged yet.</p>
-        }
-    </div>
-</section>
-
-<section class="ht-card mt-3">
-    <div class="ht-card-head">
-        <h2>Popular plan exercises</h2>
-        <span class="ht-overline">Top 10 by completions</span>
-    </div>
-    <div class="ht-card-body">
-        @if (planExercises.Any())
-        {
-            <ol class="ht-bars-list">
-                @foreach (var exercise in planExercises)
+                else
                 {
-                    var width = topExerciseCompletions == 0 ? 0 : exercise.Completions * 100.0 / topExerciseCompletions;
-                    <li>
-                        <div class="row-top">
-                            <strong>@exercise.Exercise</strong>
-                            <span class="text-muted">@exercise.Completions completed &middot; @(exercise.PlanCount == 1 ? "1 plan" : $"{exercise.PlanCount} plans") &middot; @(exercise.ClientCount == 1 ? "1 client" : $"{exercise.ClientCount} clients")</span>
-                        </div>
-                        <div class="ht-bar"><span style="width: @width.ToString("0.#", CultureInfo.InvariantCulture)%"></span></div>
-                    </li>
+                    <p class="text-muted mb-0">No workouts have been logged yet.</p>
                 }
-            </ol>
-        }
-        else
-        {
-            <p class="text-muted mb-0">No trainer workout plans have been created yet.</p>
-        }
+            </div>
+        </section>
     </div>
-</section>
+    <div class="col-lg-6">
+        <section class="ht-card h-100">
+            <div class="ht-card-head">
+                <h2>Popular plan exercises</h2>
+                <span class="ht-overline">Top 10 by completions</span>
+            </div>
+            <div class="ht-card-body">
+                @if (planExercises.Any())
+                {
+                    <ol class="ht-bars-list">
+                        @foreach (var exercise in planExercises)
+                        {
+                            var width = topExerciseCompletions == 0 ? 0 : exercise.Completions * 100.0 / topExerciseCompletions;
+                            <li>
+                                <div class="row-top">
+                                    <strong>@exercise.Exercise</strong>
+                                    <span class="text-muted">@exercise.Completions completed &middot; @(exercise.PlanCount == 1 ? "1 plan" : $"{exercise.PlanCount} plans") &middot; @(exercise.ClientCount == 1 ? "1 client" : $"{exercise.ClientCount} clients")</span>
+                                </div>
+                                <div class="ht-bar"><span style="width: @width.ToString("0.#", CultureInfo.InvariantCulture)%"></span></div>
+                            </li>
+                        }
+                    </ol>
+                }
+                else
+                {
+                    <p class="text-muted mb-0">No trainer workout plans have been created yet.</p>
+                }
+            </div>
+        </section>
+    </div>
+</div>
 
 <section class="ht-card mt-3">
     <div class="ht-card-head">
@@ -250,5 +193,71 @@
     else
     {
         <div class="ht-card-body text-muted">No trainer workout plans have been created yet.</div>
+    }
+</section>
+
+<section class="ht-card mt-3">
+    <div class="ht-card-head">
+        <h2>Performance by client</h2>
+        <span class="ht-overline">Sorted by name</span>
+    </div>
+    @if (Model.Any())
+    {
+        <div class="table-responsive">
+            <table class="ht-table">
+                <thead>
+                    <tr>
+                        <th>Client</th>
+                        <th>Weight (kg)</th>
+                        <th>BMI</th>
+                        <th>Workouts</th>
+                        <th>Burned</th>
+                        <th>Meals</th>
+                        <th>Active days</th>
+                        <th>Last active</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var client in Model)
+                    {
+                        <tr>
+                            <td>
+                                <div class="ht-member">
+                                    <span class="ht-monogram muted">@Person.GetInitials(client.Name)</span>
+                                    <div>
+                                        <a class="name d-block" asp-action="ClientDetails" asp-route-id="@client.ClientId">@client.Name</a>
+                                        <span class="sub">@client.Email</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-nowrap">
+                                @if (client.CurrentWeightKg.HasValue)
+                                {
+                                    <span class="num">@(client.StartWeightKg?.ToString("0.0") ?? "–") &rarr; @client.CurrentWeightKg.Value.ToString("0.0")</span>
+                                    @if (client.WeightChangeKg is double change && change != 0)
+                                    {
+                                        <span class="ht-pill @(change < 0 ? "success" : "clay") ms-1">@(change < 0 ? "▼" : "▲") @Math.Abs(change).ToString("0.0")</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-muted">–</span>
+                                }
+                            </td>
+                            <td class="num">@(client.CurrentBmi?.ToString("0.0") ?? "–")</td>
+                            <td class="num text-nowrap">@client.WorkoutCount <span class="sub d-inline">@client.TotalMinutes min</span></td>
+                            <td class="num">@client.TotalCaloriesBurned.ToString("N0") <small>kcal</small></td>
+                            <td class="num">@client.MealLogCount</td>
+                            <td class="num">@client.ActiveDays</td>
+                            <td class="text-nowrap">@(client.LastLoginAt?.ToString("d MMM yyyy") ?? "Never")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="ht-card-body text-muted">No clients have registered yet.</div>
     }
 </section>

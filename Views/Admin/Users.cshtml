@@ -135,6 +135,7 @@
                                         <button type="button" class="btn-icon" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" title="More" aria-label="More actions for @user.Name"><i class="icon-ellipsis-vertical"></i></button>
                                         <ul class="dropdown-menu dropdown-menu-end ht-menu">
                                             <li><a class="dropdown-item" asp-action="LoginHistory" asp-route-id="@user.Id"><i class="icon-history me-2"></i>Login history</a></li>
+                                            <li><a class="dropdown-item" asp-action="ExportUserData" asp-route-id="@user.Id"><i class="icon-download me-2"></i>Download data</a></li>
                                             @if (!isSelf)
                                             {
                                                 <li><a class="dropdown-item" asp-action="ResetPassword" asp-route-id="@user.Id"><i class="icon-key-round me-2"></i>Reset temporary password</a></li>

@@ -560,7 +560,12 @@ namespace HealthTrack.Controllers
             var user = await UserManager.FindByIdAsync(id);
             if (user == null) return NotFound();
             ViewData["TargetRole"] = user.RoleDisplayName;
-            return View(new EditUserViewModel { Id = user.Id, Name = user.Name, Email = user.Email ?? string.Empty, DateOfBirth = user.DateOfBirth });
+            var provider = user is Trainer ? await Context.ConsultationProviders.FirstOrDefaultAsync(p => p.PersonId == user.Id) : null;
+            return View(new EditUserViewModel
+            {
+                Id = user.Id, Name = user.Name, Email = user.Email ?? string.Empty, DateOfBirth = user.DateOfBirth,
+                IsTrainer = user is Trainer, Specialty = provider?.Specialty
+            });
         }
 
         [HttpPost]
@@ -569,12 +574,18 @@ namespace HealthTrack.Controllers
             var user = await UserManager.FindByIdAsync(model.Id);
             if (user == null) return NotFound();
             ViewData["TargetRole"] = user.RoleDisplayName;
+            model.IsTrainer = user is Trainer;
             ValidatePastDate(model.DateOfBirth, nameof(model.DateOfBirth));
             if (!ModelState.IsValid) return View(model);
 
             var email = model.Email.Trim();
             user.Name = model.Name.Trim();
             user.DateOfBirth = model.DateOfBirth!.Value;
+            if (user is Trainer && await Context.ConsultationProviders.FirstOrDefaultAsync(p => p.PersonId == user.Id) is { } provider)
+            {
+                provider.Name = user.Name;
+                provider.Specialty = string.IsNullOrWhiteSpace(model.Specialty) ? provider.Specialty : model.Specialty.Trim();
+            }
             if (!string.Equals(user.Email, email, StringComparison.OrdinalIgnoreCase))
             {
                 user.Email = email;

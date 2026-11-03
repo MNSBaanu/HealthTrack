@@ -187,7 +187,7 @@
                         }
                     }
                 };
-                const bar = { borderWidth: { top: 1 }, borderColor: palette.surface, borderRadius: 4, borderSkipped: false, maxBarThickness: 28, yAxisID: "y" };
+                const bar = { borderWidth: { top: 1 }, borderColor: palette.surface, borderRadius: 0, borderSkipped: false, maxBarThickness: 28, yAxisID: "y" };
                 render(canvas, {
                     type: "bar",
                     data: {

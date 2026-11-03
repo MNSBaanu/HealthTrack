@@ -15,6 +15,7 @@ namespace HealthTrack.Controllers
     [Authorize(Roles = AppRoles.Admin)]
     public class AdminController : BaseController
     {
+        public const string ProviderRole = "Provider";
         private readonly ILogger<AdminController> _logger;
         private readonly INotificationService _notificationService;
         private readonly IExportService _exportService;
@@ -107,9 +108,23 @@ namespace HealthTrack.Controllers
                 query = query.Where(u => u.Role == role);
             }
 
+            var providers = new List<ConsultationProvider>();
+            if (string.IsNullOrWhiteSpace(role) || role == ProviderRole)
+            {
+                var providerQuery = Context.ConsultationProviders.AsNoTracking()
+                    .Where(p => p.Kind == ConsultationProviderKind.HealthcareProfessional);
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    providerQuery = providerQuery.Where(p => p.Name.Contains(search) || (p.Specialty != null && p.Specialty.Contains(search)));
+                }
+                providers = await providerQuery.OrderByDescending(p => p.IsActive).ThenBy(p => p.Name).ToListAsync();
+            }
+
             ViewData["Search"] = search;
             ViewData["Role"] = role;
-            return View(await query.OrderBy(u => u.Name).ToListAsync());
+            ViewData["Providers"] = providers;
+            var users = role == ProviderRole ? new List<UserSummaryViewModel>() : await query.OrderBy(u => u.Name).ToListAsync();
+            return View(users);
         }
 
         public async Task<IActionResult> ClientDetails(string id)
@@ -754,14 +769,7 @@ namespace HealthTrack.Controllers
                 b.ScheduledFor > now ? "Scheduled" : "Available in app", b.Sent, b.Pending, b.Failed)).ToList();
         }
 
-        public async Task<IActionResult> Providers()
-        {
-            var providers = await Context.ConsultationProviders.AsNoTracking()
-                .Where(p => p.Kind == ConsultationProviderKind.HealthcareProfessional)
-                .OrderByDescending(p => p.IsActive).ThenBy(p => p.Name)
-                .ToListAsync();
-            return View(providers);
-        }
+        public IActionResult Providers() => RedirectToAction(nameof(Users), new { role = ProviderRole });
 
         [HttpGet]
         public IActionResult CreateProvider() => View("ProviderForm", new ProviderForm());

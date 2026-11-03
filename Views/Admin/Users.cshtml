@@ -4,6 +4,8 @@
     ViewData["Title"] = "Users";
     var search = ViewData["Search"] as string;
     var role = ViewData["Role"] as string;
+    var providers = ViewData["Providers"] as List<ConsultationProvider> ?? new();
+    var total = Model.Count + providers.Count;
     var currentUserId = UserManager.GetUserId(User);
     var isFiltered = !string.IsNullOrWhiteSpace(search) || !string.IsNullOrWhiteSpace(role);
 }
@@ -14,9 +16,9 @@
     </div>
     <div class="ht-head-actions">
         <a class="btn btn-line" asp-action="ImportUsers"><i class="bi bi-file-earmark-arrow-up"></i>Import CSV</a>
-        <a class="btn btn-line" asp-action="Providers"><i class="bi bi-hospital"></i>Providers</a>
+        <a class="btn btn-line" asp-action="CreateProvider"><i class="bi bi-hospital"></i>New provider</a>
         <a class="btn btn-primary" asp-action="CreateTrainer"><i class="bi bi-person-plus"></i>New trainer</a>
-        <a class="btn btn-line" asp-action="CreateAdmin"><i class="bi bi-shield-plus"></i>New admin</a>
+        <a class="btn btn-line" asp-action="CreateAdmin"><i class="bi bi-shield-plus"></i>New user</a>
     </div>
 </div>
 
@@ -30,6 +32,7 @@
         <option value="@AppRoles.Client" selected="@(role == AppRoles.Client)">Clients</option>
         <option value="@AppRoles.Admin" selected="@(role == AppRoles.Admin)">Admins</option>
         <option value="@AppRoles.Trainer" selected="@(role == AppRoles.Trainer)">Trainers</option>
+        <option value="@HealthTrack.Controllers.AdminController.ProviderRole" selected="@(role == HealthTrack.Controllers.AdminController.ProviderRole)">Providers</option>
     </select>
     @if (isFiltered)
     {
@@ -38,7 +41,7 @@
 </form>
 
 <section class="ht-card">
-    @if (Model.Any())
+    @if (total > 0)
     {
         <div class="table-responsive">
             <table class="ht-table">
@@ -100,10 +103,46 @@
                             </td>
                         </tr>
                     }
+                    @foreach (var provider in providers)
+                    {
+                        <tr>
+                            <td>
+                                <div class="ht-member">
+                                    <span class="ht-monogram muted">@Person.GetInitials(provider.Name)</span>
+                                    <div>
+                                        <div class="name">@provider.Name</div>
+                                        <span class="sub">@(provider.Specialty ?? "Healthcare professional")</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><partial name="_RolePill" model="HealthTrack.Controllers.AdminController.ProviderRole" /></td>
+                            <td class="text-nowrap">&mdash;</td>
+                            <td class="text-nowrap">&mdash;</td>
+                            <td>
+                                @if (provider.IsActive)
+                                {
+                                    <span class="ht-pill success"><i class="bi bi-circle-fill ht-status-dot"></i>Active</span>
+                                }
+                                else
+                                {
+                                    <span class="ht-pill"><i class="bi bi-toggle-off"></i>Turned off</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="ht-row-actions">
+                                    <a class="btn-icon" asp-action="ProviderSlots" asp-route-id="@provider.Id" title="Availability" aria-label="Availability for @provider.Name"><i class="bi bi-calendar-plus"></i></a>
+                                    <a class="btn-icon" asp-action="EditProvider" asp-route-id="@provider.Id" title="Edit" aria-label="Edit @provider.Name"><i class="bi bi-pencil"></i></a>
+                                    <form method="post" asp-action="ToggleProvider" asp-route-id="@provider.Id" data-confirm="@(provider.IsActive ? $"Turn off {provider.Name}? Clients will no longer see them when booking." : $"Turn on {provider.Name}?")">
+                                        <button type="submit" class="btn-icon @(provider.IsActive ? "danger" : "")" title="@(provider.IsActive ? "Turn off" : "Turn on")" aria-label="@(provider.IsActive ? "Turn off" : "Turn on") @provider.Name"><i class="bi @(provider.IsActive ? "bi-toggle-on" : "bi-toggle-off")"></i></button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
                 </tbody>
             </table>
         </div>
-        <div class="ht-table-foot">Showing @(Model.Count == 1 ? "1 member" : $"{Model.Count} members")</div>
+        <div class="ht-table-foot">Showing @(total == 1 ? "1 member" : $"{total} members")</div>
     }
     else
     {

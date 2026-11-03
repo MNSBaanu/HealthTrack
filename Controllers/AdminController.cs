@@ -135,8 +135,9 @@ namespace HealthTrack.Controllers
             ViewData["Status"] = status;
             ViewData["Providers"] = providers;
             var lockedAfter = _clock.GetUtcNow();
-            ViewData["Trainers"] = await Context.Trainers.Where(t => t.LockoutEnd == null || t.LockoutEnd <= lockedAfter)
-                .OrderBy(t => t.Name).Select(t => new SelectListItem(t.Name, t.Id)).ToListAsync();
+            ViewData["Trainers"] = (await Context.Trainers.Where(t => t.LockoutEnd == null || t.LockoutEnd <= lockedAfter)
+                .OrderBy(t => t.Name).Select(t => new { t.Id, t.Name, Clients = Context.ClientTrainerAssignments.Count(a => a.TrainerId == t.Id) })
+                .ToListAsync()).Select(t => new SelectListItem($"{t.Name} · {t.Clients} {(t.Clients == 1 ? "client" : "clients")}", t.Id)).ToList();
             var users = role == ProviderRole || status == "off" ? new List<UserSummaryViewModel>() : await query.OrderBy(u => u.Name).ToListAsync();
             return View(users);
         }

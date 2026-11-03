@@ -4,6 +4,8 @@ namespace HealthTrack.Models.ViewModels
 
     public record RecentRating(string ProviderName, string ClientName, int Rating, string? Comment, DateTime RatedAt);
 
+    public record AdminAppointmentRow(int Id, string ClientId, string ClientName, string ProviderName, ConsultationProviderKind ProviderKind, DateTime Start, AppointmentStatus Status, DateTime RequestedAt);
+
     public class ProviderRatingsViewModel
     {
         public List<ProviderRatingRow> Providers { get; set; } = new();

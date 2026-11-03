@@ -207,6 +207,66 @@ namespace HealthTrack.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> Appointments(string? search, AppointmentStatus? status, DateTime? from, DateTime? to)
+        {
+            if (from > to) (from, to) = (to, from);
+            var query = Context.Appointments.AsNoTracking().AsQueryable();
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim();
+                query = query.Where(a => a.Client.Name.Contains(term) || a.Slot.Provider.Name.Contains(term));
+            }
+            if (status.HasValue) query = query.Where(a => a.Status == status);
+            if (from.HasValue)
+            {
+                var fromUtc = _time.ToUtc(from.Value.Date);
+                query = query.Where(a => a.Slot.StartUtc >= fromUtc);
+            }
+            if (to.HasValue)
+            {
+                var toUtc = _time.ToUtc(to.Value.Date.AddDays(1));
+                query = query.Where(a => a.Slot.StartUtc < toUtc);
+            }
+
+            var rows = await query.OrderByDescending(a => a.Slot.StartUtc).Take(500)
+                .Select(a => new { a.Id, a.ClientId, Client = a.Client.Name, Provider = a.Slot.Provider.Name, a.Slot.Provider.Kind, a.Slot.StartUtc, a.Status, a.RequestedAtUtc })
+                .ToListAsync();
+            ViewData["Search"] = search;
+            ViewData["Status"] = status;
+            ViewData["From"] = from;
+            ViewData["To"] = to;
+            return View(rows.Select(a => new AdminAppointmentRow(a.Id, a.ClientId, a.Client, a.Provider, a.Kind,
+                _time.ToLocal(a.StartUtc), a.Status, _time.ToLocal(a.RequestedAtUtc))).ToList());
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CancelAppointment(int id)
+        {
+            var appointment = await Context.Appointments.Include(a => a.Slot).ThenInclude(s => s.Provider)
+                .SingleOrDefaultAsync(a => a.Id == id);
+            if (appointment == null) return NotFound();
+            if (appointment.Status is not (AppointmentStatus.Pending or AppointmentStatus.Approved))
+            {
+                TempData["Error"] = "Only pending or approved appointments can be cancelled.";
+                return RedirectToAction(nameof(Appointments));
+            }
+            appointment.Status = AppointmentStatus.Cancelled;
+            await Context.SaveChangesAsync();
+
+            var when = $"{_time.ToLocal(appointment.Slot.StartUtc):ddd, d MMM yyyy HH:mm}";
+            await _notificationService.SendAsync(appointment.ClientId,
+                $"Your appointment with {appointment.Slot.Provider.Name} on {when} was cancelled by an administrator.", NotificationType.Appointment);
+            if (appointment.Slot.Provider.PersonId is string providerPersonId)
+            {
+                await _notificationService.SendAsync(providerPersonId,
+                    $"The appointment on {when} was cancelled by an administrator.", NotificationType.Appointment);
+            }
+            await AuditAsync("Cancelled", "Appointment", appointment.ClientId, $"Appointment {id}");
+            TempData["Success"] = "Appointment cancelled. The client has been notified.";
+            return RedirectToAction(nameof(Appointments));
+        }
+
+        [HttpGet]
         public async Task<IActionResult> Settings()
         {
             ViewData["MailConfigured"] = HttpContext.RequestServices.GetRequiredService<IMailSender>().IsConfigured;

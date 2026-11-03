@@ -19,5 +19,10 @@ namespace HealthTrack.Models.ViewModels
         [DataType(DataType.Date)]
         [Display(Name = "Date of Birth")]
         public DateTime? DateOfBirth { get; set; }
+
+        [StringLength(200)]
+        public string? Specialty { get; set; }
+
+        public bool IsTrainer { get; set; }
     }
 }

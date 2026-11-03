@@ -1,6 +1,8 @@
 @model List<UserSummaryViewModel>
+@inject HealthTrack.Models.Data.HealthTrackDbContext SettingsDb
 @inject Microsoft.AspNetCore.Identity.UserManager<Person> UserManager
 @{
+    var settings = await SystemSettings.LoadAsync(SettingsDb);
     ViewData["Title"] = "Users";
     var search = ViewData["Search"] as string;
     var role = ViewData["Role"] as string;
@@ -111,10 +113,10 @@
                             <td><partial name="_StatusPill" model="user.IsLocked" /></td>
                             <td>
                                 <div class="ht-row-actions plain">
-                                    <a class="btn-icon" asp-action="EditUser" asp-route-id="@user.Id" title="Edit details" aria-label="Edit @user.Name"><i class="icon-pencil"></i></a>
+                                    <a class="btn-icon" asp-action="EditUser" asp-route-id="@user.Id" data-modal="wide" title="Edit details" aria-label="Edit @user.Name"><i class="icon-pencil"></i></a>
                                     @if (user.Role == AppRoles.Client)
                                     {
-                                        <a class="btn-icon" asp-controller="Assignments" asp-action="Edit" asp-route-id="@user.Id" title="Manage Trainer assignment" aria-label="Manage Trainer for @user.Name"><i class="icon-user-check"></i></a>
+                                        <a class="btn-icon" asp-controller="Assignments" asp-action="Edit" asp-route-id="@user.Id" data-modal="wide" data-modal-title="Trainer assignment" title="Manage Trainer assignment" aria-label="Manage Trainer for @user.Name"><i class="icon-user-check"></i></a>
                                     }
                                     @if (!isSelf)
                                     {
@@ -132,10 +134,14 @@
                                     <div class="dropdown">
                                         <button type="button" class="btn-icon" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" title="More" aria-label="More actions for @user.Name"><i class="icon-ellipsis-vertical"></i></button>
                                         <ul class="dropdown-menu dropdown-menu-end ht-menu">
-                                            <li><a class="dropdown-item" asp-action="LoginHistory" asp-route-id="@user.Id"><i class="icon-history me-2"></i>Login history</a></li>
+                                            <li><a class="dropdown-item" asp-action="LoginHistory" asp-route-id="@user.Id" data-modal="wide"><i class="icon-history me-2"></i>Login history</a></li>
+                                            <li><a class="dropdown-item" asp-action="ExportUserData" asp-route-id="@user.Id"><i class="icon-download me-2"></i>Download data</a></li>
                                             @if (!isSelf)
                                             {
-                                                <li><a class="dropdown-item" asp-action="ResetPassword" asp-route-id="@user.Id"><i class="icon-key-round me-2"></i>Reset temporary password</a></li>
+                                                @if (user.Role != AppRoles.Admin)
+                                                {
+                                                    <li><a class="dropdown-item" asp-action="ResetPassword" asp-route-id="@user.Id" data-modal><i class="icon-key-round me-2"></i>Reset temporary password</a></li>
+                                                }
                                                 <li>
                                                     <form asp-action="SignOutUser" asp-route-id="@user.Id" method="post" data-confirm="Sign @user.Name out of all sessions?">
                                                         <button type="submit" class="dropdown-item"><i class="icon-log-out me-2"></i>Sign out everywhere</button>
@@ -185,7 +191,7 @@
                             <td>
                                 <div class="ht-row-actions plain">
                                     <a class="btn-icon" asp-action="ProviderSlots" asp-route-id="@provider.Id" title="Availability" aria-label="Availability for @provider.Name"><i class="icon-calendar-plus"></i></a>
-                                    <a class="btn-icon" asp-action="EditProvider" asp-route-id="@provider.Id" title="Edit" aria-label="Edit @provider.Name"><i class="icon-pencil"></i></a>
+                                    <a class="btn-icon" asp-action="EditProvider" asp-route-id="@provider.Id" data-modal="wide" title="Edit" aria-label="Edit @provider.Name"><i class="icon-pencil"></i></a>
                                     <form method="post" asp-action="ToggleProvider" asp-route-id="@provider.Id" data-confirm="@(provider.IsActive ? $"Turn off {provider.Name}? Clients will no longer see them when booking." : $"Turn on {provider.Name}?")">
                                         <button type="submit" class="btn-icon @(provider.IsActive ? "danger" : "")" title="@(provider.IsActive ? "Turn off" : "Turn on")" aria-label="@(provider.IsActive ? "Turn off" : "Turn on") @provider.Name"><i class="@(provider.IsActive ? "icon-toggle-right" : "icon-toggle-left")"></i></button>
                                     </form>
@@ -227,8 +233,8 @@
                         <li>Role is <em>Client</em> or <em>Trainer</em>.</li>
                         <li>DateOfBirth is written as yyyy-MM-dd.</li>
                         <li>HeightCm (50–250) is required for clients.</li>
-                        <li>Leave Password empty to generate one. All imported passwords expire after 48 hours and must be changed on first sign-in.</li>
-                        <li>Up to @HealthTrack.Services.UserImportService.MaxRows rows and 1 MB per file.</li>
+                        <li>Leave Password empty to generate one. All imported passwords expire after @settings.TemporaryPasswordHours hours and must be changed on first sign-in.</li>
+                        <li>Up to @settings.ImportMaxRows rows and 1 MB per file.</li>
                     </ul>
                 </div>
                 <div class="modal-footer">
@@ -242,7 +248,7 @@
 </div>
 
 @section Scripts {
-    <script>
+    <script nonce="@HealthTrack.Services.CspNonce.Get(Context)">
         (() => {
             const bulk = document.getElementById("bulkUsers");
             if (!bulk) return;

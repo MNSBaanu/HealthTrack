@@ -4,7 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <DefaultItemExcludes>$(DefaultItemExcludes);Private/**;Tests/**</DefaultItemExcludes>
+    <DefaultItemExcludes>$(DefaultItemExcludes);Private/**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,6 +17,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="QRCoder" Version="1.8.1" />
     <PackageReference Include="QuestPDF" Version="2026.9.1" />
   </ItemGroup>
 

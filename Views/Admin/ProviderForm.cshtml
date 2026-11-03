@@ -4,12 +4,12 @@
     var isEdit = Model.Id.HasValue;
     ViewData["Title"] = isEdit ? "Edit healthcare professional" : "Add healthcare professional";
 }
-<a class="ht-back" asp-action="Providers"><i class="icon-arrow-left"></i>Healthcare professionals</a>
+<a class="ht-back" asp-action="Providers"><i class="icon-arrow-left"></i>Providers</a>
 <div class="ht-head"><div><h1 class="ht-title">@ViewData["Title"]</h1></div></div>
 <div class="row g-3">
     <div class="col-lg-8 col-xl-7">
         <section class="ht-card">
-            <div class="ht-card-body">
+            <div class="ht-card-body" data-modal-content>
                 <form asp-action="@(isEdit ? "EditProvider" : "CreateProvider")" asp-route-id="@Model.Id" novalidate>
                     <div asp-validation-summary="ModelOnly" class="ht-flash error" role="alert"></div>
                     <fieldset class="ht-fieldset mb-4">

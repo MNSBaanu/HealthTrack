@@ -218,3 +218,86 @@ document.querySelectorAll('form.ht-filter, form[data-autofilter], form[data-jour
         render();
     });
 })();
+
+(() => {
+    let modalEl = null;
+    let modal = null;
+    const ensure = () => {
+        if (modalEl) return;
+        modalEl = document.createElement('div');
+        modalEl.className = 'modal fade ht-modal ht-remote-modal';
+        modalEl.tabIndex = -1;
+        modalEl.setAttribute('aria-hidden', 'true');
+        modalEl.setAttribute('aria-labelledby', 'htRemoteModalTitle');
+        modalEl.innerHTML = '<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable"><div class="modal-content">'
+            + '<div class="modal-header"><div><h2 class="modal-title" id="htRemoteModalTitle"></h2><p class="small text-muted mb-0"></p></div>'
+            + '<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>'
+            + '<div class="modal-body"></div></div></div>';
+        document.body.append(modalEl);
+        modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    };
+    const render = html => {
+        const page = new DOMParser().parseFromString(html, 'text/html');
+        const parts = [...page.querySelectorAll('[data-modal-content]')];
+        if (!parts.length) return false;
+        const pageTitle = page.querySelector('.ht-title')?.textContent.trim() || '';
+        const pageLede = page.querySelector('.ht-lede')?.textContent.trim() || '';
+        const custom = modalEl.dataset.title;
+        modalEl.querySelector('.modal-dialog').classList.toggle('modal-lg', modalEl.dataset.wide === 'true');
+        modalEl.querySelector('.modal-title').textContent = custom || pageTitle;
+        const lede = modalEl.querySelector('.modal-header p');
+        lede.textContent = custom ? [pageTitle, pageLede].filter(Boolean).join(' · ') : pageLede;
+        lede.hidden = !lede.textContent;
+        const body = modalEl.querySelector('.modal-body');
+        body.replaceChildren(...parts.map(part => document.adoptNode(part)));
+        body.querySelectorAll('.ht-form-actions a').forEach(link => {
+            if (link.textContent.trim() !== 'Cancel') return;
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = link.className;
+            button.textContent = 'Cancel';
+            button.setAttribute('data-bs-dismiss', 'modal');
+            link.replaceWith(button);
+        });
+        window.htEnhanceDates?.(body);
+        window.htEnhancePasswords?.(body);
+        return true;
+    };
+
+    document.addEventListener('click', async event => {
+        const link = event.target.closest('a[data-modal]');
+        if (!link || event.ctrlKey || event.metaKey || event.shiftKey || event.button !== 0 || !window.bootstrap) return;
+        event.preventDefault();
+        ensure();
+        modalEl.dataset.wide = String(link.dataset.modal === 'wide');
+        modalEl.dataset.title = link.dataset.modalTitle || '';
+        try {
+            const response = await fetch(link.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            if (!response.ok || !render(await response.text())) { window.location.href = link.href; return; }
+            modal.show();
+        } catch {
+            window.location.href = link.href;
+        }
+    });
+
+    document.addEventListener('submit', async event => {
+        const form = event.target;
+        if (event.defaultPrevented || !modalEl || !modalEl.contains(form) || form.method.toLowerCase() !== 'post') return;
+        event.preventDefault();
+        const submitter = event.submitter;
+        const data = new FormData(form, submitter);
+        if (submitter) submitter.disabled = true;
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST', body: data, redirect: 'manual', headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            if (response.type === 'opaqueredirect' || response.redirected) { window.location.reload(); return; }
+            if (response.ok && render(await response.text())) return;
+            window.location.reload();
+        } catch {
+            window.location.reload();
+        } finally {
+            if (submitter) submitter.disabled = false;
+        }
+    });
+})();

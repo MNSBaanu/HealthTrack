@@ -1,0 +1,32 @@
+@model LoginWith2faViewModel
+@{
+    ViewData["Title"] = "Two-factor sign-in";
+    Layout = "_AuthLayout";
+    ViewData["SplitAuth"] = true;
+}
+
+<div class="ht-auth-form">
+    <h1>Check your app.</h1>
+    <p class="text-muted">Enter the 6-digit code from your authenticator app. Lost your phone? Enter one of your recovery codes instead.</p>
+
+    <form asp-controller="Account" asp-action="LoginWith2fa" asp-route-returnUrl="@ViewData["ReturnUrl"]" method="post" novalidate>
+        <div asp-validation-summary="ModelOnly" class="ht-flash error" role="alert"></div>
+        <input asp-for="RememberMe" type="hidden" />
+
+        <div class="mb-4">
+            <label asp-for="Code" class="form-label"></label>
+            <input asp-for="Code" class="form-control" autocomplete="one-time-code" inputmode="text" autofocus />
+            <span asp-validation-for="Code" class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg w-100">Verify <i class="icon-arrow-right"></i></button>
+    </form>
+
+    <div class="ht-auth-switch">
+        Not you? <a asp-controller="Account" asp-action="Login">Sign in with another account</a>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

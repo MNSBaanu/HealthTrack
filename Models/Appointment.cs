@@ -25,4 +25,5 @@ public class Appointment
     public string? RatingComment { get; set; }
 
     public DateTime? RatedAtUtc { get; set; }
+    public bool RatingHidden { get; set; }
 }

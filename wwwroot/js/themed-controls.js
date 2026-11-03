@@ -23,7 +23,8 @@
         }
         return minimum || undefined;
     };
-    document.querySelectorAll('input[type="date"], input[type="datetime-local"], input[type="time"]').forEach(input => {
+    const enhance = root => root.querySelectorAll('input[type="date"], input[type="datetime-local"], input[type="time"]').forEach(input => {
+        if (input._flatpickr) return;
         const type = input.type;
         const hasTime = type !== 'date';
         const format = type === 'date' ? 'Y-m-d' : type === 'time' ? 'H:i' : 'Y-m-d\\TH:i';
@@ -41,6 +42,7 @@
             minuteIncrement: input.step && Number(input.step) >= 60 ? Number(input.step) / 60 : 1,
             allowInput: true,
             disableMobile: true,
+            static: !!input.closest('.modal'),
             minDate: type !== 'time' && minimum ? minimum : undefined,
             maxDate: type !== 'time' && maximum ? maximum : undefined,
             minTime: type === 'time' && minimum ? minimum : undefined,
@@ -80,4 +82,6 @@
             }
         });
     });
+    enhance(document);
+    window.htEnhanceDates = enhance;
 })();

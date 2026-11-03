@@ -97,6 +97,15 @@ namespace HealthTrack.Controllers
             if (question.Length == 0) return Json(new { answer = (string?)null });
             if (question.Length > 300) question = question[..300];
 
+            var key = FaqKey(question);
+            var faq = (await Context.ChatFaqs.AsNoTracking().ToListAsync(cancellationToken))
+                .FirstOrDefault(f =>
+                {
+                    var saved = FaqKey(f.Question);
+                    return saved == key || (saved.Length >= 8 && key.Contains(saved)) || (key.Length >= 8 && saved.Contains(key));
+                });
+            if (faq != null) return Json(new { answer = faq.Answer });
+
             string? answer = null;
             if (!MedicalAdvice.IsMatch(question))
                 answer = await _ai.AskAsync(question, cancellationToken);
@@ -113,6 +122,8 @@ namespace HealthTrack.Controllers
 
         private static string Normalize(string? question) =>
             Regex.Replace((question ?? string.Empty).ToLowerInvariant(), @"[^a-z0-9\s]", " ").Trim();
+
+        private static string FaqKey(string question) => Regex.Replace(Normalize(question), @"\s+", " ");
 
         private JsonResult Reply(string answer, string link, string linkText) =>
             Json(new { answer, link, linkText });

@@ -82,12 +82,16 @@ builder.Services.AddHostedService<DailyReminderWorker>();
 builder.Services.AddHostedService<DataRetentionWorker>();
 builder.Services.AddScoped<NotificationEmailDispatcher>();
 builder.Services.AddHostedService<NotificationEmailWorker>();
+builder.Services.AddScoped<WeeklyReportSender>();
+builder.Services.AddHostedService<WeeklyReportWorker>();
 
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
     scope.ServiceProvider.GetRequiredService<HealthTrackDbContext>().Database.Migrate();
+    var savedSettings = await SystemSettings.LoadAsync(scope.ServiceProvider.GetRequiredService<HealthTrackDbContext>());
+    savedSettings.ApplyLockout(app.Services.GetRequiredService<Microsoft.Extensions.Options.IOptions<IdentityOptions>>().Value);
     await DbSeeder.SeedAsync(scope.ServiceProvider, builder.Configuration);
 }
 
@@ -103,7 +107,9 @@ app.UseHttpsRedirection();
 app.Use(async (context, next) =>
 {
     var headers = context.Response.Headers;
-    headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+    var nonce = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(16));
+    context.Items[CspNonce.Key] = nonce;
+    headers["Content-Security-Policy"] = $"default-src 'self'; script-src 'self' 'nonce-{nonce}' https://cdn.jsdelivr.net; "
         + "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
         + "font-src 'self' https://cdn.jsdelivr.net https://fonts.gstatic.com; img-src 'self' data:; "
         + "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'";

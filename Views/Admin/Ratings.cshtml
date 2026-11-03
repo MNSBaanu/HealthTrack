@@ -7,9 +7,12 @@
         <h1 class="ht-title">Consultation ratings</h1>
         <p class="ht-lede">How clients rated completed consultations with trainers and healthcare professionals.</p>
     </div>
+    <div class="ht-head-actions">
+        <partial name="_ExportMenu" model='new Dictionary<string, string> { ["report"] = "ratings" }' />
+    </div>
 </div>
 
-@if (!Model.Providers.Any())
+@if (!Model.Recent.Any())
 {
     <section class="ht-card"><div class="ht-card-body"><p class="text-muted mb-0">No ratings yet. Clients can rate a consultation from its details page once it has ended.</p></div></section>
 }
@@ -43,10 +46,16 @@ else
         <div class="ht-card-body">
             @foreach (var rating in Model.Recent)
             {
-                <article class="border-bottom pb-3 mb-3">
-                    <div class="d-flex justify-content-between gap-2">
-                        <strong>@rating.ProviderName</strong>
-                        <span>@for (var star = 1; star <= 5; star++) { <i class="@(star <= rating.Rating ? "icon-star" : "icon-star opacity-25") text-warning"></i> }</span>
+                <article class="border-bottom pb-3 mb-3 @(rating.Hidden ? "opacity-50" : "")">
+                    <div class="d-flex justify-content-between align-items-center gap-2">
+                        <strong>@rating.ProviderName @if (rating.Hidden) { <span class="ht-pill ms-1">Hidden</span> }</strong>
+                        <div class="d-flex align-items-center gap-2">
+                            <span>@for (var star = 1; star <= 5; star++) { <i class="@(star <= rating.Rating ? "icon-star" : "icon-star opacity-25") text-warning"></i> }</span>
+                            <form asp-action="ToggleRating" asp-route-id="@rating.AppointmentId" method="post"
+                                  data-confirm="@(rating.Hidden ? "Restore this rating? It will count towards the average again." : "Hide this rating? It will no longer count towards the average.")">
+                                <button type="submit" class="btn btn-sm btn-line"><i class="@(rating.Hidden ? "icon-eye" : "icon-eye-off")"></i>@(rating.Hidden ? "Restore" : "Hide")</button>
+                            </form>
+                        </div>
                     </div>
                     <div class="small text-muted">@rating.ClientName · @rating.RatedAt.ToString("d MMM yyyy")</div>
                     @if (!string.IsNullOrWhiteSpace(rating.Comment)) { <p class="mb-0 mt-1">@rating.Comment</p> }

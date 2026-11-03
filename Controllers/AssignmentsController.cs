@@ -139,14 +139,17 @@ public class AssignmentsController(HealthTrackDbContext context, UserManager<Per
             .Where(t => t.LockoutEnd == null || t.LockoutEnd <= now)
             .Where(t => Context.UserRoles.Any(ur => ur.UserId == t.Id
                 && Context.Roles.Any(r => r.Id == ur.RoleId && r.Name == AppRoles.Trainer)))
-            .OrderBy(t => t.Name).Select(t => new SelectListItem
-            { Value = t.Id, Text = t.Name + " (" + t.Email + ")" }).ToListAsync();
+            .OrderBy(t => t.Name).Select(t => new { t.Id, t.Name, t.Email, Clients = Context.ClientTrainerAssignments.Count(a => a.TrainerId == t.Id) })
+            .ToListAsync();
+        var leastBusy = trainers.OrderBy(t => t.Clients).ThenBy(t => t.Name).FirstOrDefault();
         var history = await Context.TrainerAssignmentHistories.AsNoTracking().Include(h => h.Trainer)
             .Where(h => h.ClientId == client.Id).OrderByDescending(h => h.AssignedAtUtc).ToListAsync();
         return new AssignmentEditViewModel
         {
             ClientId = client.Id, ClientName = client.Name, ClientEmail = client.Email ?? string.Empty,
-            CurrentTrainerName = client.TrainerAssignment?.Trainer.Name, Trainers = trainers,
+            CurrentTrainerName = client.TrainerAssignment?.Trainer.Name,
+            Trainers = trainers.Select(t => new SelectListItem { Value = t.Id, Text = $"{t.Name} ({t.Email}) · {t.Clients} {(t.Clients == 1 ? "client" : "clients")}" }).ToList(),
+            SuggestedTrainerName = leastBusy == null ? null : $"{leastBusy.Name} ({leastBusy.Clients} {(leastBusy.Clients == 1 ? "client" : "clients")})",
             TrainerId = form.TrainerId, RowVersion = form.RowVersion, History = history
         };
     }

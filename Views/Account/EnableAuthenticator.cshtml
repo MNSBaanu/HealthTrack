@@ -1,0 +1,46 @@
+@model EnableAuthenticatorViewModel
+@{
+    ViewData["FormPage"] = "standard";
+    ViewData["Title"] = "Set up two-factor sign-in";
+}
+
+<a class="ht-back" asp-action="ChangePassword"><i class="icon-arrow-left"></i>Account</a>
+<div class="ht-head">
+    <div>
+        <h1 class="ht-title">Set up two-factor sign-in</h1>
+        <p class="ht-lede">After your password, you'll also enter a code from your phone when you sign in.</p>
+    </div>
+</div>
+
+<section class="ht-card">
+    <div class="ht-card-body">
+        <ol class="ht-steps mb-4">
+            <li>Install an authenticator app such as Google Authenticator or Microsoft Authenticator.</li>
+            <li>Scan this QR code, or enter the key by hand.</li>
+            <li>Type the 6-digit code the app shows.</li>
+        </ol>
+        <div class="d-flex flex-wrap align-items-center gap-4 mb-4">
+            <img src="@Model.QrCodeDataUri" alt="QR code for your authenticator app" width="180" height="180" class="ht-qr" />
+            <div>
+                <div class="ht-overline mb-1">Setup key</div>
+                <code class="ht-setup-key">@Model.SharedKey</code>
+            </div>
+        </div>
+        <form asp-action="EnableAuthenticator" method="post" novalidate>
+            <div asp-validation-summary="ModelOnly" class="ht-flash error" role="alert"></div>
+            <div class="mb-3">
+                <label asp-for="Code" class="form-label"></label>
+                <input asp-for="Code" class="form-control" autocomplete="one-time-code" inputmode="numeric" maxlength="7" autofocus />
+                <span asp-validation-for="Code" class="text-danger"></span>
+            </div>
+            <div class="ht-form-actions">
+                <button type="submit" class="btn btn-primary"><i class="icon-shield-check"></i>Turn on</button>
+                <a class="btn btn-line" asp-action="ChangePassword">Cancel</a>
+            </div>
+        </form>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

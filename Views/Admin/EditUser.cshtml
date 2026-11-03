@@ -15,7 +15,7 @@
 <div class="row g-3">
     <div class="col-lg-8 col-xl-7">
         <section class="ht-card">
-            <div class="ht-card-body">
+            <div class="ht-card-body" data-modal-content>
                 <form asp-action="EditUser" method="post" novalidate>
                     <input asp-for="Id" type="hidden" />
                     <div asp-validation-summary="ModelOnly" class="ht-flash error" role="alert"></div>
@@ -38,6 +38,14 @@
                                 <input asp-for="DateOfBirth" class="form-control" max="@DateTime.Today.AddDays(-1).ToString("yyyy-MM-dd")" />
                                 <span asp-validation-for="DateOfBirth" class="text-danger"></span>
                             </div>
+                            @if (Model.IsTrainer)
+                            {
+                                <div class="col-md-6">
+                                    <label asp-for="Specialty" class="form-label"></label>
+                                    <input asp-for="Specialty" class="form-control" maxlength="200" />
+                                    <span asp-validation-for="Specialty" class="text-danger"></span>
+                                </div>
+                            }
                         </div>
                     </fieldset>
 

@@ -2,7 +2,11 @@ namespace HealthTrack.Models.ViewModels
 {
     public record ProviderRatingRow(string Name, string Kind, string? Specialty, double Average, int Count);
 
-    public record RecentRating(string ProviderName, string ClientName, int Rating, string? Comment, DateTime RatedAt);
+    public record ChatQuestionGroup(string Question, int Count, string Roles, DateTime Last, bool Ai);
+
+    public record RecentRating(int AppointmentId, string ProviderName, string ClientName, int Rating, string? Comment, DateTime RatedAt, bool Hidden);
+
+    public record AdminAppointmentRow(int Id, string ClientId, string ClientName, string ProviderName, ConsultationProviderKind ProviderKind, DateTime Start, AppointmentStatus Status, DateTime RequestedAt);
 
     public class ProviderRatingsViewModel
     {

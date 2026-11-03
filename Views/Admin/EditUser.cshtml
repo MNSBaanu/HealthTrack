@@ -38,6 +38,14 @@
                                 <input asp-for="DateOfBirth" class="form-control" max="@DateTime.Today.AddDays(-1).ToString("yyyy-MM-dd")" />
                                 <span asp-validation-for="DateOfBirth" class="text-danger"></span>
                             </div>
+                            @if (Model.IsTrainer)
+                            {
+                                <div class="col-md-6">
+                                    <label asp-for="Specialty" class="form-label"></label>
+                                    <input asp-for="Specialty" class="form-control" maxlength="200" />
+                                    <span asp-validation-for="Specialty" class="text-danger"></span>
+                                </div>
+                            }
                         </div>
                     </fieldset>
 

@@ -1943,3 +1943,72 @@ tr[hidden], li[hidden], article[hidden] {
 .ht-date-range .form-control {
   width: 9.5rem;
 }
+
+.ht-row-actions.plain .btn-icon {
+  width: 2.4rem;
+  height: 2.4rem;
+  border-color: transparent;
+  background-color: transparent;
+  border-radius: var(--ht-radius-sm);
+  color: var(--ht-ink);
+  font-size: 1.15rem;
+}
+
+.ht-row-actions.plain .btn-icon:hover {
+  border-color: transparent;
+  background-color: var(--ht-paper);
+  color: var(--ht-ink);
+}
+
+.ht-row-actions.plain .btn-icon.danger:hover {
+  background-color: var(--ht-danger-soft);
+  color: var(--ht-danger);
+}
+
+.ht-member .name a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.ht-member .name a:hover {
+  color: var(--ht-saffron-deep);
+  text-decoration: underline;
+}
+
+.ht-modal .modal-content {
+  background-color: var(--ht-surface);
+  border: 1px solid var(--ht-line);
+  border-radius: var(--ht-radius-lg);
+  box-shadow: var(--ht-shadow-lg);
+}
+
+.ht-modal .modal-header,
+.ht-modal .modal-footer {
+  border-color: var(--ht-line);
+}
+
+.ht-modal .modal-header {
+  align-items: flex-start;
+}
+
+.ht-modal .modal-title {
+  font-family: var(--ht-font-display);
+  font-size: 1.25rem;
+  margin-bottom: 0.2rem;
+}
+
+[class^="icon-"]::before,
+[class*=" icon-"]::before {
+  display: inline-block;
+  line-height: 1;
+  vertical-align: -0.125em;
+}
+
+.ht-status-dot.ht-status-dot::before {
+  content: "";
+  width: 1em;
+  height: 1em;
+  border-radius: 50%;
+  background-color: currentColor;
+  vertical-align: middle;
+}

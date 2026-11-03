@@ -7,7 +7,7 @@
     var activeDietPlans = Model.DietPlans.Count(p => p.IsActive);
 }
 
-<a class="ht-back" asp-action="Users"><i class="bi bi-arrow-left"></i>All users</a>
+<a class="ht-back" asp-action="Users"><i class="icon-arrow-left"></i>All users</a>
 
 <section class="ht-card ink mb-3">
     <div class="ht-banner">
@@ -17,11 +17,11 @@
             <h2>@Model.Name</h2>
             <div class="ht-on-ink-muted">@Model.Email</div>
             <div class="facts">
-                <span class="ht-pill on-ink"><i class="bi bi-calendar3"></i>Joined @Model.CreatedAt.ToString("d MMM yyyy")</span>
-                <span class="ht-pill on-ink"><i class="bi bi-clock-history"></i>Last active @(Model.LastLoginAt?.ToString("d MMM, HH:mm") ?? "never")</span>
+                <span class="ht-pill on-ink"><i class="icon-calendar"></i>Joined @Model.CreatedAt.ToString("d MMM yyyy")</span>
+                <span class="ht-pill on-ink"><i class="icon-history"></i>Last active @(Model.LastLoginAt?.ToString("d MMM, HH:mm") ?? "never")</span>
                 @if (!string.IsNullOrWhiteSpace(provider?.Specialty))
                 {
-                    <span class="ht-pill saffron"><i class="bi bi-award"></i>@provider.Specialty</span>
+                    <span class="ht-pill saffron"><i class="icon-award"></i>@provider.Specialty</span>
                 }
             </div>
         </div>
@@ -75,7 +75,7 @@
                                 <td class="text-muted small">@assignment.Client.Email</td>
                                 <td class="text-nowrap text-muted small">@assignment.AssignedAtUtc.ToString("d MMM yyyy")</td>
                                 <td>
-                                    <a class="btn-icon" asp-action="ClientDetails" asp-route-id="@assignment.ClientId" title="View client"><i class="bi bi-eye"></i></a>
+                                    <a class="btn-icon" asp-action="ClientDetails" asp-route-id="@assignment.ClientId" title="View client"><i class="icon-eye"></i></a>
                                 </td>
                             </tr>
                         }

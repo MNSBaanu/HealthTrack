@@ -23,31 +23,31 @@
                 <nav class="ht-tabs" aria-label="Main navigation">
                     @if (isClient)
                     {
-                        <a class="@Tab("Client", "Index")" asp-controller="Client" asp-action="Index"><i class="bi bi-grid-1x2"></i>Overview</a>
-                        <a class="@Tab("ClientPlans")" asp-controller="ClientPlans" asp-action="Index"><i class="bi bi-calendar-week"></i>Plans</a>
-                        <a class="@Tab("Client", "Progress")" asp-controller="Client" asp-action="Progress"><i class="bi bi-graph-up"></i>Progress</a>
-                        <a class="@Tab("HealthMetrics")" asp-controller="HealthMetrics" asp-action="Index"><i class="bi bi-rulers"></i>Metrics</a>
-                        <a class="@Tab("WorkoutLogs")" asp-controller="WorkoutLogs" asp-action="Index"><i class="bi bi-lightning-charge"></i>Workouts</a>
-                        <a class="@Tab("MealLogs")" asp-controller="MealLogs" asp-action="Index"><i class="bi bi-cup-hot"></i>Meals</a>
-                        <a class="@Tab("Appointments")" asp-controller="Appointments" asp-action="Index"><i class="bi bi-calendar-check"></i>Appointments</a>
-                        <a class="@Tab("ClientFeedback")" asp-controller="ClientFeedback" asp-action="Index"><i class="bi bi-chat-left-text"></i>Feedback</a>
+                        <a class="@Tab("Client", "Index")" asp-controller="Client" asp-action="Index"><i class="icon-layout-dashboard"></i>Overview</a>
+                        <a class="@Tab("ClientPlans")" asp-controller="ClientPlans" asp-action="Index"><i class="icon-calendar-range"></i>Plans</a>
+                        <a class="@Tab("Client", "Progress")" asp-controller="Client" asp-action="Progress"><i class="icon-trending-up"></i>Progress</a>
+                        <a class="@Tab("HealthMetrics")" asp-controller="HealthMetrics" asp-action="Index"><i class="icon-ruler"></i>Metrics</a>
+                        <a class="@Tab("WorkoutLogs")" asp-controller="WorkoutLogs" asp-action="Index"><i class="icon-zap"></i>Workouts</a>
+                        <a class="@Tab("MealLogs")" asp-controller="MealLogs" asp-action="Index"><i class="icon-coffee"></i>Meals</a>
+                        <a class="@Tab("Appointments")" asp-controller="Appointments" asp-action="Index"><i class="icon-calendar-check"></i>Appointments</a>
+                        <a class="@Tab("ClientFeedback")" asp-controller="ClientFeedback" asp-action="Index"><i class="icon-message-square-text"></i>Feedback</a>
                     }
                     @if (isTrainer)
                     {
-                        <a class="@Tab("Trainer", "Index")" asp-controller="Trainer" asp-action="Index"><i class="bi bi-grid-1x2"></i>Overview</a>
-                        <a class="@Tab("Trainer", "Clients", "ClientDetails")" asp-controller="Trainer" asp-action="Clients"><i class="bi bi-people"></i>My Clients</a>
-                        <a class="@Tab("TrainerPlans", "WorkoutPlans", "CreateWorkoutPlan", "EditWorkoutPlan")" asp-controller="TrainerPlans" asp-action="WorkoutPlans"><i class="bi bi-lightning-charge"></i>Workout Plans</a>
-                        <a class="@Tab("TrainerPlans", "DietPlans", "CreateDietPlan", "EditDietPlan")" asp-controller="TrainerPlans" asp-action="DietPlans"><i class="bi bi-cup-hot"></i>Diet Plans</a>
-                        <a class="@Tab("TrainerSchedule")" asp-controller="TrainerSchedule" asp-action="Index"><i class="bi bi-calendar-check"></i>Consultations</a>
-                        <a class="@Tab("TrainerReports")" asp-controller="TrainerReports" asp-action="Index"><i class="bi bi-journal-text"></i>Reports</a>
+                        <a class="@Tab("Trainer", "Index")" asp-controller="Trainer" asp-action="Index"><i class="icon-layout-dashboard"></i>Overview</a>
+                        <a class="@Tab("Trainer", "Clients", "ClientDetails")" asp-controller="Trainer" asp-action="Clients"><i class="icon-users"></i>My Clients</a>
+                        <a class="@Tab("TrainerPlans", "WorkoutPlans", "CreateWorkoutPlan", "EditWorkoutPlan")" asp-controller="TrainerPlans" asp-action="WorkoutPlans"><i class="icon-zap"></i>Workout Plans</a>
+                        <a class="@Tab("TrainerPlans", "DietPlans", "CreateDietPlan", "EditDietPlan")" asp-controller="TrainerPlans" asp-action="DietPlans"><i class="icon-coffee"></i>Diet Plans</a>
+                        <a class="@Tab("TrainerSchedule")" asp-controller="TrainerSchedule" asp-action="Index"><i class="icon-calendar-check"></i>Consultations</a>
+                        <a class="@Tab("TrainerReports")" asp-controller="TrainerReports" asp-action="Index"><i class="icon-notebook-text"></i>Reports</a>
                     }
                     @if (isAdmin)
                     {
-                        <a class="@Tab("Admin", "Index")" asp-controller="Admin" asp-action="Index"><i class="bi bi-grid-1x2"></i>Console</a>
-                        <a class="@Tab("Admin", "Users", "ClientDetails", "CreateAdmin", "CreateTrainer", "ImportUsers", "LoginHistory", "Providers", "CreateProvider", "EditProvider", "ProviderSlots", "AddProviderSlot")" asp-controller="Admin" asp-action="Users"><i class="bi bi-people"></i>Users</a>
-                        <a class="@Tab("Assignments")" asp-controller="Assignments" asp-action="Index"><i class="bi bi-person-check"></i>Assignments</a>
-                        <a class="@Tab("Admin", "Reports", "SystemHealth", "Ratings", "AuditLog", "ChatQuestions")" asp-controller="Admin" asp-action="Reports"><i class="bi bi-journal-text"></i>Reports</a>
-                        <a class="@Tab("Admin", "SendNotification")" asp-controller="Admin" asp-action="SendNotification"><i class="bi bi-megaphone"></i>Broadcast</a>
+                        <a class="@Tab("Admin", "Index")" asp-controller="Admin" asp-action="Index"><i class="icon-layout-dashboard"></i>Console</a>
+                        <a class="@Tab("Admin", "Users", "ClientDetails", "CreateAdmin", "CreateTrainer", "ImportUsers", "LoginHistory", "Providers", "CreateProvider", "EditProvider", "ProviderSlots", "AddProviderSlot")" asp-controller="Admin" asp-action="Users"><i class="icon-users"></i>Users</a>
+                        <a class="@Tab("Assignments")" asp-controller="Assignments" asp-action="Index"><i class="icon-user-check"></i>Assignments</a>
+                        <a class="@Tab("Admin", "Reports", "SystemHealth", "Ratings", "AuditLog", "ChatQuestions")" asp-controller="Admin" asp-action="Reports"><i class="icon-notebook-text"></i>Reports</a>
+                        <a class="@Tab("Admin", "SendNotification")" asp-controller="Admin" asp-action="SendNotification"><i class="icon-megaphone"></i>Broadcast</a>
                     }
                 </nav>
                 <div class="ht-mast-actions">
@@ -70,14 +70,14 @@
             @if (TempData["Success"] is string success)
             {
                 <div class="ht-flash success alert fade show" role="status">
-                    <i class="bi bi-check2-circle"></i><span>@success</span>
+                    <i class="icon-circle-check"></i><span>@success</span>
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             }
             @if (TempData["Error"] is string error)
             {
                 <div class="ht-flash error alert fade show" role="alert">
-                    <i class="bi bi-exclamation-octagon"></i><span>@error</span>
+                    <i class="icon-octagon-alert"></i><span>@error</span>
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             }

@@ -9,9 +9,9 @@
         <h1 class="ht-title">Welcome, @Model.TrainerName</h1>
     </div>
     <div class="ht-head-actions">
-        <a class="btn btn-line" asp-controller="TrainerPlans" asp-action="CreateWorkoutPlan"><i class="bi bi-lightning-charge"></i>New workout plan</a>
-        <a class="btn btn-line" asp-controller="TrainerPlans" asp-action="CreateDietPlan"><i class="bi bi-cup-hot"></i>New diet plan</a>
-        <a class="btn btn-primary" asp-controller="TrainerSchedule" asp-action="Index"><i class="bi bi-calendar-check"></i>Consultations</a>
+        <a class="btn btn-line" asp-controller="TrainerPlans" asp-action="CreateWorkoutPlan"><i class="icon-zap"></i>New workout plan</a>
+        <a class="btn btn-line" asp-controller="TrainerPlans" asp-action="CreateDietPlan"><i class="icon-coffee"></i>New diet plan</a>
+        <a class="btn btn-primary" asp-controller="TrainerSchedule" asp-action="Index"><i class="icon-calendar-check"></i>Consultations</a>
     </div>
 </div>
 
@@ -38,8 +38,8 @@
 {
     <section class="ht-card mb-4 border-warning">
         <div class="ht-card-head">
-            <h2><i class="bi bi-arrow-repeat saffron me-2"></i>@Model.RescheduleRequestsCount reschedule request@(Model.RescheduleRequestsCount == 1 ? "" : "s") waiting</h2>
-            <a asp-controller="TrainerSchedule" asp-action="Index" asp-fragment="reschedule-requests">Review requests <i class="bi bi-arrow-right"></i></a>
+            <h2><i class="icon-refresh-cw saffron me-2"></i>@Model.RescheduleRequestsCount reschedule request@(Model.RescheduleRequestsCount == 1 ? "" : "s") waiting</h2>
+            <a asp-controller="TrainerSchedule" asp-action="Index" asp-fragment="reschedule-requests">Review requests <i class="icon-arrow-right"></i></a>
         </div>
     </section>
 }
@@ -48,8 +48,8 @@
 {
     <section class="ht-card mb-4 border-warning">
         <div class="ht-card-head">
-            <h2><i class="bi bi-bell saffron me-2"></i>Pending consultation requests</h2>
-            <a asp-controller="TrainerSchedule" asp-action="Index">Manage all schedule <i class="bi bi-arrow-right"></i></a>
+            <h2><i class="icon-bell saffron me-2"></i>Pending consultation requests</h2>
+            <a asp-controller="TrainerSchedule" asp-action="Index">Manage all schedule <i class="icon-arrow-right"></i></a>
         </div>
         <div class="ht-card-body p-0">
             <div class="table-responsive">
@@ -80,11 +80,11 @@
                                 <td class="text-end">
                                     <form asp-controller="TrainerSchedule" asp-action="Approve" method="post" class="d-inline">
                                         <input type="hidden" name="appointmentId" value="@appt.Id" />
-                                        <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-check-lg"></i>Approve</button>
+                                        <button type="submit" class="btn btn-sm btn-primary"><i class="icon-check"></i>Approve</button>
                                     </form>
                                     <form asp-controller="TrainerSchedule" asp-action="Cancel" method="post" class="d-inline ms-1">
                                         <input type="hidden" name="appointmentId" value="@appt.Id" />
-                                        <button type="submit" class="btn btn-sm btn-line-danger"><i class="bi bi-x-lg"></i>Decline</button>
+                                        <button type="submit" class="btn btn-sm btn-line-danger"><i class="icon-x"></i>Decline</button>
                                     </form>
                                 </td>
                             </tr>
@@ -101,7 +101,7 @@
         <section class="ht-card h-100">
             <div class="ht-card-head">
                 <h2>My assigned clients</h2>
-                <a asp-action="Clients">View all clients <i class="bi bi-arrow-right"></i></a>
+                <a asp-action="Clients">View all clients <i class="icon-arrow-right"></i></a>
             </div>
             <div class="ht-card-body p-0">
                 @if (Model.AssignedClients.Any())
@@ -155,7 +155,7 @@
                 else
                 {
                     <div class="p-4">
-                        <partial name="_EmptyState" model='new EmptyStateViewModel("bi bi-people", "No clients assigned yet", "The administrator will assign clients to you. Check back soon.")' />
+                        <partial name="_EmptyState" model='new EmptyStateViewModel("icon-users", "No clients assigned yet", "The administrator will assign clients to you. Check back soon.")' />
                     </div>
                 }
             </div>
@@ -181,11 +181,11 @@
                                 <div class="small text-muted mt-1">
                                     @if (act.ActivityType == "Workout")
                                     {
-                                        <i class="bi bi-lightning-charge me-1 text-warning"></i>
+                                        <i class="icon-zap me-1 text-warning"></i>
                                     }
                                     else
                                     {
-                                        <i class="bi bi-cup-hot me-1 text-info"></i>
+                                        <i class="icon-coffee me-1 text-info"></i>
                                     }
                                     @act.Summary
                                 </div>
@@ -233,11 +233,11 @@
                                         <td>
                                             @if (fb.IsReadByClient)
                                             {
-                                                <span class="text-success small"><i class="bi bi-check2-all"></i> Read</span>
+                                                <span class="text-success small"><i class="icon-check-check"></i> Read</span>
                                             }
                                             else
                                             {
-                                                <span class="text-muted small"><i class="bi bi-check2"></i> Sent</span>
+                                                <span class="text-muted small"><i class="icon-check"></i> Sent</span>
                                             }
                                         </td>
                                     </tr>

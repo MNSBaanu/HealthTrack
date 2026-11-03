@@ -1,6 +1,6 @@
 @model List<LoginHistory>
 @{ var person = (Person)ViewData["Person"]!; ViewData["Title"] = "Login history"; }
-<a class="ht-back" asp-action="Users"><i class="bi bi-arrow-left"></i>All users</a>
+<a class="ht-back" asp-action="Users"><i class="icon-arrow-left"></i>All users</a>
 <div class="ht-head"><div><h1 class="ht-title">Login history</h1><p class="ht-lede">@person.Name · @person.Email</p></div></div>
 <section class="ht-card">
     <div class="ht-card-body">

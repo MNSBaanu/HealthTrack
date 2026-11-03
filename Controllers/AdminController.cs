@@ -96,7 +96,7 @@ namespace HealthTrack.Controllers
             return Json(model);
         }
 
-        public async Task<IActionResult> Users(string? search, string? role)
+        public async Task<IActionResult> Users(string? search, string? role, string? status)
         {
             var query = QueryUserSummaries();
             if (!string.IsNullOrWhiteSpace(search))
@@ -107,9 +107,11 @@ namespace HealthTrack.Controllers
             {
                 query = query.Where(u => u.Role == role);
             }
+            if (status == "active") query = query.Where(u => !u.IsLocked);
+            else if (status == "locked") query = query.Where(u => u.IsLocked);
 
             var providers = new List<ConsultationProvider>();
-            if (string.IsNullOrWhiteSpace(role) || role == ProviderRole)
+            if ((string.IsNullOrWhiteSpace(role) || role == ProviderRole) && status != "locked")
             {
                 var providerQuery = Context.ConsultationProviders.AsNoTracking()
                     .Where(p => p.Kind == ConsultationProviderKind.HealthcareProfessional);
@@ -117,13 +119,16 @@ namespace HealthTrack.Controllers
                 {
                     providerQuery = providerQuery.Where(p => p.Name.Contains(search) || (p.Specialty != null && p.Specialty.Contains(search)));
                 }
+                if (status == "active") providerQuery = providerQuery.Where(p => p.IsActive);
+                else if (status == "off") providerQuery = providerQuery.Where(p => !p.IsActive);
                 providers = await providerQuery.OrderByDescending(p => p.IsActive).ThenBy(p => p.Name).ToListAsync();
             }
 
             ViewData["Search"] = search;
             ViewData["Role"] = role;
+            ViewData["Status"] = status;
             ViewData["Providers"] = providers;
-            var users = role == ProviderRole ? new List<UserSummaryViewModel>() : await query.OrderBy(u => u.Name).ToListAsync();
+            var users = role == ProviderRole || status == "off" ? new List<UserSummaryViewModel>() : await query.OrderBy(u => u.Name).ToListAsync();
             return View(users);
         }
 

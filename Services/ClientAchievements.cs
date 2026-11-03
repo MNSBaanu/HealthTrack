@@ -36,13 +36,13 @@ namespace HealthTrack.Services
 
             var badges = new List<Badge>
             {
-                new("bi-lightning-charge", "First workout", "Log your first workout", totalWorkoutDays >= 1),
-                new("bi-fire", "3-day streak", "Work out 3 days in a row", longest >= 3),
-                new("bi-fire", "7-day streak", "Work out 7 days in a row", longest >= 7),
-                new("bi-trophy", "10 workout days", "Train on 10 different days", totalWorkoutDays >= 10),
-                new("bi-cup-hot", "Meal tracker", "Log 10 meals", totalMeals >= 10),
-                new("bi-rulers", "Regular weigh-ins", "Record 5 weigh-ins", totalWeighIns >= 5),
-                new("bi-bullseye", "Goal reached", "Reach your target weight", goalReached)
+                new("icon-zap", "First workout", "Log your first workout", totalWorkoutDays >= 1),
+                new("icon-flame", "3-day streak", "Work out 3 days in a row", longest >= 3),
+                new("icon-flame", "7-day streak", "Work out 7 days in a row", longest >= 7),
+                new("icon-trophy", "10 workout days", "Train on 10 different days", totalWorkoutDays >= 10),
+                new("icon-coffee", "Meal tracker", "Log 10 meals", totalMeals >= 10),
+                new("icon-ruler", "Regular weigh-ins", "Record 5 weigh-ins", totalWeighIns >= 5),
+                new("icon-target", "Goal reached", "Reach your target weight", goalReached)
             };
             return new AchievementSummary(current, longest, badges);
         }

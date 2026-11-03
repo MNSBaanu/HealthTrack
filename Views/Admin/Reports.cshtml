@@ -28,29 +28,29 @@
             <input id="report-to" type="date" name="to" value="@to?.ToString("yyyy-MM-dd")" class="form-control" placeholder="To" aria-label="To date" />
             @if (from.HasValue || to.HasValue)
             {
-                <a class="btn-icon" asp-action="Reports" title="Clear dates" aria-label="Clear dates"><i class="bi bi-x-lg"></i></a>
+                <a class="btn-icon" asp-action="Reports" title="Clear dates" aria-label="Clear dates"><i class="icon-x"></i></a>
             }
         </form>
         <div class="dropdown">
             <button class="btn btn-line dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="bi bi-funnel"></i>Filter
+                <i class="icon-filter"></i>Filter
             </button>
             <ul class="dropdown-menu dropdown-menu-end ht-menu">
-                <li><a class="dropdown-item active" asp-action="Reports" aria-current="page"><i class="bi bi-bar-chart me-2"></i>General</a></li>
-                <li><a class="dropdown-item" asp-action="SystemHealth"><i class="bi bi-activity me-2"></i>System health</a></li>
-                <li><a class="dropdown-item" asp-action="Ratings"><i class="bi bi-star me-2"></i>Ratings</a></li>
-                <li><a class="dropdown-item" asp-action="AuditLog"><i class="bi bi-shield-check me-2"></i>Audit log</a></li>
-                <li><a class="dropdown-item" asp-action="ChatQuestions"><i class="bi bi-chat-dots me-2"></i>Chat questions</a></li>
+                <li><a class="dropdown-item active" asp-action="Reports" aria-current="page"><i class="icon-chart-bar me-2"></i>General</a></li>
+                <li><a class="dropdown-item" asp-action="SystemHealth"><i class="icon-activity me-2"></i>System health</a></li>
+                <li><a class="dropdown-item" asp-action="Ratings"><i class="icon-star me-2"></i>Ratings</a></li>
+                <li><a class="dropdown-item" asp-action="AuditLog"><i class="icon-shield-check me-2"></i>Audit log</a></li>
+                <li><a class="dropdown-item" asp-action="ChatQuestions"><i class="icon-message-circle-more me-2"></i>Chat questions</a></li>
             </ul>
         </div>
         <div class="dropdown">
             <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="bi bi-download"></i>Export
+                <i class="icon-download"></i>Export
             </button>
             <ul class="dropdown-menu dropdown-menu-end ht-menu">
-                <li><a class="dropdown-item" asp-action="ExportReport" asp-route-format="pdf" asp-route-from="@from" asp-route-to="@to"><i class="bi bi-file-earmark-pdf me-2"></i>PDF report</a></li>
-                <li><a class="dropdown-item" asp-action="ExportReport" asp-route-format="xlsx" asp-route-from="@from" asp-route-to="@to"><i class="bi bi-file-earmark-excel me-2"></i>Excel spreadsheet</a></li>
-                <li><a class="dropdown-item" asp-action="ExportReport" asp-route-format="csv" asp-route-from="@from" asp-route-to="@to"><i class="bi bi-filetype-csv me-2"></i>CSV spreadsheet</a></li>
+                <li><a class="dropdown-item" asp-action="ExportReport" asp-route-format="pdf" asp-route-from="@from" asp-route-to="@to"><i class="icon-file-text me-2"></i>PDF report</a></li>
+                <li><a class="dropdown-item" asp-action="ExportReport" asp-route-format="xlsx" asp-route-from="@from" asp-route-to="@to"><i class="icon-file-spreadsheet me-2"></i>Excel spreadsheet</a></li>
+                <li><a class="dropdown-item" asp-action="ExportReport" asp-route-format="csv" asp-route-from="@from" asp-route-to="@to"><i class="icon-sheet me-2"></i>CSV spreadsheet</a></li>
             </ul>
         </div>
     </div>

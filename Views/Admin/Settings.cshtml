@@ -1,0 +1,92 @@
+@model SystemSettings
+@{
+    ViewData["FormPage"] = "standard";
+    ViewData["Title"] = "Settings";
+    var mailConfigured = ViewData["MailConfigured"] is true;
+}
+
+<div class="ht-head">
+    <div>
+        <h1 class="ht-title">Settings</h1>
+        <p class="ht-lede">System-wide options for every HealthTrack account.</p>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-8 col-xl-7">
+        <section class="ht-card">
+            <div class="ht-card-body">
+                <form asp-action="Settings" method="post" novalidate>
+                    <div asp-validation-summary="ModelOnly" class="ht-flash error" role="alert"></div>
+
+                    <fieldset class="ht-fieldset">
+                        <legend>Site banner</legend>
+                        <div class="form-check form-switch mb-3">
+                            <input asp-for="BannerEnabled" class="form-check-input" role="switch" />
+                            <label asp-for="BannerEnabled" class="form-check-label"></label>
+                        </div>
+                        <label asp-for="BannerMessage" class="form-label"></label>
+                        <input asp-for="BannerMessage" class="form-control" maxlength="300" placeholder="e.g. HealthTrack will be down for maintenance on Sunday 8–9 am." />
+                        <span asp-validation-for="BannerMessage" class="text-danger"></span>
+                        <div class="form-text">Shown at the top of every page, including sign-in.</div>
+                    </fieldset>
+
+                    <fieldset class="ht-fieldset">
+                        <legend>Security</legend>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="MaxFailedAccessAttempts" class="form-label"></label>
+                                <input asp-for="MaxFailedAccessAttempts" class="form-control" min="1" max="20" />
+                                <span asp-validation-for="MaxFailedAccessAttempts" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="LockoutMinutes" class="form-label"></label>
+                                <input asp-for="LockoutMinutes" class="form-control" min="1" max="1440" />
+                                <span asp-validation-for="LockoutMinutes" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="TemporaryPasswordHours" class="form-label"></label>
+                                <input asp-for="TemporaryPasswordHours" class="form-control" min="1" max="336" />
+                                <span asp-validation-for="TemporaryPasswordHours" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="ht-fieldset">
+                        <legend>Import</legend>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="ImportMaxRows" class="form-label"></label>
+                                <input asp-for="ImportMaxRows" class="form-control" min="1" max="5000" />
+                                <span asp-validation-for="ImportMaxRows" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="ht-fieldset">
+                        <legend>Weekly report</legend>
+                        <div class="form-check form-switch">
+                            <input asp-for="WeeklyReportEnabled" class="form-check-input" role="switch" />
+                            <label asp-for="WeeklyReportEnabled" class="form-check-label"></label>
+                        </div>
+                        <div class="form-text">
+                            Every Monday from 8 am, the General report for the past 7 days is emailed as a PDF to all admins.
+                            @(Model.WeeklyReportSentAtUtc is DateTime sent ? $"Last sent {sent.ToLocalTime():d MMM yyyy, HH:mm}." : "Not sent yet.")
+                            @if (!mailConfigured) { <strong class="text-danger">Email is not configured, so nothing will be sent.</strong> }
+                        </div>
+                    </fieldset>
+
+                    <div class="ht-form-actions">
+                        <button type="submit" class="btn btn-primary"><i class="icon-check"></i>Save settings</button>
+                        <button type="submit" form="sendWeeklyReport" class="btn btn-line" disabled="@(!mailConfigured)"><i class="icon-send"></i>Send report now</button>
+                    </div>
+                </form>
+                <form id="sendWeeklyReport" asp-action="SendWeeklyReport" method="post" data-confirm="Email this week's General report to all admins now?"></form>
+            </div>
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

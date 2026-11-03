@@ -88,6 +88,8 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     scope.ServiceProvider.GetRequiredService<HealthTrackDbContext>().Database.Migrate();
+    var savedSettings = await SystemSettings.LoadAsync(scope.ServiceProvider.GetRequiredService<HealthTrackDbContext>());
+    savedSettings.ApplyLockout(app.Services.GetRequiredService<Microsoft.Extensions.Options.IOptions<IdentityOptions>>().Value);
     await DbSeeder.SeedAsync(scope.ServiceProvider, builder.Configuration);
 }
 

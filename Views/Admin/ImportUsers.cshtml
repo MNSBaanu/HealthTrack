@@ -1,5 +1,7 @@
 @model HealthTrack.Services.UserImportResult
+@inject HealthTrack.Models.Data.HealthTrackDbContext SettingsDb
 @{
+    var settings = await SystemSettings.LoadAsync(SettingsDb);
     ViewData["Title"] = "Import users";
     var attempted = Model.Imported.Count > 0 || Model.Rejected.Count > 0;
     var generated = Model.Imported.Where(u => u.TemporaryPassword != null).ToList();
@@ -29,8 +31,8 @@
                     <li>Role is <em>Client</em> or <em>Trainer</em>.</li>
                     <li>DateOfBirth is written as yyyy-MM-dd.</li>
                     <li>HeightCm (50–250) is required for clients.</li>
-                    <li>Leave Password empty to generate one. All imported passwords expire after 48 hours and must be changed on first sign-in.</li>
-                    <li>Up to @HealthTrack.Services.UserImportService.MaxRows rows and 1 MB per file.</li>
+                    <li>Leave Password empty to generate one. All imported passwords expire after @settings.TemporaryPasswordHours hours and must be changed on first sign-in.</li>
+                    <li>Up to @settings.ImportMaxRows rows and 1 MB per file.</li>
                 </ul>
             </div>
         </section>
@@ -50,7 +52,7 @@
                 @if (generated.Any())
                 {
                     <div class="ht-card-body">
-                        <p class="small text-muted">Generated passwords are shown only now. Share them securely. They expire after 48 hours, and users must choose a new password before accessing their account.</p>
+                        <p class="small text-muted">Generated passwords are shown only now. Share them securely. They expire after @settings.TemporaryPasswordHours hours, and users must choose a new password before accessing their account.</p>
                     </div>
                 }
                 @if (Model.Imported.Any())

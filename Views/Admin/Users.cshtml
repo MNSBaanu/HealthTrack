@@ -1,6 +1,8 @@
 @model List<UserSummaryViewModel>
+@inject HealthTrack.Models.Data.HealthTrackDbContext SettingsDb
 @inject Microsoft.AspNetCore.Identity.UserManager<Person> UserManager
 @{
+    var settings = await SystemSettings.LoadAsync(SettingsDb);
     ViewData["Title"] = "Users";
     var search = ViewData["Search"] as string;
     var role = ViewData["Role"] as string;
@@ -227,8 +229,8 @@
                         <li>Role is <em>Client</em> or <em>Trainer</em>.</li>
                         <li>DateOfBirth is written as yyyy-MM-dd.</li>
                         <li>HeightCm (50–250) is required for clients.</li>
-                        <li>Leave Password empty to generate one. All imported passwords expire after 48 hours and must be changed on first sign-in.</li>
-                        <li>Up to @HealthTrack.Services.UserImportService.MaxRows rows and 1 MB per file.</li>
+                        <li>Leave Password empty to generate one. All imported passwords expire after @settings.TemporaryPasswordHours hours and must be changed on first sign-in.</li>
+                        <li>Up to @settings.ImportMaxRows rows and 1 MB per file.</li>
                     </ul>
                 </div>
                 <div class="modal-footer">

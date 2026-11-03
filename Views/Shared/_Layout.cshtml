@@ -44,8 +44,7 @@
                     @if (isAdmin)
                     {
                         <a class="@Tab("Admin", "Index")" asp-controller="Admin" asp-action="Index"><i class="bi bi-grid-1x2"></i>Console</a>
-                        <a class="@Tab("Admin", "Users", "ClientDetails", "CreateAdmin", "CreateTrainer", "ImportUsers", "LoginHistory")" asp-controller="Admin" asp-action="Users"><i class="bi bi-people"></i>Users</a>
-                        <a class="@Tab("Admin", "Providers", "CreateProvider", "EditProvider", "ProviderSlots", "AddProviderSlot")" asp-controller="Admin" asp-action="Providers"><i class="bi bi-hospital"></i>Providers</a>
+                        <a class="@Tab("Admin", "Users", "ClientDetails", "CreateAdmin", "CreateTrainer", "ImportUsers", "LoginHistory", "Providers", "CreateProvider", "EditProvider", "ProviderSlots", "AddProviderSlot")" asp-controller="Admin" asp-action="Users"><i class="bi bi-people"></i>Users</a>
                         <a class="@Tab("Assignments")" asp-controller="Assignments" asp-action="Index"><i class="bi bi-person-check"></i>Assignments</a>
                         <a class="@Tab("Admin", "Reports", "SystemHealth", "Ratings", "AuditLog", "ChatQuestions")" asp-controller="Admin" asp-action="Reports"><i class="bi bi-journal-text"></i>Reports</a>
                         <a class="@Tab("Admin", "SendNotification")" asp-controller="Admin" asp-action="SendNotification"><i class="bi bi-megaphone"></i>Broadcast</a>

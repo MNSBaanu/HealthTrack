@@ -95,6 +95,9 @@ namespace HealthTrack.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<bool>("RatingHidden")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime>("RequestedAtUtc")
                         .HasColumnType("datetime2");
 
@@ -195,6 +198,32 @@ namespace HealthTrack.Migrations
                         {
                             t.HasCheckConstraint("CK_AvailabilitySlots_TimeRange", "[EndUtc] > [StartUtc]");
                         });
+                });
+
+            modelBuilder.Entity("HealthTrack.Models.ChatFaq", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Answer")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Question")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ChatFaqs");
                 });
 
             modelBuilder.Entity("HealthTrack.Models.ChatQuestion", b =>
@@ -723,6 +752,41 @@ namespace HealthTrack.Migrations
                         {
                             t.HasCheckConstraint("CK_RescheduleRequests_Status", "[Status] IN (0, 1, 2, 3, 4)");
                         });
+                });
+
+            modelBuilder.Entity("HealthTrack.Models.SystemSettings", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("BannerEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("BannerMessage")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<int>("ImportMaxRows")
+                        .HasColumnType("int");
+
+                    b.Property<int>("LockoutMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MaxFailedAccessAttempts")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TemporaryPasswordHours")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("WeeklyReportEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("WeeklyReportSentAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SystemSettings");
                 });
 
             modelBuilder.Entity("HealthTrack.Models.TrainerAssignmentHistory", b =>

@@ -44,7 +44,7 @@
                     @if (isAdmin)
                     {
                         <a class="@Tab("Admin", "Index")" asp-controller="Admin" asp-action="Index"><i class="icon-layout-dashboard"></i>Console</a>
-                        <a class="@Tab("Admin", "Users", "ClientDetails", "CreateAdmin", "CreateTrainer", "ImportUsers", "LoginHistory", "Providers", "CreateProvider", "EditProvider", "ProviderSlots", "AddProviderSlot")" asp-controller="Admin" asp-action="Users"><i class="icon-users"></i>Users</a>
+                        <a class="@Tab("Admin", "Users", "ClientDetails", "EditUser", "CreateAdmin", "CreateTrainer", "ImportUsers", "LoginHistory", "Providers", "CreateProvider", "EditProvider", "ProviderSlots", "AddProviderSlot")" asp-controller="Admin" asp-action="Users"><i class="icon-users"></i>Users</a>
                         <a class="@Tab("Assignments")" asp-controller="Assignments" asp-action="Index"><i class="icon-user-check"></i>Assignments</a>
                         <a class="@Tab("Admin", "Reports", "SystemHealth", "Ratings", "AuditLog", "ChatQuestions")" asp-controller="Admin" asp-action="Reports"><i class="icon-notebook-text"></i>Reports</a>
                         <a class="@Tab("Admin", "SendNotification")" asp-controller="Admin" asp-action="SendNotification"><i class="icon-megaphone"></i>Broadcast</a>

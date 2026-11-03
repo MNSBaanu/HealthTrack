@@ -2012,3 +2012,25 @@ tr[hidden], li[hidden], article[hidden] {
   background-color: currentColor;
   vertical-align: middle;
 }
+
+.ht-bulk-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--ht-line);
+}
+
+.ht-bulk-bar[hidden] {
+  display: none;
+}
+
+.ht-bulk-bar [data-bulk-count] {
+  margin-right: auto;
+}
+
+.ht-table .ht-check {
+  width: 1%;
+  padding-right: 0;
+}

@@ -16,6 +16,8 @@ namespace HealthTrack.Controllers
     public class AdminController : BaseController
     {
         public const string ProviderRole = "Provider";
+        public const int InactiveDays = 14;
+        private const string ReminderMessage = "We miss you at HealthTrack! Log a workout or meal today to keep your progress on track.";
         private readonly ILogger<AdminController> _logger;
         private readonly INotificationService _notificationService;
         private readonly IExportService _exportService;
@@ -109,9 +111,14 @@ namespace HealthTrack.Controllers
             }
             if (status == "active") query = query.Where(u => !u.IsLocked);
             else if (status == "locked") query = query.Where(u => u.IsLocked);
+            else if (status == "inactive")
+            {
+                var cutoff = DateTime.Now.AddDays(-InactiveDays);
+                query = query.Where(u => u.Role == AppRoles.Client && (u.LastLoginAt == null || u.LastLoginAt < cutoff));
+            }
 
             var providers = new List<ConsultationProvider>();
-            if ((string.IsNullOrWhiteSpace(role) || role == ProviderRole) && status != "locked")
+            if ((string.IsNullOrWhiteSpace(role) || role == ProviderRole) && status is not ("locked" or "inactive"))
             {
                 var providerQuery = Context.ConsultationProviders.AsNoTracking()
                     .Where(p => p.Kind == ConsultationProviderKind.HealthcareProfessional);
@@ -128,6 +135,9 @@ namespace HealthTrack.Controllers
             ViewData["Role"] = role;
             ViewData["Status"] = status;
             ViewData["Providers"] = providers;
+            var lockedAfter = _clock.GetUtcNow();
+            ViewData["Trainers"] = await Context.Trainers.Where(t => t.LockoutEnd == null || t.LockoutEnd <= lockedAfter)
+                .OrderBy(t => t.Name).Select(t => new SelectListItem(t.Name, t.Id)).ToListAsync();
             var users = role == ProviderRole || status == "off" ? new List<UserSummaryViewModel>() : await query.OrderBy(u => u.Name).ToListAsync();
             return View(users);
         }
@@ -359,16 +369,12 @@ namespace HealthTrack.Controllers
             }
 
             var isLocked = await UserManager.IsLockedOutAsync(user);
-            await using var operation = await AtomicOperation.BeginAsync(Context);
-            var result = await UserManager.SetLockoutEnabledAsync(user, true);
-            if (result.Succeeded) result = await UserManager.SetLockoutEndDateAsync(user, isLocked ? null : DateTimeOffset.MaxValue);
-            if (result.Succeeded) result = await UserManager.UpdateSecurityStampAsync(user);
+            var result = await SetLockAsync(user, !isLocked);
             if (!result.Succeeded)
             {
                 TempData["Error"] = string.Join(" ", result.Errors.Select(e => e.Description));
                 return RedirectToAction(nameof(Users));
             }
-            await operation.CommitAsync();
 
             _logger.LogInformation("Admin {AdminId} {Action} user {UserId}", CurrentUserId, isLocked ? "unlocked" : "locked", id);
             TempData["Success"] = $"{user.Name} has been {(isLocked ? "unlocked" : "locked")}.";
@@ -390,10 +396,186 @@ namespace HealthTrack.Controllers
                 return NotFound();
             }
 
+            var error = await DeleteAccountAsync(user);
+            if (error != null)
+            {
+                TempData["Error"] = error;
+                return RedirectToAction(nameof(Users));
+            }
+
+            TempData["Success"] = $"{user.Name} has been deleted.";
+            return RedirectToAction(nameof(Users));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> EditUser(string id)
+        {
+            var user = await UserManager.FindByIdAsync(id);
+            if (user == null) return NotFound();
+            ViewData["TargetRole"] = user.RoleDisplayName;
+            return View(new EditUserViewModel { Id = user.Id, Name = user.Name, Email = user.Email ?? string.Empty, DateOfBirth = user.DateOfBirth });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> EditUser(EditUserViewModel model)
+        {
+            var user = await UserManager.FindByIdAsync(model.Id);
+            if (user == null) return NotFound();
+            ViewData["TargetRole"] = user.RoleDisplayName;
+            ValidatePastDate(model.DateOfBirth, nameof(model.DateOfBirth));
+            if (!ModelState.IsValid) return View(model);
+
+            var email = model.Email.Trim();
+            user.Name = model.Name.Trim();
+            user.DateOfBirth = model.DateOfBirth!.Value;
+            if (!string.Equals(user.Email, email, StringComparison.OrdinalIgnoreCase))
+            {
+                user.Email = email;
+                user.UserName = email;
+                user.EmailConfirmed = true;
+            }
+            var result = await UserManager.UpdateAsync(user);
+            if (!result.Succeeded)
+            {
+                AddErrors(result);
+                return View(model);
+            }
+
+            _logger.LogInformation("Admin {AdminId} edited user {UserId}", CurrentUserId, user.Id);
+            TempData["Success"] = $"{user.Name}'s details have been updated.";
+            return RedirectToAction(nameof(Users));
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SignOutUser(string id)
+        {
+            if (id == CurrentUserId)
+            {
+                TempData["Error"] = "Use Sign out to end your own session.";
+                return RedirectToAction(nameof(Users));
+            }
+            var user = await UserManager.FindByIdAsync(id);
+            if (user == null) return NotFound();
+            var result = await UserManager.UpdateSecurityStampAsync(user);
+            if (!result.Succeeded)
+            {
+                TempData["Error"] = string.Join(" ", result.Errors.Select(e => e.Description));
+                return RedirectToAction(nameof(Users));
+            }
+            _logger.LogInformation("Admin {AdminId} signed out user {UserId}", CurrentUserId, id);
+            TempData["Success"] = $"{user.Name} has been signed out of all sessions.";
+            return RedirectToAction(nameof(Users));
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SendReminder(string id)
+        {
+            var client = await Context.Clients.SingleOrDefaultAsync(c => c.Id == id);
+            if (client == null) return NotFound();
+            await _notificationService.SendAsync(client.Id, ReminderMessage, NotificationType.General);
+            TempData["Success"] = $"Reminder sent to {client.Name}.";
+            return RedirectToAction(nameof(Users), new { status = "inactive" });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> BulkUsers(string bulkAction, string[] ids, string? trainerId)
+        {
+            ids = ids.Distinct().ToArray();
+            if (bulkAction == "export" && ids.Length > 0)
+            {
+                var rows = await QueryUserSummaries().Where(u => ids.Contains(u.Id)).OrderBy(u => u.Name).ToListAsync();
+                var csv = _exportService.ToCsv(new[]
+                {
+                    new ReportSection("Users", new[] { "Name", "Email", "Role", "Joined", "Last active", "Status" },
+                        rows.Select(u => new object?[] { u.Name, u.Email, u.Role, u.CreatedAt, u.LastLoginAt, u.IsLocked ? "Locked" : "Active" }))
+                });
+                return File(csv, "text/csv", $"healthtrack-users-{DateTime.Today:yyyy-MM-dd}.csv");
+            }
+
+            ids = ids.Where(i => i != CurrentUserId).ToArray();
+            if (ids.Length == 0)
+            {
+                TempData["Error"] = "Select at least one user other than yourself.";
+                return RedirectToAction(nameof(Users));
+            }
+
+            var users = await Context.Users.Where(u => ids.Contains(u.Id)).ToListAsync();
+            var done = 0;
+            var skipped = new List<string>();
+            string verb;
+            switch (bulkAction)
+            {
+                case "lock":
+                case "unlock":
+                    verb = bulkAction == "lock" ? "locked" : "unlocked";
+                    foreach (var user in users)
+                    {
+                        if ((await SetLockAsync(user, bulkAction == "lock")).Succeeded) done++; else skipped.Add(user.Name);
+                    }
+                    break;
+                case "signout":
+                    verb = "signed out";
+                    foreach (var user in users)
+                    {
+                        if ((await UserManager.UpdateSecurityStampAsync(user)).Succeeded) done++; else skipped.Add(user.Name);
+                    }
+                    break;
+                case "remind":
+                    verb = "sent a reminder";
+                    foreach (var user in users)
+                    {
+                        if (user is not Client) { skipped.Add(user.Name); continue; }
+                        await _notificationService.SendAsync(user.Id, ReminderMessage, NotificationType.General);
+                        done++;
+                    }
+                    break;
+                case "assign":
+                    var now = _clock.GetUtcNow();
+                    var trainer = await Context.Trainers.SingleOrDefaultAsync(t => t.Id == trainerId && (t.LockoutEnd == null || t.LockoutEnd <= now));
+                    if (trainer == null)
+                    {
+                        TempData["Error"] = "Choose a valid, unlocked Trainer to assign.";
+                        return RedirectToAction(nameof(Users));
+                    }
+                    verb = $"assigned to {trainer.Name}";
+                    var assigned = await AssignTrainerAsync(trainer, users.OfType<Client>().Select(c => c.Id).ToList(), now.UtcDateTime);
+                    done = assigned;
+                    skipped.AddRange(users.Where(u => u is not Client).Select(u => u.Name));
+                    break;
+                case "delete":
+                    verb = "deleted";
+                    foreach (var user in users)
+                    {
+                        if (await DeleteAccountAsync(user) == null) done++; else skipped.Add(user.Name);
+                    }
+                    break;
+                default:
+                    TempData["Error"] = "Choose a bulk action.";
+                    return RedirectToAction(nameof(Users));
+            }
+
+            _logger.LogInformation("Admin {AdminId} bulk {Action} {Count} users", CurrentUserId, bulkAction, done);
+            TempData["Success"] = $"{done} {(done == 1 ? "user" : "users")} {verb}.";
+            if (skipped.Count > 0) TempData["Error"] = $"Skipped: {string.Join(", ", skipped)}.";
+            return RedirectToAction(nameof(Users));
+        }
+
+        private async Task<IdentityResult> SetLockAsync(Person user, bool lockAccount)
+        {
+            await using var operation = await AtomicOperation.BeginAsync(Context);
+            var result = await UserManager.SetLockoutEnabledAsync(user, true);
+            if (result.Succeeded) result = await UserManager.SetLockoutEndDateAsync(user, lockAccount ? DateTimeOffset.MaxValue : null);
+            if (result.Succeeded) result = await UserManager.UpdateSecurityStampAsync(user);
+            if (result.Succeeded) await operation.CommitAsync();
+            return result;
+        }
+
+        private async Task<string?> DeleteAccountAsync(Person user)
+        {
+            var id = user.Id;
             if (user is Trainer && await Context.ClientTrainerAssignments.AnyAsync(a => a.TrainerId == id))
             {
-                TempData["Error"] = "Reassign or remove this Trainer's Client assignments before deleting the account.";
-                return RedirectToAction(nameof(Users));
+                return "Reassign or remove this Trainer's Client assignments before deleting the account.";
             }
             await using var transaction = await AtomicOperation.BeginAsync(Context);
             if (user is Trainer)
@@ -403,8 +585,7 @@ namespace HealthTrack.Controllers
                 {
                     if (await Context.Appointments.AnyAsync(a => a.Slot.ProviderId == provider.Id))
                     {
-                        TempData["Error"] = "This Trainer has linked sessions. Retain the account for existing consultations.";
-                        return RedirectToAction(nameof(Users));
+                        return "This Trainer has linked sessions. Retain the account for existing consultations.";
                     }
                     Context.AvailabilitySlots.RemoveRange(provider.Slots);
                     Context.ConsultationProviders.Remove(provider);
@@ -416,19 +597,53 @@ namespace HealthTrack.Controllers
             try { result = await UserManager.DeleteAsync(user); }
             catch (DbUpdateException ex) when (ex.InnerException is Microsoft.Data.SqlClient.SqlException { Number: 547 })
             {
-                TempData["Error"] = "This account has linked records. Remove its current assignments or retain the account for existing consultations.";
-                return RedirectToAction(nameof(Users));
+                Context.ChangeTracker.Clear();
+                return "This account has linked records. Remove its current assignments or retain the account for existing consultations.";
             }
             if (!result.Succeeded)
             {
-                TempData["Error"] = string.Join(" ", result.Errors.Select(e => e.Description));
-                return RedirectToAction(nameof(Users));
+                return string.Join(" ", result.Errors.Select(e => e.Description));
             }
             await transaction.CommitAsync();
 
             _logger.LogInformation("Admin {AdminId} deleted user {UserId}", CurrentUserId, id);
-            TempData["Success"] = $"{user.Name} has been deleted.";
-            return RedirectToAction(nameof(Users));
+            return null;
+        }
+
+        private async Task<int> AssignTrainerAsync(Trainer trainer, List<string> clientIds, DateTime now)
+        {
+            var clients = await Context.Clients.Include(c => c.TrainerAssignment)
+                .Where(c => clientIds.Contains(c.Id)).ToListAsync();
+            var changed = clients.Where(c => c.TrainerAssignment?.TrainerId != trainer.Id).ToList();
+            var previous = new Dictionary<string, string?>();
+            foreach (var client in changed)
+            {
+                previous[client.Id] = client.TrainerAssignment?.TrainerId;
+                if (client.TrainerAssignment == null)
+                {
+                    Context.ClientTrainerAssignments.Add(new ClientTrainerAssignment { ClientId = client.Id, TrainerId = trainer.Id, AssignedAtUtc = now });
+                }
+                else
+                {
+                    client.TrainerAssignment.TrainerId = trainer.Id;
+                    client.TrainerAssignment.AssignedAtUtc = now;
+                }
+                foreach (var row in await Context.TrainerAssignmentHistories.Where(h => h.ClientId == client.Id && h.EndedAtUtc == null).ToListAsync())
+                {
+                    row.EndedAtUtc = now;
+                }
+                Context.TrainerAssignmentHistories.Add(new TrainerAssignmentHistory { ClientId = client.Id, TrainerId = trainer.Id, AssignedAtUtc = now });
+            }
+            await Context.SaveChangesAsync();
+
+            foreach (var client in changed)
+            {
+                await _notificationService.SendAsync(client.Id, $"{trainer.Name} is now your Trainer.", NotificationType.General);
+                await _notificationService.SendAsync(trainer.Id, $"{client.Name} has been assigned to you.", NotificationType.General);
+                if (previous[client.Id] is string oldTrainerId)
+                    await _notificationService.SendAsync(oldTrainerId, $"{client.Name} is no longer assigned to you.", NotificationType.General);
+            }
+            return changed.Count;
         }
 
         [HttpGet]

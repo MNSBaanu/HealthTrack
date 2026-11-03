@@ -1,0 +1,56 @@
+@model EditUserViewModel
+@{
+    ViewData["FormPage"] = "standard";
+    ViewData["Title"] = "Edit user";
+}
+
+<a class="ht-back" asp-action="Users"><i class="icon-arrow-left"></i>All users</a>
+<div class="ht-head">
+    <div>
+        <h1 class="ht-title">Edit user</h1>
+        <p class="ht-lede">@ViewData["TargetRole"] account</p>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-8 col-xl-7">
+        <section class="ht-card">
+            <div class="ht-card-body">
+                <form asp-action="EditUser" method="post" novalidate>
+                    <input asp-for="Id" type="hidden" />
+                    <div asp-validation-summary="ModelOnly" class="ht-flash error" role="alert"></div>
+
+                    <fieldset class="ht-fieldset">
+                        <legend>Details</legend>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="Name" class="form-label">Full name</label>
+                                <input asp-for="Name" class="form-control" autofocus />
+                                <span asp-validation-for="Name" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Email" class="form-label"></label>
+                                <input asp-for="Email" class="form-control" autocomplete="off" />
+                                <span asp-validation-for="Email" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="DateOfBirth" class="form-label"></label>
+                                <input asp-for="DateOfBirth" class="form-control" max="@DateTime.Today.AddDays(-1).ToString("yyyy-MM-dd")" />
+                                <span asp-validation-for="DateOfBirth" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <div class="ht-form-actions">
+                        <button type="submit" class="btn btn-primary"><i class="icon-check"></i>Save changes</button>
+                        <a class="btn btn-line" asp-action="Users">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

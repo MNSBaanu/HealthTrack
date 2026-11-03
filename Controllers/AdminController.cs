@@ -229,6 +229,8 @@ namespace HealthTrack.Controllers
                 .ToListAsync();
             ViewData["Search"] = search;
             ViewData["Status"] = status;
+            ViewData["NowLocal"] = _time.ToLocal(_clock.GetUtcNow().UtcDateTime);
+            ViewData["Limit"] = 500;
             ViewData["From"] = from;
             ViewData["To"] = to;
             return View(rows.Select(a => new AdminAppointmentRow(a.Id, a.ClientId, a.Client, a.Provider, a.Kind,
@@ -244,6 +246,11 @@ namespace HealthTrack.Controllers
             if (appointment.Status is not (AppointmentStatus.Pending or AppointmentStatus.Approved))
             {
                 TempData["Error"] = "Only pending or approved appointments can be cancelled.";
+                return RedirectToAction(nameof(Appointments));
+            }
+            if (appointment.Slot.StartUtc <= _clock.GetUtcNow().UtcDateTime)
+            {
+                TempData["Error"] = "This appointment has already started, so it can't be cancelled.";
                 return RedirectToAction(nameof(Appointments));
             }
             appointment.Status = AppointmentStatus.Cancelled;

@@ -76,7 +76,6 @@ namespace HealthTrack.Controllers
             var registrations = await CountPerDayAsync(Context.Users.Where(u => u.CreatedAt >= from).Select(u => u.CreatedAt));
             var fromUtc = _time.ToUtc(from);
             var appointments = await CountUtcPerDayAsync(Context.Appointments.Where(a => a.RequestedAtUtc >= fromUtc).Select(a => a.RequestedAtUtc));
-            var notifications = await CountPerDayAsync(Context.Notifications.Where(n => n.CreatedAt >= from).Select(n => n.CreatedAt));
             var workoutPlans = await CountUtcPerDayAsync(Context.WorkoutPlans.Where(p => p.CreatedAtUtc >= fromUtc).Select(p => p.CreatedAtUtc));
             var dietPlans = await CountUtcPerDayAsync(Context.DietPlans.Where(p => p.CreatedAtUtc >= fromUtc).Select(p => p.CreatedAtUtc));
             var feedback = await CountUtcPerDayAsync(Context.TrainerFeedbacks.Where(f => f.CreatedAtUtc >= fromUtc).Select(f => f.CreatedAtUtc));
@@ -90,7 +89,6 @@ namespace HealthTrack.Controllers
                 Metrics = dates.Select(d => metrics.GetValueOrDefault(d)).ToList(),
                 Registrations = dates.Select(d => registrations.GetValueOrDefault(d)).ToList(),
                 Appointments = dates.Select(d => appointments.GetValueOrDefault(d)).ToList(),
-                Notifications = dates.Select(d => notifications.GetValueOrDefault(d)).ToList(),
                 Plans = dates.Select(d => workoutPlans.GetValueOrDefault(d) + dietPlans.GetValueOrDefault(d)).ToList(),
                 Feedback = dates.Select(d => feedback.GetValueOrDefault(d)).ToList()
             };

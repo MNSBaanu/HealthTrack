@@ -1887,3 +1887,49 @@ tr[hidden], li[hidden], article[hidden] {
 .ht-pager[hidden] {
   display: none;
 }
+
+.ht-auth-body:has(.ht-auth-form.wide) {
+  padding: 1rem 0;
+}
+
+.ht-auth-form.wide h1 {
+  margin-bottom: 1.25rem;
+}
+
+.ht-auth-form.wide .ht-fieldset {
+  padding-top: 1rem;
+  margin-top: 1rem;
+}
+
+.ht-auth-form.wide .ht-fieldset:first-of-type {
+  padding-top: 0;
+  margin-top: 0;
+}
+
+.ht-auth-form.wide .ht-fieldset legend {
+  margin-bottom: 0.5rem;
+}
+
+.ht-auth-form.wide .ht-auth-switch {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+}
+
+.ht-auth-form.wide .form-check {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  padding-left: 0;
+  text-align: center;
+}
+
+.ht-auth-form.wide .form-check .form-check-input {
+  float: none;
+  margin: 0;
+}
+
+.ht-auth-form.wide .form-check .text-danger {
+  width: 100%;
+}

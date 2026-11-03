@@ -82,6 +82,8 @@ builder.Services.AddHostedService<DailyReminderWorker>();
 builder.Services.AddHostedService<DataRetentionWorker>();
 builder.Services.AddScoped<NotificationEmailDispatcher>();
 builder.Services.AddHostedService<NotificationEmailWorker>();
+builder.Services.AddScoped<WeeklyReportSender>();
+builder.Services.AddHostedService<WeeklyReportWorker>();
 
 var app = builder.Build();
 

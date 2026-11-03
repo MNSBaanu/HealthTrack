@@ -921,6 +921,7 @@ namespace HealthTrack.Controllers
             if (existing != null) existing.Answer = answer;
             else Context.ChatFaqs.Add(new ChatFaq { Question = question, Answer = answer });
             await Context.SaveChangesAsync();
+            await AuditAsync(existing != null ? "Updated" : "Created", "ChatFaq", null, question);
             TempData["Success"] = "Answer saved. The chatbot will use it for matching questions.";
             return RedirectToAction(nameof(ChatQuestions));
         }
@@ -932,6 +933,7 @@ namespace HealthTrack.Controllers
             if (faq == null) return NotFound();
             Context.ChatFaqs.Remove(faq);
             await Context.SaveChangesAsync();
+            await AuditAsync("Deleted", "ChatFaq", null, faq.Question);
             TempData["Success"] = "Saved answer removed.";
             return RedirectToAction(nameof(ChatQuestions));
         }

@@ -6,6 +6,5 @@ namespace HealthTrack.Models.ViewModels
         public string Email { get; set; } = string.Empty;
         public string Initials { get; set; } = string.Empty;
         public string RoleDisplayName { get; set; } = string.Empty;
-        public string DashboardController { get; set; } = string.Empty;
     }
 }

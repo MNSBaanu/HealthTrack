@@ -14,13 +14,15 @@
             <div class="fw-bold text-dark">@Model.Name</div>
             <div class="small text-muted text-truncate">@Model.Email</div>
         </li>
-        <li><a class="dropdown-item" asp-controller="@Model.DashboardController" asp-action="Index"><i class="bi bi-grid-1x2 me-2"></i>Dashboard</a></li>
+        <li><a class="dropdown-item" asp-controller="Account" asp-action="ChangePassword"><i class="bi bi-person-gear me-2"></i>Account</a></li>
         @if (User.IsInRole(AppRoles.Client))
         {
             <li><a class="dropdown-item" asp-controller="Client" asp-action="Profile"><i class="bi bi-person me-2"></i>My profile</a></li>
         }
-        <li><a class="dropdown-item" asp-controller="Account" asp-action="ChangePassword"><i class="bi bi-key me-2"></i>Change password</a></li>
-        <li><a class="dropdown-item" asp-controller="Notifications" asp-action="Index"><i class="bi bi-bell me-2"></i>Notifications</a></li>
+        @if (User.IsInRole(AppRoles.Admin))
+        {
+            <li><a class="dropdown-item" asp-controller="Admin" asp-action="CreateAdmin"><i class="bi bi-shield-plus me-2"></i>New admin</a></li>
+        }
         <li><hr class="dropdown-divider" /></li>
         <li>
             <form asp-controller="Account" asp-action="Logout" method="post">

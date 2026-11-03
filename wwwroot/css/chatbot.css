@@ -1,6 +1,6 @@
 .ht-chat { position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 1050; font-size: .9rem; }
-.ht-chat-launch { display: flex; align-items: center; gap: .5rem; border: 0; border-radius: 999px; padding: .8rem 1.2rem; background: #17191c; color: #fff; box-shadow: 0 5px 24px #0002; font-weight: 600; }
-.ht-chat-launch i { color: #ffc400; font-size: 1.15rem; }
+.ht-chat-launch { display: flex; align-items: center; gap: .5rem; border: 0; border-radius: 999px; padding: .8rem 1.2rem; background: #ffc400; color: #17191c; box-shadow: 0 5px 24px #0002; font-weight: 600; }
+.ht-chat-launch i { color: #17191c; font-size: 1.15rem; }
 .ht-chat-panel { width: min(380px, calc(100vw - 2.5rem)); max-height: min(650px, calc(100dvh - 7rem)); display: flex; flex-direction: column; margin-bottom: .75rem; background: #fff; border: 1px solid #e6e3df; border-radius: 20px; box-shadow: 0 10px 45px #0002; overflow: hidden; }
 .ht-chat-panel[hidden] { display: none; }
 .ht-chat-header { padding: 1rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; background: #faf9f6; }

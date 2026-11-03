@@ -803,6 +803,7 @@ namespace HealthTrack.Controllers
             if (id == CurrentUserId) return BadRequest("Use Change password for your own account.");
             var user = await UserManager.FindByIdAsync(id);
             if (user == null) return NotFound();
+            if (user is Admin) return AdminResetBlocked();
             ViewData["TargetUserId"] = id;
             ViewData["TargetUserName"] = user.Name;
             return View(new ResetUserPasswordViewModel());
@@ -815,6 +816,7 @@ namespace HealthTrack.Controllers
             if (id == CurrentUserId) return BadRequest("Use Change password for your own account.");
             var user = await UserManager.FindByIdAsync(id);
             if (user == null) return NotFound();
+            if (user is Admin) return AdminResetBlocked();
             ViewData["TargetUserId"] = id;
             ViewData["TargetUserName"] = user.Name;
             if (!ModelState.IsValid) return View(model);
@@ -829,6 +831,12 @@ namespace HealthTrack.Controllers
             if (!result.Succeeded) { AddErrors(result); return View(model); }
             await operation.CommitAsync();
             TempData["Success"] = $"Temporary password reset for {user.Name}. Share it securely; it expires in {hours} hours and must be changed on sign-in.";
+            return RedirectToAction(nameof(Users));
+        }
+
+        private IActionResult AdminResetBlocked()
+        {
+            TempData["Error"] = "Administrators reset their own password from Account. Another admin's password can't be reset here.";
             return RedirectToAction(nameof(Users));
         }
 

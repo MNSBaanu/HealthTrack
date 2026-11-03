@@ -138,7 +138,10 @@
                                             <li><a class="dropdown-item" asp-action="ExportUserData" asp-route-id="@user.Id"><i class="icon-download me-2"></i>Download data</a></li>
                                             @if (!isSelf)
                                             {
-                                                <li><a class="dropdown-item" asp-action="ResetPassword" asp-route-id="@user.Id" data-modal><i class="icon-key-round me-2"></i>Reset temporary password</a></li>
+                                                @if (user.Role != AppRoles.Admin)
+                                                {
+                                                    <li><a class="dropdown-item" asp-action="ResetPassword" asp-route-id="@user.Id" data-modal><i class="icon-key-round me-2"></i>Reset temporary password</a></li>
+                                                }
                                                 <li>
                                                     <form asp-action="SignOutUser" asp-route-id="@user.Id" method="post" data-confirm="Sign @user.Name out of all sessions?">
                                                         <button type="submit" class="dropdown-item"><i class="icon-log-out me-2"></i>Sign out everywhere</button>

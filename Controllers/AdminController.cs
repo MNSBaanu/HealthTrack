@@ -247,6 +247,22 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Settings));
         }
 
+        [HttpPost]
+        public async Task<IActionResult> SendWeeklyReport()
+        {
+            try
+            {
+                var count = await HttpContext.RequestServices.GetRequiredService<WeeklyReportSender>().SendAsync(HttpContext.RequestAborted);
+                TempData["Success"] = $"Weekly report emailed to {count} {(count == 1 ? "admin" : "admins")}.";
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or MailKit.Net.Smtp.SmtpCommandException or MailKit.ProtocolException or System.Net.Sockets.SocketException or IOException)
+            {
+                _logger.LogWarning(ex, "Could not send the weekly report");
+                TempData["Error"] = ex is InvalidOperationException ? ex.Message : "The report could not be emailed. Check the mail server settings.";
+            }
+            return RedirectToAction(nameof(Settings));
+        }
+
         [HttpGet]
         public async Task<IActionResult> SystemHealth()
         {

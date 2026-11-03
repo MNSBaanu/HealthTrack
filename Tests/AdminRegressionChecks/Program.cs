@@ -216,6 +216,9 @@ class FakeMail:IMailSender {
         if(FailuresRemaining>0){FailuresRemaining--;throw new IOException("Injected delivery failure");}
         Messages.Add(message);return Task.CompletedTask;
     }
+    public Task SendReportAsync(string address,string name,string subject,string message,byte[] attachment,string fileName,CancellationToken token=default){
+        Messages.Add(subject);return Task.CompletedTask;
+    }
 }
 class MemoryTempData:ITempDataProvider { public IDictionary<string,object> LoadTempData(HttpContext c)=>new Dictionary<string,object>();public void SaveTempData(HttpContext c,IDictionary<string,object> values){} }
 class RejectRoleManager(IServiceProvider p):UserManager<Person>(p.GetRequiredService<IUserStore<Person>>(),p.GetRequiredService<IOptions<IdentityOptions>>(),p.GetRequiredService<IPasswordHasher<Person>>(),p.GetServices<IUserValidator<Person>>(),p.GetServices<IPasswordValidator<Person>>(),p.GetRequiredService<ILookupNormalizer>(),p.GetRequiredService<IdentityErrorDescriber>(),p,p.GetRequiredService<ILogger<UserManager<Person>>>()) {

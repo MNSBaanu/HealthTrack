@@ -337,6 +337,55 @@ namespace HealthTrack.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> ExportUserData(string id)
+        {
+            var user = await UserManager.FindByIdAsync(id);
+            if (user == null) return NotFound();
+
+            var data = new Dictionary<string, object?>
+            {
+                ["exportedAtUtc"] = _clock.GetUtcNow().UtcDateTime,
+                ["profile"] = new { user.Id, user.Name, user.Email, Role = user.RoleDisplayName, user.DateOfBirth, user.CreatedAt, user.LastLoginAt, user.EmailNotificationsEnabled },
+                ["notifications"] = await Context.Notifications.AsNoTracking().Where(n => n.PersonId == id).OrderBy(n => n.CreatedAt).ToListAsync(),
+                ["loginHistory"] = await Context.LoginHistories.AsNoTracking().Where(l => l.PersonId == id).OrderBy(l => l.LoggedInAt).ToListAsync()
+            };
+            if (user is Client client)
+            {
+                data["clientProfile"] = new { client.HeightCm, client.FitnessGoal, client.TargetWeightKg, client.TargetDate };
+                data["healthMetrics"] = await Context.HealthMetrics.AsNoTracking().Where(m => m.ClientId == id).OrderBy(m => m.RecordedAt).ToListAsync();
+                data["workoutLogs"] = await Context.WorkoutLogs.AsNoTracking().Where(w => w.ClientId == id).OrderBy(w => w.LoggedAt).ToListAsync();
+                data["mealLogs"] = await Context.MealLogs.AsNoTracking().Where(m => m.ClientId == id).OrderBy(m => m.LoggedAt).ToListAsync();
+                data["appointments"] = await Context.Appointments.AsNoTracking().Where(a => a.ClientId == id).OrderBy(a => a.Slot.StartUtc)
+                    .Select(a => new { a.Id, Provider = a.Slot.Provider.Name, a.Slot.StartUtc, a.Slot.EndUtc, Status = a.Status.ToString(), a.Notes, a.Rating, a.RatingComment, a.RequestedAtUtc })
+                    .ToListAsync();
+                data["workoutPlans"] = await Context.WorkoutPlans.AsNoTracking().Where(p => p.ClientId == id).Include(p => p.Items).ToListAsync();
+                data["dietPlans"] = await Context.DietPlans.AsNoTracking().Where(p => p.ClientId == id).Include(p => p.Meals).ToListAsync();
+                data["trainerFeedback"] = await Context.TrainerFeedbacks.AsNoTracking().Where(f => f.ClientId == id).ToListAsync();
+                data["weeklyCheckIns"] = await Context.WeeklyCheckIns.AsNoTracking().Where(c => c.ClientId == id).ToListAsync();
+                data["trainerAssignments"] = await Context.TrainerAssignmentHistories.AsNoTracking().Where(h => h.ClientId == id)
+                    .Select(h => new { Trainer = h.Trainer!.Name, h.AssignedAtUtc, h.EndedAtUtc }).ToListAsync();
+            }
+            else if (user is Trainer)
+            {
+                data["assignedClients"] = await Context.ClientTrainerAssignments.AsNoTracking().Where(a => a.TrainerId == id)
+                    .Select(a => new { Client = a.Client.Name, a.AssignedAtUtc }).ToListAsync();
+                data["workoutPlans"] = await Context.WorkoutPlans.AsNoTracking().Where(p => p.TrainerId == id).Include(p => p.Items).ToListAsync();
+                data["dietPlans"] = await Context.DietPlans.AsNoTracking().Where(p => p.TrainerId == id).Include(p => p.Meals).ToListAsync();
+                data["feedbackGiven"] = await Context.TrainerFeedbacks.AsNoTracking().Where(f => f.TrainerId == id).ToListAsync();
+            }
+
+            var json = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(data, new System.Text.Json.JsonSerializerOptions
+            {
+                WriteIndented = true,
+                ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles,
+                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+            });
+            _logger.LogInformation("Admin {AdminId} exported data for user {UserId}", CurrentUserId, id);
+            await AuditAsync("Exported", "UserData", user is Client ? id : null, user.Name);
+            return File(json, "application/json", $"healthtrack-data-{user.Id[..8]}-{DateTime.Today:yyyyMMdd}.json");
+        }
+
+        [HttpGet]
         public async Task<IActionResult> SystemHealth()
         {
             var now = DateTime.Now;

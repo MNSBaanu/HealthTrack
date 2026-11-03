@@ -4,7 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <DefaultItemExcludes>$(DefaultItemExcludes);Private/**;Tests/**</DefaultItemExcludes>
+    <DefaultItemExcludes>$(DefaultItemExcludes);Private/**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>

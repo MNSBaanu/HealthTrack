@@ -1,0 +1,27 @@
+@model string[]
+@{
+    ViewData["FormPage"] = "standard";
+    ViewData["Title"] = "Recovery codes";
+}
+
+<div class="ht-head">
+    <div>
+        <h1 class="ht-title">Save your recovery codes</h1>
+        <p class="ht-lede">Two-factor sign-in is on. If you lose your phone, each code below lets you sign in once.</p>
+    </div>
+</div>
+
+<section class="ht-card">
+    <div class="ht-card-body">
+        <div class="ht-flash error mb-3" role="alert">These codes are shown only now. Copy or print them and keep them somewhere safe.</div>
+        <ul class="ht-recovery-codes">
+            @foreach (var code in Model)
+            {
+                <li><code>@code</code></li>
+            }
+        </ul>
+        <div class="ht-form-actions">
+            <a class="btn btn-primary" asp-action="ChangePassword"><i class="icon-check"></i>I've saved them</a>
+        </div>
+    </div>
+</section>

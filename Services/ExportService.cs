@@ -46,7 +46,7 @@ namespace HealthTrack.Services
                     page.PageColor(Surface);
                     page.DefaultTextStyle(style => style.FontSize(10).FontColor(TextColor));
 
-                    page.Header().Background(Ink).CornerRadius(8).PaddingVertical(14).PaddingHorizontal(18).Row(row =>
+                    page.Header().ShowOnce().Background(Ink).CornerRadius(8).PaddingVertical(14).PaddingHorizontal(18).Row(row =>
                     {
                         row.AutoItem().AlignMiddle().Width(10).Height(10).Background(Saffron).CornerRadius(5);
                         row.AutoItem().PaddingLeft(8).AlignMiddle().Text(text =>

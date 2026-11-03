@@ -47,7 +47,29 @@ namespace HealthTrack.Services
                 HtmlBody = BuildHtml(toName, message),
                 TextBody = $"Hi {toName},\n\n{message}\n\nOpen HealthTrack to see more."
             }.ToMessageBody();
+            await SendAsync(mail, cancellationToken);
+        }
 
+        public async Task SendReportAsync(string toAddress, string toName, string subject, string message,
+            byte[] attachment, string fileName, CancellationToken cancellationToken = default)
+        {
+            if (!IsConfigured) throw new InvalidOperationException("Email is not configured.");
+            var mail = new MimeMessage();
+            mail.From.Add(new MailboxAddress(_options.FromName, _options.FromAddress));
+            mail.To.Add(new MailboxAddress(toName, toAddress));
+            mail.Subject = subject;
+            var body = new BodyBuilder
+            {
+                HtmlBody = BuildHtml(toName, message),
+                TextBody = $"Hi {toName},\n\n{message}"
+            };
+            body.Attachments.Add(fileName, attachment, new ContentType("application", "pdf"));
+            mail.Body = body.ToMessageBody();
+            await SendAsync(mail, cancellationToken);
+        }
+
+        private async Task SendAsync(MimeMessage mail, CancellationToken cancellationToken)
+        {
             using var client = new SmtpClient();
             client.Timeout = 30000;
             await client.ConnectAsync(_options.Host, _options.Port, SecureSocketOptions.Auto, cancellationToken);

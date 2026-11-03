@@ -36,10 +36,13 @@ namespace HealthTrack.Models.Data
         public DbSet<WeeklyCheckIn> WeeklyCheckIns { get; set; }
         public DbSet<LoginHistory> LoginHistories { get; set; }
         public DbSet<TrainerAssignmentHistory> TrainerAssignmentHistories { get; set; }
+        public DbSet<SystemSettings> SystemSettings { get; set; }
+        public DbSet<ChatFaq> ChatFaqs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+            builder.Entity<SystemSettings>().Property(s => s.Id).ValueGeneratedNever();
             builder.Entity<Notification>().HasOne(n => n.AdminBroadcast).WithMany(b => b.Notifications)
                 .HasForeignKey(n => n.AdminBroadcastId).OnDelete(DeleteBehavior.SetNull);
             builder.Entity<NotificationEmail>().HasKey(e => e.NotificationId);

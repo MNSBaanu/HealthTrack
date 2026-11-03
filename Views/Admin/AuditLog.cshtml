@@ -13,6 +13,9 @@
     <div>
         <h1 class="ht-title">Audit log</h1>
     </div>
+    <div class="ht-head-actions">
+        <partial name="_ExportMenu" model='new Dictionary<string, string> { ["report"] = "audit", ["actor"] = actor ?? "", ["action"] = action ?? "", ["from"] = from?.ToString("yyyy-MM-dd") ?? "", ["to"] = to?.ToString("yyyy-MM-dd") ?? "" }' />
+    </div>
 </div>
 
 <form asp-action="AuditLog" method="get" class="ht-card ht-filter mb-3">

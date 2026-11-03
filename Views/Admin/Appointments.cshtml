@@ -1,0 +1,105 @@
+@model List<AdminAppointmentRow>
+@{
+    ViewData["Title"] = "Appointments";
+    var search = ViewData["Search"] as string;
+    var status = ViewData["Status"] as AppointmentStatus?;
+    var from = ViewData["From"] as DateTime?;
+    var to = ViewData["To"] as DateTime?;
+    var nowLocal = ViewData["NowLocal"] as DateTime? ?? DateTime.Now;
+    var limit = ViewData["Limit"] as int? ?? 500;
+    var isFiltered = !string.IsNullOrWhiteSpace(search) || status.HasValue || from.HasValue || to.HasValue;
+}
+
+<div class="ht-head">
+    <div>
+        <h1 class="ht-title">Appointments</h1>
+        <p class="ht-lede">Every booking across trainers and healthcare professionals.</p>
+    </div>
+</div>
+
+<form asp-action="Appointments" method="get" class="ht-card ht-filter mb-3">
+    <div class="ht-input-icon flex-grow-1">
+        <i class="icon-search"></i>
+        <input type="search" name="search" value="@search" class="form-control" placeholder="Search by client or provider" aria-label="Search appointments" />
+    </div>
+    <select name="status" class="form-select w-auto" aria-label="Filter by status">
+        <option value="">All statuses</option>
+        @foreach (var option in Enum.GetValues<AppointmentStatus>())
+        {
+            <option value="@option" selected="@(status == option)">@option</option>
+        }
+    </select>
+    <div class="ht-date-range">
+        <input type="date" name="from" value="@from?.ToString("yyyy-MM-dd")" class="form-control" placeholder="From" aria-label="From date" />
+        <span class="text-muted">&ndash;</span>
+        <input type="date" name="to" value="@to?.ToString("yyyy-MM-dd")" class="form-control" placeholder="To" aria-label="To date" />
+    </div>
+    @if (isFiltered)
+    {
+        <a class="btn btn-line" asp-action="Appointments">Clear</a>
+    }
+</form>
+
+<section class="ht-card">
+    @if (Model.Any())
+    {
+        <div class="table-responsive">
+            <table class="ht-table">
+                <thead>
+                    <tr>
+                        <th>When</th>
+                        <th>Client</th>
+                        <th>Provider</th>
+                        <th>Status</th>
+                        <th>Requested</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in Model)
+                    {
+                        <tr>
+                            <td class="text-nowrap">@row.Start.ToString("ddd, d MMM yyyy HH:mm")</td>
+                            <td><a asp-action="ClientDetails" asp-route-id="@row.ClientId">@row.ClientName</a></td>
+                            <td>@row.ProviderName<div class="small text-muted">@(row.ProviderKind == ConsultationProviderKind.Trainer ? "Trainer" : "Healthcare professional")</div></td>
+                            <td>
+                                @switch (row.Status)
+                                {
+                                    case AppointmentStatus.Pending: <span class="ht-pill info">Pending</span> break;
+                                    case AppointmentStatus.Approved: <span class="ht-pill success">Approved</span> break;
+                                    case AppointmentStatus.Cancelled: <span class="ht-pill danger">Cancelled</span> break;
+                                    default: <span class="ht-pill">Completed</span> break;
+                                }
+                            </td>
+                            <td class="text-nowrap">@row.RequestedAt.ToString("d MMM yyyy")</td>
+                            <td>
+                                <div class="ht-row-actions plain">
+                                    @if (row.Status is AppointmentStatus.Pending or AppointmentStatus.Approved && row.Start > nowLocal)
+                                    {
+                                        <form asp-action="CancelAppointment" asp-route-id="@row.Id" method="post"
+                                              data-confirm="Cancel @row.ClientName's appointment with @row.ProviderName? The client will be notified.">
+                                            <button type="submit" class="btn-icon danger" title="Cancel appointment" aria-label="Cancel appointment for @row.ClientName"><i class="icon-calendar-x"></i></button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        @if (Model.Count >= limit)
+        {
+            <div class="ht-card-body text-muted small">Showing the latest @limit appointments. Narrow the search, status or dates to find older ones.</div>
+        }
+    }
+    else
+    {
+        <div class="ht-empty">
+            <span class="ht-glyph saffron"><i class="icon-calendar"></i></span>
+            <h3>No appointments found</h3>
+            <p>@(isFiltered ? "Try a different search, status or date range." : "Bookings will appear here once clients request them.")</p>
+            @if (isFiltered) { <a class="btn btn-line" asp-action="Appointments">Clear filters</a> }
+        </div>
+    }
+</section>

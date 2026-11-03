@@ -21,7 +21,6 @@ namespace HealthTrack.Services
 
     public class UserImportService
     {
-        public const int MaxRows = 500;
         public const int MaxBytes = 1_000_000;
         public const string Template =
             "Name,Email,Role,DateOfBirth,HeightCm,FitnessGoal,Password\r\n" +
@@ -33,6 +32,7 @@ namespace HealthTrack.Services
         private readonly UserManager<Person> _users;
         private readonly HealthTrackDbContext _context;
         private readonly TimeProvider _clock;
+        private int _temporaryPasswordHours = 48;
 
         public UserImportService(UserManager<Person> users, HealthTrackDbContext context, TimeProvider clock)
         {
@@ -63,9 +63,11 @@ namespace HealthTrack.Services
                 result.FileError = "Missing required column(s): " + string.Join(", ", missing) + ". Download the template to see the expected columns.";
                 return result;
             }
-            if (rows.Count - 1 > MaxRows)
+            var settings = await SystemSettings.LoadAsync(_context);
+            _temporaryPasswordHours = settings.TemporaryPasswordHours;
+            if (rows.Count - 1 > settings.ImportMaxRows)
             {
-                result.FileError = $"The file has more than {MaxRows} rows. Split it into smaller files.";
+                result.FileError = $"The file has more than {settings.ImportMaxRows} rows. Split it into smaller files.";
                 return result;
             }
 
@@ -149,7 +151,7 @@ namespace HealthTrack.Services
             person.Name = name;
             person.DateOfBirth = born;
             person.MustChangePassword = true;
-            person.TemporaryPasswordExpiresAtUtc = _clock.GetUtcNow().UtcDateTime.AddHours(48);
+            person.TemporaryPasswordExpiresAtUtc = _clock.GetUtcNow().UtcDateTime.AddHours(_temporaryPasswordHours);
 
             var roleName = isClient ? AppRoles.Client : AppRoles.Trainer;
             var created = await AccountProvisioner.CreateAsync(_context, _users, person, password, roleName);

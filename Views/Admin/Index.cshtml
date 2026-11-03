@@ -107,7 +107,7 @@
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="~/js/charts.js" asp-append-version="true"></script>
-    <script>
+    <script nonce="@HealthTrack.Services.CspNonce.Get(Context)">
         HealthTrackCharts.usage("@Url.Action("UsageData", "Admin")");
     </script>
 }

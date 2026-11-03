@@ -1,17 +1,18 @@
 @model List<ChatQuestion>
 @{
     ViewData["Title"] = "Chat questions";
-    var grouped = Model
-        .GroupBy(q => q.Question.Trim().ToLowerInvariant())
-        .Select(g => new { Question = g.First().Question, Count = g.Count(), Roles = string.Join(", ", g.Select(q => q.Role).Distinct()), Last = g.Max(q => q.CreatedAtUtc), Ai = g.Any(q => q.AiAnswered) })
-        .OrderByDescending(g => g.Count).ThenByDescending(g => g.Last)
-        .ToList();
+    var faqs = ViewData["Faqs"] as List<ChatFaq> ?? new();
+    var grouped = HealthTrack.Services.AdminReportService.GroupChatQuestions(Model);
 }
 
 <a class="ht-back" asp-action="Reports"><i class="icon-arrow-left"></i>Reports</a>
 <div class="ht-head">
     <div>
         <h1 class="ht-title">Unanswered chat questions</h1>
+    </div>
+    <div class="ht-head-actions">
+        <button type="button" class="btn btn-line" data-bs-toggle="modal" data-bs-target="#faqModal" data-faq-question=""><i class="icon-plus"></i>New answer</button>
+        <partial name="_ExportMenu" model='new Dictionary<string, string> { ["report"] = "chat" }' />
     </div>
 </div>
 
@@ -27,6 +28,7 @@
                         <th>By</th>
                         <th>Last asked</th>
                         <th>AI reply</th>
+                        <th class="text-end">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -38,6 +40,7 @@
                             <td>@item.Roles</td>
                             <td class="text-nowrap">@item.Last.ToLocalTime().ToString("d MMM yyyy HH:mm")</td>
                             <td>@(item.Ai ? "Yes" : "No")</td>
+                            <td><div class="ht-row-actions plain"><button type="button" class="btn-icon" data-bs-toggle="modal" data-bs-target="#faqModal" data-faq-question="@item.Question" title="Save an answer" aria-label="Save an answer for this question"><i class="icon-message-square-plus"></i></button></div></td>
                         </tr>
                     }
                 </tbody>
@@ -49,3 +52,78 @@
         <div class="ht-card-body text-muted">No questions have missed the chat topics yet. Showing the latest 500 when there are some.</div>
     }
 </section>
+
+<section class="ht-card mt-3">
+    <div class="ht-card-head">
+        <h2>Saved answers</h2>
+        <span class="ht-overline">The chatbot replies with these before asking the AI</span>
+    </div>
+    @if (faqs.Any())
+    {
+        <div class="table-responsive">
+            <table class="ht-table">
+                <thead>
+                    <tr>
+                        <th>Question</th>
+                        <th>Answer</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var faq in faqs)
+                    {
+                        <tr>
+                            <td>@faq.Question</td>
+                            <td>@faq.Answer</td>
+                            <td>
+                                <div class="ht-row-actions plain">
+                                    <button type="button" class="btn-icon" data-bs-toggle="modal" data-bs-target="#faqModal" data-faq-question="@faq.Question" data-faq-answer="@faq.Answer" title="Edit" aria-label="Edit saved answer"><i class="icon-pencil"></i></button>
+                                    <form asp-action="DeleteFaq" asp-route-id="@faq.Id" method="post" data-confirm="Remove this saved answer?">
+                                        <button type="submit" class="btn-icon danger" title="Remove" aria-label="Remove saved answer"><i class="icon-trash-2"></i></button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="ht-card-body text-muted">No saved answers yet. Use the answer button on a question above to add one.</div>
+    }
+</section>
+
+<div class="modal fade ht-modal" id="faqModal" tabindex="-1" aria-labelledby="faqTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-action="SaveFaq" method="post">
+                <div class="modal-header">
+                    <h2 class="modal-title" id="faqTitle">Save an answer</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label for="faqQuestion" class="form-label">Question</label>
+                    <input id="faqQuestion" name="question" class="form-control mb-3" maxlength="300" required />
+                    <label for="faqAnswer" class="form-label">Answer</label>
+                    <textarea id="faqAnswer" name="answer" class="form-control" rows="4" maxlength="1000" required></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-line" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="icon-check"></i>Save answer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script nonce="@HealthTrack.Services.CspNonce.Get(Context)">
+        document.getElementById("faqModal").addEventListener("show.bs.modal", event => {
+            const trigger = event.relatedTarget;
+            document.getElementById("faqQuestion").value = trigger?.dataset.faqQuestion || "";
+            document.getElementById("faqAnswer").value = trigger?.dataset.faqAnswer || "";
+        });
+    </script>
+}

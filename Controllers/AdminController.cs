@@ -1142,11 +1142,29 @@ namespace HealthTrack.Controllers
             return View(nameof(ProviderSlots), await LoadProviderSlotsAsync(provider, form));
         }
 
+        [HttpPost]
+        public async Task<IActionResult> DeleteProviderSlot(int id, int slotId)
+        {
+            var slot = await Context.AvailabilitySlots.Include(s => s.Appointments)
+                .SingleOrDefaultAsync(s => s.Id == slotId && s.ProviderId == id && s.Provider.Kind == ConsultationProviderKind.HealthcareProfessional);
+            if (slot == null) return NotFound();
+            if (slot.Appointments.Any(a => a.Status != AppointmentStatus.Cancelled))
+            {
+                TempData["Error"] = "This slot has a booking. Cancel the appointment first.";
+                return RedirectToAction(nameof(ProviderSlots), new { id });
+            }
+            if (slot.Appointments.Any()) slot.IsAvailable = false;
+            else Context.AvailabilitySlots.Remove(slot);
+            await Context.SaveChangesAsync();
+            TempData["Success"] = "Availability slot removed.";
+            return RedirectToAction(nameof(ProviderSlots), new { id });
+        }
+
         private async Task<ProviderSlotsViewModel> LoadProviderSlotsAsync(ConsultationProvider provider, AddAvailabilitySlotForm form)
         {
             var nowUtc = _clock.GetUtcNow().UtcDateTime;
             var slots = await Context.AvailabilitySlots.AsNoTracking()
-                .Where(s => s.ProviderId == provider.Id && s.EndUtc > nowUtc)
+                .Where(s => s.ProviderId == provider.Id && s.IsAvailable && s.EndUtc > nowUtc)
                 .OrderBy(s => s.StartUtc)
                 .ToListAsync();
             return new ProviderSlotsViewModel

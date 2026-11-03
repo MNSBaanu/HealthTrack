@@ -14,15 +14,16 @@
             <div class="mb-3"><label asp-for="TrainerId" class="form-label"></label>
                 <select asp-for="TrainerId" asp-items="Model.Trainers" class="form-select"><option value="">Select a Trainer</option></select>
                 <span asp-validation-for="TrainerId" class="text-danger"></span></div>
-            <div class="ht-form-actions"><button type="submit" class="btn btn-primary">Save assignment</button><a class="btn btn-line" asp-action="Index">Cancel</a></div>
+            <div class="ht-form-actions"><button type="submit" class="btn btn-primary">Save assignment</button><a class="btn btn-line" asp-action="Index">Cancel</a>
+                @if (Model.CurrentTrainerName != null) { <button type="submit" form="removeAssignment" class="btn btn-line">Remove assignment</button> }</div>
         }
         else { <p class="text-muted">No unlocked Trainer accounts are available. An eligible Trainer account is needed before assignment.</p> }
     </form>
     @if (Model.CurrentTrainerName != null)
     {
-        <form asp-action="Remove" method="post" class="mt-4" data-confirm="Remove this Client's current Trainer assignment? Existing plans and appointments will be preserved.">
+        <form id="removeAssignment" asp-action="Remove" method="post" class="@(Model.Trainers.Any() ? "" : "mt-4")" data-confirm="Remove this Client's current Trainer assignment? Existing plans and appointments will be preserved.">
             <input name="ClientId" type="hidden" value="@Model.ClientId" /><input name="RowVersion" type="hidden" value="@Model.RowVersion" />
-            <button type="submit" class="btn btn-line">Remove assignment</button>
+            @if (!Model.Trainers.Any()) { <button type="submit" class="btn btn-line">Remove assignment</button> }
         </form>
     }
 </div></section></div></div>

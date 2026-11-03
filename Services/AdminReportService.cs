@@ -14,12 +14,14 @@ namespace HealthTrack.Services
             "ratings" => "Consultation ratings report",
             "audit" => "Audit log report",
             "chat" => "Chat questions report",
+            "performance" => "Client performance report",
             _ => "General report"
         };
 
         public async Task<List<ReportSection>> BuildSectionsAsync(string? report, DateTime? from, DateTime? to, bool emailConfigured,
             string? actor = null, string? action = null)
         {
+            if (report == "performance") return await BuildPerformanceSectionsAsync(from, to);
             var sections = new List<ReportSection>();
             var general = report is not ("health" or "ratings" or "audit" or "chat");
             if (general) sections.AddRange(await BuildPerformanceSectionsAsync(from, to));

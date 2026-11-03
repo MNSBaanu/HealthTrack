@@ -77,11 +77,6 @@ a:hover {
   color: var(--ht-danger) !important;
 }
 
-.ht-num {
-  font-family: var(--ht-font-display);
-  font-variant-numeric: lining-nums tabular-nums;
-}
-
 .ht-overline {
   font-family: var(--ht-font-body);
   font-size: 0.72rem;
@@ -1534,13 +1529,6 @@ a:hover {
 
 .ht-input-icon > .form-control {
   padding-left: 2.6rem;
-}
-
-.ht-table-foot {
-  padding: 0.9rem 1.4rem;
-  border-top: 1px dashed var(--ht-line-strong);
-  font-size: 0.85rem;
-  color: var(--ht-muted);
 }
 
 .ht-flash.validation-summary-valid {

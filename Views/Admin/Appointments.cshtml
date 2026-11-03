@@ -5,6 +5,8 @@
     var status = ViewData["Status"] as AppointmentStatus?;
     var from = ViewData["From"] as DateTime?;
     var to = ViewData["To"] as DateTime?;
+    var nowLocal = ViewData["NowLocal"] as DateTime? ?? DateTime.Now;
+    var limit = ViewData["Limit"] as int? ?? 500;
     var isFiltered = !string.IsNullOrWhiteSpace(search) || status.HasValue || from.HasValue || to.HasValue;
 }
 
@@ -72,7 +74,7 @@
                             <td class="text-nowrap">@row.RequestedAt.ToString("d MMM yyyy")</td>
                             <td>
                                 <div class="ht-row-actions plain">
-                                    @if (row.Status is AppointmentStatus.Pending or AppointmentStatus.Approved)
+                                    @if (row.Status is AppointmentStatus.Pending or AppointmentStatus.Approved && row.Start > nowLocal)
                                     {
                                         <form asp-action="CancelAppointment" asp-route-id="@row.Id" method="post"
                                               data-confirm="Cancel @row.ClientName's appointment with @row.ProviderName? The client will be notified.">
@@ -86,6 +88,10 @@
                 </tbody>
             </table>
         </div>
+        @if (Model.Count >= limit)
+        {
+            <div class="ht-card-body text-muted small">Showing the latest @limit appointments. Narrow the search, status or dates to find older ones.</div>
+        }
     }
     else
     {

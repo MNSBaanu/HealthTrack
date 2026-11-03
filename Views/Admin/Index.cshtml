@@ -77,31 +77,6 @@
     </div>
 </div>
 
-<div class="row g-3 mb-3">
-    <div class="col-12">
-        <section class="ht-card">
-            <div class="ht-card-head"><h2>Trainer assignments</h2><a asp-controller="Assignments" asp-action="Index">Manage assignments <i class="bi bi-arrow-right"></i></a></div>
-            <div class="ht-card-body">
-                <div class="row g-3 mb-3">
-                    <div class="col-sm-4"><span class="ht-overline">Trainers</span><div class="fs-3 fw-semibold" data-stat="trainers">@Model.TotalTrainers</div></div>
-                    <div class="col-sm-4"><span class="ht-overline">Assigned Clients</span><div class="fs-3 fw-semibold" data-stat="assigned">@Model.AssignedClients</div></div>
-                    <div class="col-sm-4"><span class="ht-overline">Unassigned Clients</span><div class="fs-3 fw-semibold" data-stat="unassigned">@Model.UnassignedClients</div></div>
-                </div>
-                @if (Model.RecentAssignments.Any())
-                {
-                    <ul class="list-unstyled mb-0">
-                        @foreach (var assignment in Model.RecentAssignments)
-                        {
-                            <li class="py-1"><a asp-controller="Assignments" asp-action="Edit" asp-route-id="@assignment.ClientId">@assignment.ClientName</a> &middot; @assignment.TrainerName</li>
-                        }
-                    </ul>
-                }
-                else { <p class="text-muted mb-0">No Clients have been assigned a Trainer yet.</p> }
-            </div>
-        </section>
-    </div>
-</div>
-
 <div class="row g-3">
     <div class="col-lg-5">
         <section class="ht-card h-100">

@@ -46,17 +46,6 @@ namespace HealthTrack.Controllers
                 TotalUsers = await Context.Users.CountAsync(),
                 TotalClients = await Context.Clients.CountAsync(),
                 TotalAdmins = await Context.Admins.CountAsync(),
-                TotalTrainers = await Context.Trainers.CountAsync(),
-                AssignedClients = await Context.ClientTrainerAssignments.CountAsync(),
-                UnassignedClients = await Context.Clients.CountAsync(c => c.TrainerAssignment == null),
-                RecentAssignments = await Context.ClientTrainerAssignments.AsNoTracking()
-                    .OrderByDescending(a => a.AssignedAtUtc).Take(5)
-                    .Select(a => new AssignmentRowViewModel
-                    {
-                        ClientId = a.ClientId, ClientName = a.Client.Name,
-                        TrainerId = a.TrainerId, TrainerName = a.Trainer.Name,
-                        AssignedAtUtc = a.AssignedAtUtc
-                    }).ToListAsync(),
                 NewUsersThisWeek = await Context.Users.CountAsync(u => u.CreatedAt >= weekStart),
                 ActiveUsersThisWeek = await Context.Users.CountAsync(u => u.LastLoginAt >= weekStart),
                 LockedUsers = await Context.Users.CountAsync(u => u.LockoutEnd > now),

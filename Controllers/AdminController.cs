@@ -57,11 +57,7 @@ namespace HealthTrack.Controllers
                     + await Context.DietPlans.CountAsync(p => p.CreatedAtUtc >= weekStartUtc),
                 FeedbackThisWeek = await Context.TrainerFeedbacks.CountAsync(f => f.CreatedAtUtc >= weekStartUtc),
                 MetricsThisWeek = await Context.HealthMetrics.CountAsync(m => m.RecordedAt >= weekStart),
-                PopularActivities = await GetPopularActivitiesAsync(5),
-                RecentUsers = await QueryUserSummaries()
-                    .OrderByDescending(u => u.CreatedAt)
-                    .Take(5)
-                    .ToListAsync()
+                PopularActivities = await GetPopularActivitiesAsync(5)
             };
             return View(model);
         }

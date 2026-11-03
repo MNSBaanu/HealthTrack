@@ -16,6 +16,5 @@ namespace HealthTrack.Models.ViewModels
         public int TrainerPlansThisWeek { get; set; }
         public int FeedbackThisWeek { get; set; }
         public List<ActivityStatViewModel> PopularActivities { get; set; } = new();
-        public List<UserSummaryViewModel> RecentUsers { get; set; } = new();
     }
 }

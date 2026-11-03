@@ -13,8 +13,6 @@
     </div>
     <div class="ht-head-actions">
         <a class="btn btn-line" asp-action="SendNotification"><i class="bi bi-megaphone"></i>Broadcast</a>
-        <a class="btn btn-line" asp-action="CreateTrainer"><i class="bi bi-person-plus"></i>New trainer</a>
-        <a class="btn btn-line" asp-action="CreateAdmin"><i class="bi bi-shield-plus"></i>New admin</a>
         <a class="btn btn-primary" asp-action="Reports"><i class="bi bi-journal-text"></i>Reports</a>
     </div>
 </div>
@@ -78,7 +76,7 @@
 </div>
 
 <div class="row g-3">
-    <div class="col-lg-5">
+    <div class="col-12">
         <section class="ht-card h-100">
             <div class="ht-card-head">
                 <h2>Personal workout activities</h2>
@@ -105,45 +103,6 @@
                 {
                     <p class="text-muted mb-0">No workouts have been logged yet.</p>
                 }
-            </div>
-        </section>
-    </div>
-    <div class="col-lg-7">
-        <section class="ht-card h-100">
-            <div class="ht-card-head">
-                <h2>Newest members</h2>
-                <a asp-action="Users">All users <i class="bi bi-arrow-right"></i></a>
-            </div>
-            <div class="table-responsive">
-                <table class="ht-table">
-                    <thead>
-                        <tr>
-                            <th>Member</th>
-                            <th>Role</th>
-                            <th>Joined</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var user in Model.RecentUsers)
-                        {
-                            <tr>
-                                <td>
-                                    <div class="ht-member">
-                                        <span class="ht-monogram muted">@Person.GetInitials(user.Name)</span>
-                                        <div>
-                                            <div class="name">@user.Name</div>
-                                            <span class="sub">@user.Email</span>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td><partial name="_RolePill" model="user.Role" /></td>
-                                <td class="text-nowrap">@user.CreatedAt.ToString("d MMM yyyy")</td>
-                                <td><partial name="_StatusPill" model="user.IsLocked" /></td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
             </div>
         </section>
     </div>

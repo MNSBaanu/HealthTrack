@@ -2053,3 +2053,24 @@ tr[hidden], li[hidden], article[hidden] {
   margin-bottom: 1rem;
   border-radius: 0.5rem;
 }
+
+.ht-remote-modal .modal-body .ht-card {
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+  margin-top: 1.5rem !important;
+}
+
+.ht-remote-modal .modal-body .ht-card-body,
+.ht-remote-modal .modal-body .ht-card-head {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.ht-remote-modal .modal-body > .ht-card-body:first-child {
+  padding-top: 0;
+}
+
+.ht-remote-modal .ht-form-actions {
+  margin-bottom: 0;
+}

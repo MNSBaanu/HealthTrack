@@ -1,8 +1,9 @@
 (() => {
     const controls = [];
-    document.querySelectorAll('input[type="password"]').forEach((input, index) => {
+    let count = 0;
+    const enhance = root => root.querySelectorAll('input[type="password"]').forEach(input => {
         if (input.closest('.ht-password-field')) return;
-        input.id ||= `ht-password-${index}`;
+        input.id ||= `ht-password-${++count}`;
         const fieldName = input.labels?.[0]?.textContent.trim().toLowerCase() || 'password';
         const wrapper = document.createElement('div');
         wrapper.className = 'ht-password-field';
@@ -31,5 +32,7 @@
         input.form?.addEventListener('reset', () => setVisible(false));
         controls.push(() => setVisible(false));
     });
+    enhance(document);
+    window.htEnhancePasswords = enhance;
     window.addEventListener('pagehide', () => controls.forEach(hide => hide()));
 })();

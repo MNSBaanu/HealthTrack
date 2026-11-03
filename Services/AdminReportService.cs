@@ -6,11 +6,161 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthTrack.Services
 {
-    public class AdminReportService(HealthTrackDbContext context)
+    public class AdminReportService(HealthTrackDbContext context, AppointmentTime time)
     {
-        public const string PdfTitle = "HealthTrack - Client Performance Report";
+        public static string Title(string? report) => report switch
+        {
+            "health" => "System health report",
+            "ratings" => "Consultation ratings report",
+            "audit" => "Audit log report",
+            "chat" => "Chat questions report",
+            _ => "General report"
+        };
 
-        public async Task<List<ReportSection>> BuildSectionsAsync(DateTime? from, DateTime? to)
+        public async Task<List<ReportSection>> BuildSectionsAsync(string? report, DateTime? from, DateTime? to, bool emailConfigured,
+            string? actor = null, string? action = null)
+        {
+            var sections = new List<ReportSection>();
+            var general = report is not ("health" or "ratings" or "audit" or "chat");
+            if (general) sections.AddRange(await BuildPerformanceSectionsAsync(from, to));
+            if (general || report == "health") sections.AddRange(BuildHealthSections(await GetSystemHealthAsync(emailConfigured)));
+            if (general || report == "ratings") sections.AddRange(BuildRatingsSections(await GetRatingsAsync(int.MaxValue)));
+            if (general || report == "audit")
+            {
+                var (entries, names) = await GetAuditLogAsync(actor, action, from, to);
+                sections.Add(new ReportSection("Audit Log",
+                    new[] { "When", "Who", "Role", "Action", "Record", "Client", "Detail" },
+                    entries.Select(e => new object?[]
+                    {
+                        e.CreatedAtUtc.ToLocalTime(), e.ActorName, e.ActorRole, e.Action, e.Entity,
+                        e.SubjectClientId == null ? null : names.GetValueOrDefault(e.SubjectClientId, "Deleted account"), e.Detail
+                    })));
+            }
+            if (general || report == "chat")
+            {
+                var (questions, faqs) = await GetChatQuestionsAsync();
+                sections.Add(new ReportSection("Unanswered Chat Questions",
+                    new[] { "Question", "Asked", "Asked by", "Last asked", "AI reply" },
+                    GroupChatQuestions(questions).Select(q => new object?[] { q.Question, q.Count, q.Roles, q.Last.ToLocalTime(), q.Ai ? "Yes" : "No" })));
+                sections.Add(new ReportSection("Saved Chatbot Answers",
+                    new[] { "Question", "Answer" },
+                    faqs.Select(f => new object?[] { f.Question, f.Answer })));
+            }
+            return sections;
+        }
+
+        public async Task<SystemHealthViewModel> GetSystemHealthAsync(bool emailConfigured)
+        {
+            var now = DateTime.Now;
+            var since7 = now.AddDays(-7);
+            var firstDay = now.Date.AddDays(-13);
+            var utcNow = DateTime.UtcNow;
+            var logins = await context.LoginHistories.AsNoTracking()
+                .Where(l => l.LoggedInAt >= firstDay)
+                .Select(l => new { l.LoggedInAt, l.Succeeded, l.PersonId }).ToListAsync();
+
+            return new SystemHealthViewModel
+            {
+                Clients = await context.Clients.CountAsync(),
+                Trainers = await context.Trainers.CountAsync(),
+                Admins = await context.Admins.CountAsync(),
+                NewUsers7d = await context.Users.CountAsync(u => u.CreatedAt >= since7),
+                LockedAccounts = await context.Users.CountAsync(u => u.LockoutEnd != null && u.LockoutEnd > DateTimeOffset.UtcNow),
+                ActiveUsers7d = logins.Where(l => l.Succeeded && l.LoggedInAt >= since7).Select(l => l.PersonId).Distinct().Count(),
+                FailedLogins24h = logins.Count(l => !l.Succeeded && l.LoggedInAt >= now.AddHours(-24)),
+                FailedLogins7d = logins.Count(l => !l.Succeeded && l.LoggedInAt >= since7),
+                Exports7d = await context.AuditLogs.CountAsync(a => a.Action == "Exported" && a.CreatedAtUtc >= utcNow.AddDays(-7)),
+                Imports30d = await context.AuditLogs.CountAsync(a => a.Action == "Imported" && a.CreatedAtUtc >= utcNow.AddDays(-30)),
+                PendingAppointments = await context.Appointments.CountAsync(a => a.Status == AppointmentStatus.Pending),
+                UnreadNotifications = await context.Notifications.CountAsync(n => !n.IsRead && !n.IsDismissed),
+                EmailConfigured = emailConfigured,
+                Daily = Enumerable.Range(0, 14).Select(i => firstDay.AddDays(i))
+                    .Select(day => new DailyLogins(day,
+                        logins.Count(l => l.Succeeded && l.LoggedInAt.Date == day),
+                        logins.Count(l => !l.Succeeded && l.LoggedInAt.Date == day)))
+                    .ToList()
+            };
+        }
+
+        public async Task<ProviderRatingsViewModel> GetRatingsAsync(int recent)
+        {
+            var rated = await context.Appointments.AsNoTracking()
+                .Include(a => a.Slot).ThenInclude(s => s.Provider).Include(a => a.Client)
+                .Where(a => a.Rating != null)
+                .ToListAsync();
+
+            return new ProviderRatingsViewModel
+            {
+                Providers = rated.Where(a => !a.RatingHidden).GroupBy(a => a.Slot.ProviderId)
+                    .Select(g => new ProviderRatingRow(g.First().Slot.Provider.Name, g.First().Slot.Provider.Kind.ToString(),
+                        g.First().Slot.Provider.Specialty, Math.Round(g.Average(a => a.Rating!.Value), 1), g.Count()))
+                    .OrderByDescending(r => r.Average).ThenByDescending(r => r.Count).ToList(),
+                Recent = rated.OrderByDescending(a => a.RatedAtUtc).Take(recent)
+                    .Select(a => new RecentRating(a.Id, a.Slot.Provider.Name, a.Client.Name, a.Rating!.Value, a.RatingComment, time.ToLocal(a.RatedAtUtc!.Value), a.RatingHidden))
+                    .ToList()
+            };
+        }
+
+        public async Task<(List<AuditLog> Entries, Dictionary<string, string> Names)> GetAuditLogAsync(string? actor, string? action, DateTime? from, DateTime? to)
+        {
+            var logs = context.AuditLogs.AsNoTracking().AsQueryable();
+            if (!string.IsNullOrWhiteSpace(actor)) logs = logs.Where(l => l.ActorName.Contains(actor.Trim()));
+            if (!string.IsNullOrWhiteSpace(action)) logs = logs.Where(l => l.Action == action);
+            if (from.HasValue) logs = logs.Where(l => l.CreatedAtUtc >= from.Value.Date.ToUniversalTime());
+            if (to.HasValue) logs = logs.Where(l => l.CreatedAtUtc < to.Value.Date.AddDays(1).ToUniversalTime());
+            var entries = await logs.OrderByDescending(l => l.CreatedAtUtc).Take(300).ToListAsync();
+            var subjectIds = entries.Where(l => l.SubjectClientId != null).Select(l => l.SubjectClientId!).Distinct().ToList();
+            var names = await context.Clients.Where(c => subjectIds.Contains(c.Id)).ToDictionaryAsync(c => c.Id, c => c.Name);
+            return (entries, names);
+        }
+
+        public async Task<(List<ChatQuestion> Questions, List<ChatFaq> Faqs)> GetChatQuestionsAsync() =>
+            (await context.ChatQuestions.AsNoTracking().OrderByDescending(q => q.CreatedAtUtc).Take(500).ToListAsync(),
+             await context.ChatFaqs.AsNoTracking().OrderBy(f => f.Question).ToListAsync());
+
+        public static List<ChatQuestionGroup> GroupChatQuestions(IEnumerable<ChatQuestion> questions) =>
+            questions.GroupBy(q => q.Question.Trim().ToLowerInvariant())
+                .Select(g => new ChatQuestionGroup(g.First().Question, g.Count(), string.Join(", ", g.Select(q => q.Role).Distinct()),
+                    g.Max(q => q.CreatedAtUtc), g.Any(q => q.AiAnswered)))
+                .OrderByDescending(g => g.Count).ThenByDescending(g => g.Last)
+                .ToList();
+
+        private static IEnumerable<ReportSection> BuildHealthSections(SystemHealthViewModel health)
+        {
+            yield return new ReportSection("System Health",
+                new[] { "Metric", "Value" },
+                new[]
+                {
+                    new object?[] { "Clients", health.Clients },
+                    new object?[] { "Trainers", health.Trainers },
+                    new object?[] { "Admins", health.Admins },
+                    new object?[] { "Active users (7 days)", health.ActiveUsers7d },
+                    new object?[] { "New accounts (7 days)", health.NewUsers7d },
+                    new object?[] { "Locked accounts", health.LockedAccounts },
+                    new object?[] { "Failed sign-ins (24 hours)", health.FailedLogins24h },
+                    new object?[] { "Failed sign-ins (7 days)", health.FailedLogins7d },
+                    new object?[] { "Exports (7 days)", health.Exports7d },
+                    new object?[] { "Imports (30 days)", health.Imports30d },
+                    new object?[] { "Pending appointments", health.PendingAppointments },
+                    new object?[] { "Unread notifications", health.UnreadNotifications },
+                    new object?[] { "Email configured", health.EmailConfigured ? "Yes" : "No" }
+                });
+            yield return new ReportSection("Daily Sign-ins (14 days)",
+                new[] { "Day", "Successful", "Failed" },
+                health.Daily.Select(d => new object?[] { d.Day.ToString("yyyy-MM-dd"), d.Successful, d.Failed }));
+        }
+
+        private static IEnumerable<ReportSection> BuildRatingsSections(ProviderRatingsViewModel ratings)
+        {
+            yield return new ReportSection("Average Rating by Provider",
+                new[] { "Provider", "Type", "Specialty", "Average", "Ratings" },
+                ratings.Providers.Select(p => new object?[] { p.Name, p.Kind, p.Specialty, p.Average, p.Count }));
+            yield return new ReportSection("Ratings",
+                new[] { "Rated", "Provider", "Client", "Rating", "Comment", "Hidden" },
+                ratings.Recent.Select(r => new object?[] { r.RatedAt, r.ProviderName, r.ClientName, r.Rating, r.Comment, r.Hidden ? "Yes" : "No" }));
+        }
+
+        private async Task<List<ReportSection>> BuildPerformanceSectionsAsync(DateTime? from, DateTime? to)
         {
             var performance = await GetClientPerformanceAsync(from, to);
             var activities = await GetPopularActivitiesAsync(10, from, to);

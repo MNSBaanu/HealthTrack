@@ -1,0 +1,11 @@
+@model Dictionary<string, string>
+<div class="dropdown">
+    <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="icon-download"></i>Export
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end ht-menu">
+        <li><a class="dropdown-item" asp-action="ExportReport" asp-route-format="pdf" asp-all-route-data="Model"><i class="icon-file-text me-2"></i>PDF report</a></li>
+        <li><a class="dropdown-item" asp-action="ExportReport" asp-route-format="xlsx" asp-all-route-data="Model"><i class="icon-file-spreadsheet me-2"></i>Excel spreadsheet</a></li>
+        <li><a class="dropdown-item" asp-action="ExportReport" asp-route-format="csv" asp-all-route-data="Model"><i class="icon-sheet me-2"></i>CSV spreadsheet</a></li>
+    </ul>
+</div>

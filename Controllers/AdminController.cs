@@ -59,7 +59,7 @@ namespace HealthTrack.Controllers
                     + await Context.DietPlans.CountAsync(p => p.CreatedAtUtc >= weekStartUtc),
                 FeedbackThisWeek = await Context.TrainerFeedbacks.CountAsync(f => f.CreatedAtUtc >= weekStartUtc),
                 MetricsThisWeek = await Context.HealthMetrics.CountAsync(m => m.RecordedAt >= weekStart),
-                PopularActivities = await new AdminReportService(Context).GetPopularActivitiesAsync(5)
+                PopularActivities = await ReportData.GetPopularActivitiesAsync(5)
             };
             return View(model);
         }
@@ -189,22 +189,7 @@ namespace HealthTrack.Controllers
         [HttpGet]
         public async Task<IActionResult> Ratings()
         {
-            var rated = await Context.Appointments.AsNoTracking()
-                .Include(a => a.Slot).ThenInclude(s => s.Provider).Include(a => a.Client)
-                .Where(a => a.Rating != null)
-                .ToListAsync();
-
-            var model = new ProviderRatingsViewModel
-            {
-                Providers = rated.Where(a => !a.RatingHidden).GroupBy(a => a.Slot.ProviderId)
-                    .Select(g => new ProviderRatingRow(g.First().Slot.Provider.Name, g.First().Slot.Provider.Kind.ToString(),
-                        g.First().Slot.Provider.Specialty, Math.Round(g.Average(a => a.Rating!.Value), 1), g.Count()))
-                    .OrderByDescending(r => r.Average).ThenByDescending(r => r.Count).ToList(),
-                Recent = rated.OrderByDescending(a => a.RatedAtUtc).Take(50)
-                    .Select(a => new RecentRating(a.Id, a.Slot.Provider.Name, a.Client.Name, a.Rating!.Value, a.RatingComment, _time.ToLocal(a.RatedAtUtc!.Value), a.RatingHidden))
-                    .ToList()
-            };
-            return View(model);
+            return View(await ReportData.GetRatingsAsync(50));
         }
 
         [HttpPost]
@@ -388,37 +373,12 @@ namespace HealthTrack.Controllers
         [HttpGet]
         public async Task<IActionResult> SystemHealth()
         {
-            var now = DateTime.Now;
-            var since7 = now.AddDays(-7);
-            var firstDay = now.Date.AddDays(-13);
-            var utcNow = DateTime.UtcNow;
-            var logins = await Context.LoginHistories.AsNoTracking()
-                .Where(l => l.LoggedInAt >= firstDay)
-                .Select(l => new { l.LoggedInAt, l.Succeeded, l.PersonId }).ToListAsync();
-
-            var model = new SystemHealthViewModel
-            {
-                Clients = await Context.Clients.CountAsync(),
-                Trainers = await Context.Trainers.CountAsync(),
-                Admins = await Context.Admins.CountAsync(),
-                NewUsers7d = await Context.Users.CountAsync(u => u.CreatedAt >= since7),
-                LockedAccounts = await Context.Users.CountAsync(u => u.LockoutEnd != null && u.LockoutEnd > DateTimeOffset.UtcNow),
-                ActiveUsers7d = logins.Where(l => l.Succeeded && l.LoggedInAt >= since7).Select(l => l.PersonId).Distinct().Count(),
-                FailedLogins24h = logins.Count(l => !l.Succeeded && l.LoggedInAt >= now.AddHours(-24)),
-                FailedLogins7d = logins.Count(l => !l.Succeeded && l.LoggedInAt >= since7),
-                Exports7d = await Context.AuditLogs.CountAsync(a => a.Action == "Exported" && a.CreatedAtUtc >= utcNow.AddDays(-7)),
-                Imports30d = await Context.AuditLogs.CountAsync(a => a.Action == "Imported" && a.CreatedAtUtc >= utcNow.AddDays(-30)),
-                PendingAppointments = await Context.Appointments.CountAsync(a => a.Status == AppointmentStatus.Pending),
-                UnreadNotifications = await Context.Notifications.CountAsync(n => !n.IsRead && !n.IsDismissed),
-                EmailConfigured = HttpContext.RequestServices.GetRequiredService<IMailSender>().IsConfigured,
-                Daily = Enumerable.Range(0, 14).Select(i => firstDay.AddDays(i))
-                    .Select(day => new DailyLogins(day,
-                        logins.Count(l => l.Succeeded && l.LoggedInAt.Date == day),
-                        logins.Count(l => !l.Succeeded && l.LoggedInAt.Date == day)))
-                    .ToList()
-            };
-            return View(model);
+            return View(await ReportData.GetSystemHealthAsync(MailConfigured));
         }
+
+        private AdminReportService ReportData => new(Context, _time);
+
+        private bool MailConfigured => HttpContext.RequestServices.GetRequiredService<IMailSender>().IsConfigured;
 
         [HttpGet]
         public IActionResult ImportUsers()
@@ -865,7 +825,7 @@ namespace HealthTrack.Controllers
             if (from > to) (from, to) = (to, from);
             ViewData["From"] = from;
             ViewData["To"] = to;
-            var reports = new AdminReportService(Context);
+            var reports = ReportData;
             ViewData["PopularActivities"] = await reports.GetPopularActivitiesAsync(10, from, to);
             var (planExercises, topPlans) = await reports.GetPlanRoutinesAsync(10, from, to);
             ViewData["PlanExercises"] = planExercises;
@@ -874,21 +834,23 @@ namespace HealthTrack.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> ExportReport(string format = "csv", DateTime? from = null, DateTime? to = null)
+        public async Task<IActionResult> ExportReport(string format = "csv", string? report = null, DateTime? from = null, DateTime? to = null,
+            string? actor = null, string? action = null)
         {
             if (from > to) (from, to) = (to, from);
-            var sections = await new AdminReportService(Context).BuildSectionsAsync(from, to);
+            var sections = await ReportData.BuildSectionsAsync(report, from, to, MailConfigured, actor, action);
+            var title = AdminReportService.Title(report);
 
-            var fileName = $"HealthTrack_Report_{DateTime.Now:yyyyMMdd}";
-            _logger.LogInformation("Admin {AdminId} exported report as {Format}", CurrentUserId, format);
-            await AuditAsync("Exported", "ClientPerformanceReport", null, format);
+            var fileName = $"HealthTrack_{title.Replace(' ', '_')}_{DateTime.Now:yyyyMMdd}";
+            _logger.LogInformation("Admin {AdminId} exported {Report} as {Format}", CurrentUserId, title, format);
+            await AuditAsync("Exported", title, null, format);
             if (format.Equals("pdf", StringComparison.OrdinalIgnoreCase))
             {
-                return File(_exportService.ToPdf(AdminReportService.PdfTitle, sections), "application/pdf", fileName + ".pdf");
+                return File(_exportService.ToPdf("HealthTrack - " + title, sections), "application/pdf", fileName + ".pdf");
             }
             if (format.Equals("xlsx", StringComparison.OrdinalIgnoreCase))
             {
-                return File(_exportService.ToXlsx("Client Performance Report", sections), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName + ".xlsx");
+                return File(_exportService.ToXlsx(title, sections), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName + ".xlsx");
             }
             return File(_exportService.ToCsv(sections), "text/csv", fileName + ".csv");
         }
@@ -901,24 +863,17 @@ namespace HealthTrack.Controllers
             ViewData["Action"] = action;
             ViewData["From"] = from;
             ViewData["To"] = to;
-            var logs = Context.AuditLogs.AsNoTracking().AsQueryable();
-            if (!string.IsNullOrWhiteSpace(actor)) logs = logs.Where(l => l.ActorName.Contains(actor.Trim()));
-            if (!string.IsNullOrWhiteSpace(action)) logs = logs.Where(l => l.Action == action);
-            if (from.HasValue) logs = logs.Where(l => l.CreatedAtUtc >= from.Value.Date.ToUniversalTime());
-            if (to.HasValue) logs = logs.Where(l => l.CreatedAtUtc < to.Value.Date.AddDays(1).ToUniversalTime());
-            var entries = await logs.OrderByDescending(l => l.CreatedAtUtc).Take(300).ToListAsync();
-            var subjectIds = entries.Where(l => l.SubjectClientId != null).Select(l => l.SubjectClientId!).Distinct().ToList();
-            ViewData["SubjectNames"] = await Context.Clients.Where(c => subjectIds.Contains(c.Id))
-                .ToDictionaryAsync(c => c.Id, c => c.Name);
+            var (entries, names) = await ReportData.GetAuditLogAsync(actor, action, from, to);
+            ViewData["SubjectNames"] = names;
             return View(entries);
         }
 
         [HttpGet]
         public async Task<IActionResult> ChatQuestions()
         {
-            ViewData["Faqs"] = await Context.ChatFaqs.AsNoTracking().OrderBy(f => f.Question).ToListAsync();
-            return View(await Context.ChatQuestions.AsNoTracking()
-                .OrderByDescending(q => q.CreatedAtUtc).Take(500).ToListAsync());
+            var (questions, faqs) = await ReportData.GetChatQuestionsAsync();
+            ViewData["Faqs"] = faqs;
+            return View(questions);
         }
 
         [HttpPost]

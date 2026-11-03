@@ -7,6 +7,9 @@
         <h1 class="ht-title">Consultation ratings</h1>
         <p class="ht-lede">How clients rated completed consultations with trainers and healthcare professionals.</p>
     </div>
+    <div class="ht-head-actions">
+        <partial name="_ExportMenu" model='new Dictionary<string, string> { ["report"] = "ratings" }' />
+    </div>
 </div>
 
 @if (!Model.Recent.Any())

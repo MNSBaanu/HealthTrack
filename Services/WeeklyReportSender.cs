@@ -4,15 +4,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthTrack.Services
 {
-    public class WeeklyReportSender(HealthTrackDbContext context, IExportService export, IMailSender mail, TimeProvider clock)
+    public class WeeklyReportSender(HealthTrackDbContext context, IExportService export, IMailSender mail, TimeProvider clock, AppointmentTime time)
     {
         public async Task<int> SendAsync(CancellationToken cancellationToken = default)
         {
             if (!mail.IsConfigured) throw new InvalidOperationException("Email is not configured, so the report can't be sent.");
             var to = DateTime.Today;
             var from = to.AddDays(-6);
-            var sections = await new AdminReportService(context).BuildSectionsAsync(from, to);
-            var pdf = export.ToPdf(AdminReportService.PdfTitle, sections);
+            var sections = await new AdminReportService(context, time).BuildSectionsAsync(null, from, to, mail.IsConfigured);
+            var pdf = export.ToPdf("HealthTrack - " + AdminReportService.Title(null), sections);
             var now = clock.GetUtcNow();
             var admins = await context.Admins.AsNoTracking()
                 .Where(a => a.Email != null && (a.LockoutEnd == null || a.LockoutEnd <= now))

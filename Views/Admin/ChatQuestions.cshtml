@@ -2,11 +2,7 @@
 @{
     ViewData["Title"] = "Chat questions";
     var faqs = ViewData["Faqs"] as List<ChatFaq> ?? new();
-    var grouped = Model
-        .GroupBy(q => q.Question.Trim().ToLowerInvariant())
-        .Select(g => new { Question = g.First().Question, Count = g.Count(), Roles = string.Join(", ", g.Select(q => q.Role).Distinct()), Last = g.Max(q => q.CreatedAtUtc), Ai = g.Any(q => q.AiAnswered) })
-        .OrderByDescending(g => g.Count).ThenByDescending(g => g.Last)
-        .ToList();
+    var grouped = HealthTrack.Services.AdminReportService.GroupChatQuestions(Model);
 }
 
 <a class="ht-back" asp-action="Reports"><i class="icon-arrow-left"></i>Reports</a>
@@ -15,7 +11,8 @@
         <h1 class="ht-title">Unanswered chat questions</h1>
     </div>
     <div class="ht-head-actions">
-        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#faqModal" data-faq-question=""><i class="icon-plus"></i>New answer</button>
+        <button type="button" class="btn btn-line" data-bs-toggle="modal" data-bs-target="#faqModal" data-faq-question=""><i class="icon-plus"></i>New answer</button>
+        <partial name="_ExportMenu" model='new Dictionary<string, string> { ["report"] = "chat" }' />
     </div>
 </div>
 

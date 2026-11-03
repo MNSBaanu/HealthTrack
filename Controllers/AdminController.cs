@@ -866,8 +866,38 @@ namespace HealthTrack.Controllers
         [HttpGet]
         public async Task<IActionResult> ChatQuestions()
         {
+            ViewData["Faqs"] = await Context.ChatFaqs.AsNoTracking().OrderBy(f => f.Question).ToListAsync();
             return View(await Context.ChatQuestions.AsNoTracking()
                 .OrderByDescending(q => q.CreatedAtUtc).Take(500).ToListAsync());
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SaveFaq(string question, string answer)
+        {
+            question = (question ?? string.Empty).Trim();
+            answer = (answer ?? string.Empty).Trim();
+            if (question.Length is 0 or > 300 || answer.Length is 0 or > 1000)
+            {
+                TempData["Error"] = "Enter a question (up to 300 characters) and an answer (up to 1000 characters).";
+                return RedirectToAction(nameof(ChatQuestions));
+            }
+            var existing = await Context.ChatFaqs.FirstOrDefaultAsync(f => f.Question == question);
+            if (existing != null) existing.Answer = answer;
+            else Context.ChatFaqs.Add(new ChatFaq { Question = question, Answer = answer });
+            await Context.SaveChangesAsync();
+            TempData["Success"] = "Answer saved. The chatbot will use it for matching questions.";
+            return RedirectToAction(nameof(ChatQuestions));
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteFaq(int id)
+        {
+            var faq = await Context.ChatFaqs.FindAsync(id);
+            if (faq == null) return NotFound();
+            Context.ChatFaqs.Remove(faq);
+            await Context.SaveChangesAsync();
+            TempData["Success"] = "Saved answer removed.";
+            return RedirectToAction(nameof(ChatQuestions));
         }
 
         [HttpGet]

@@ -12,7 +12,7 @@
 
         <fieldset class="ht-fieldset">
             <legend>About you</legend>
-            <div class="row g-3">
+            <div class="row g-2">
                 <div class="col-md-6">
                     <label asp-for="Name" class="form-label">Full name</label>
                     <input asp-for="Name" class="form-control" autocomplete="name" autofocus />
@@ -33,7 +33,7 @@
 
         <fieldset class="ht-fieldset">
             <legend>Your starting point</legend>
-            <div class="row g-3">
+            <div class="row g-2">
                 <div class="col-md-6">
                     <label asp-for="HeightCm" class="form-label">Height</label>
                     <div class="ht-input-unit">
@@ -60,7 +60,7 @@
 
         <fieldset class="ht-fieldset">
             <legend>Security</legend>
-            <div class="row g-3">
+            <div class="row g-2">
                 <div class="col-md-6">
                     <label asp-for="Password" class="form-label"></label>
                     <input asp-for="Password" class="form-control" autocomplete="new-password" />
@@ -77,7 +77,7 @@
             </div>
         </fieldset>
 
-        <div class="form-check mt-4">
+        <div class="form-check mt-3">
             <input asp-for="AcceptPrivacy" class="form-check-input" />
             <label asp-for="AcceptPrivacy" class="form-check-label">I have read and accept the <a asp-controller="Home" asp-action="Privacy" target="_blank" rel="noopener">privacy policy</a>.</label>
             <span asp-validation-for="AcceptPrivacy" class="text-danger d-block"></span>

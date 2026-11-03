@@ -1,11 +1,16 @@
 (function () {
+    const styles = getComputedStyle(document.documentElement);
+    function token(name, fallback) {
+        return styles.getPropertyValue("--ht-" + name).trim() || fallback;
+    }
     const palette = {
-        ink: "#1a1823",
-        saffron: "#e9a21b",
-        clay: "#c4553b",
-        slate: "#3e5c76",
-        line: "#e4dccf",
-        muted: "#7a7482"
+        ink: token("ink", "#1a1823"),
+        saffron: token("saffron", "#e9a21b"),
+        clay: token("clay", "#c4553b"),
+        slate: token("slate", "#3e5c76"),
+        line: token("line", "#e4dccf"),
+        muted: token("muted", "#7a7482"),
+        surface: token("surface", "#fffdf9")
     };
 
     function applyTheme() {
@@ -146,23 +151,51 @@
         fetch(url + "?days=14")
             .then(function (response) { return response.json(); })
             .then(function (data) {
+                function sum(series) {
+                    return data.labels.map(function (_, i) {
+                        return series.reduce(function (total, s) { return total + (s[i] || 0); }, 0);
+                    });
+                }
+                const breakdown = {
+                    "Client activity": [["Workouts", data.workouts], ["Meals", data.meals], ["Measurements", data.metrics]],
+                    "Trainer activity": [["Plans", data.plans], ["Feedback", data.feedback], ["Appointments", data.appointments]]
+                };
                 const options = baseOptions();
                 options.scales.x.stacked = true;
+                options.scales.x.ticks = { maxRotation: 0, autoSkipPadding: 12 };
                 options.scales.y.stacked = true;
-                options.scales.y.ticks = { precision: 0 };
+                options.scales.y.ticks = { precision: 0, maxTicksLimit: 5 };
+                options.scales.y.grid = { color: palette.line };
+                options.scales.y1 = {
+                    position: "right",
+                    beginAtZero: true,
+                    ticks: { precision: 0, maxTicksLimit: 5 },
+                    grid: { drawOnChartArea: false },
+                    border: { display: false }
+                };
+                options.plugins = {
+                    legend: { position: "top", align: "end", labels: { usePointStyle: true, pointStyle: "rect", boxWidth: 10, boxHeight: 10, padding: 16 } },
+                    tooltip: {
+                        callbacks: {
+                            afterLabel: function (context) {
+                                const parts = breakdown[context.dataset.label];
+                                if (!parts) {
+                                    return "";
+                                }
+                                return parts.map(function (p) { return "  " + p[0] + ": " + (p[1][context.dataIndex] || 0); });
+                            }
+                        }
+                    }
+                };
+                const bar = { borderWidth: { top: 1 }, borderColor: palette.surface, borderRadius: 0, borderSkipped: false, maxBarThickness: 28, yAxisID: "y" };
                 render(canvas, {
                     type: "bar",
                     data: {
                         labels: data.labels.map(dayLabel),
                         datasets: [
-                            { label: "Workouts", data: data.workouts, backgroundColor: palette.ink, borderRadius: 4, maxBarThickness: 26 },
-                            { label: "Meals", data: data.meals, backgroundColor: palette.saffron, borderRadius: 4, maxBarThickness: 26 },
-                            { label: "Measurements", data: data.metrics, backgroundColor: palette.slate, borderRadius: 4, maxBarThickness: 26 },
-                            { label: "Appointments", data: data.appointments, backgroundColor: palette.muted, borderRadius: 4, maxBarThickness: 26 },
-                            { label: "Notifications", data: data.notifications, backgroundColor: palette.line, borderRadius: 4, maxBarThickness: 26 },
-                            { label: "Trainer plans", data: data.plans, backgroundColor: "#5b8a72", borderRadius: 4, maxBarThickness: 26 },
-                            { label: "Feedback", data: data.feedback, backgroundColor: "#8e6c9e", borderRadius: 4, maxBarThickness: 26 },
-                            { label: "New members", data: data.registrations, type: "line", borderColor: palette.clay, backgroundColor: palette.clay, tension: 0.35, pointRadius: 3, stack: "registrations" }
+                            Object.assign({ label: "Client activity", data: sum([data.workouts, data.meals, data.metrics]), backgroundColor: palette.slate }, bar),
+                            Object.assign({ label: "Trainer activity", data: sum([data.plans, data.feedback, data.appointments]), backgroundColor: palette.ink }, bar),
+                            { label: "New members", data: data.registrations, type: "line", borderColor: palette.saffron, backgroundColor: palette.saffron, borderWidth: 2, tension: 0, pointRadius: 0, pointHoverRadius: 4, yAxisID: "y1", stack: "registrations" }
                         ]
                     },
                     options: options

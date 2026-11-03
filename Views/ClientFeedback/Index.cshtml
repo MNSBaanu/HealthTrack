@@ -77,7 +77,7 @@
             </div>
             <section class="feedback-message feedback-from-trainer" aria-label="Trainer feedback">
                 <div class="feedback-message-heading">
-                    <div><span class="feedback-speaker"><i class="bi bi-person-badge" aria-hidden="true"></i>Trainer feedback</span><strong class="feedback-author">@(item.Trainer?.Name ?? "Trainer unavailable")</strong></div>
+                    <div><span class="feedback-speaker"><i class="icon-id-card" aria-hidden="true"></i>Trainer feedback</span><strong class="feedback-author">@(item.Trainer?.Name ?? "Trainer unavailable")</strong></div>
                     <time class="small text-muted" datetime="@item.CreatedAtUtc.ToString("O")">@Time.ToLocal(item.CreatedAtUtc).ToString("d MMM yyyy, HH:mm")</time>
                 </div>
                 <p class="feedback-message-text">@item.Comments</p>
@@ -86,7 +86,7 @@
             {
                 <section class="feedback-message feedback-from-client" aria-label="Your reply">
                     <div class="feedback-message-heading">
-                        <div><span class="feedback-speaker"><i class="bi bi-reply" aria-hidden="true"></i>Your reply</span><strong class="feedback-author">You · Client</strong></div>
+                        <div><span class="feedback-speaker"><i class="icon-reply" aria-hidden="true"></i>Your reply</span><strong class="feedback-author">You · Client</strong></div>
                         @if (item.ClientRepliedAtUtc.HasValue)
                         {
                             <time class="small text-muted" datetime="@item.ClientRepliedAtUtc.Value.ToString("O")">@Time.ToLocal(item.ClientRepliedAtUtc.Value).ToString("d MMM yyyy, HH:mm")</time>

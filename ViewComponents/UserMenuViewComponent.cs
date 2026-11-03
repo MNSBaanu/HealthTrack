@@ -27,8 +27,7 @@ namespace HealthTrack.ViewComponents
                 Name = person.Name,
                 Email = person.Email ?? string.Empty,
                 Initials = person.Initials,
-                RoleDisplayName = person.RoleDisplayName,
-                DashboardController = person.DashboardController
+                RoleDisplayName = person.RoleDisplayName
             };
             return View(model);
         }

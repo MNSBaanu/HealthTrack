@@ -3,10 +3,10 @@
 @{
     var (icon, tone) = Model switch
     {
-        MealType.Breakfast => ("bi-sunrise", "saffron"),
-        MealType.Lunch => ("bi-sun", "clay"),
-        MealType.Dinner => ("bi-moon-stars", "slate"),
-        _ => ("bi-apple", "success")
+        MealType.Breakfast => ("icon-sunrise", "saffron"),
+        MealType.Lunch => ("icon-sun", "clay"),
+        MealType.Dinner => ("icon-moon-star", "slate"),
+        _ => ("icon-apple", "success")
     };
 }
-<span class="ht-pill @tone"><i class="bi @icon"></i>@Model</span>
+<span class="ht-pill @tone"><i class="@icon"></i>@Model</span>

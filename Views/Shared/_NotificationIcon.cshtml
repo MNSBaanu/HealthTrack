@@ -3,10 +3,10 @@
 @{
     var (icon, tone) = Model switch
     {
-        NotificationType.Workout => ("bi-lightning-charge", "saffron"),
-        NotificationType.Meal => ("bi-cup-hot", "clay"),
-        NotificationType.Appointment => ("bi-calendar-event", "slate"),
-        _ => ("bi-bell", "ink")
+        NotificationType.Workout => ("icon-zap", "saffron"),
+        NotificationType.Meal => ("icon-coffee", "clay"),
+        NotificationType.Appointment => ("icon-calendar-days", "slate"),
+        _ => ("icon-bell", "ink")
     };
 }
-<span class="ht-glyph @tone"><i class="bi @icon"></i></span>
+<span class="ht-glyph @tone"><i class="@icon"></i></span>

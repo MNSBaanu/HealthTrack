@@ -8,18 +8,16 @@
     var to = ViewData["To"] as DateTime?;
 }
 
+<a class="ht-back" asp-action="Reports"><i class="icon-arrow-left"></i>Reports</a>
 <div class="ht-head">
     <div>
         <h1 class="ht-title">Audit log</h1>
-    </div>
-    <div class="ht-head-actions">
-        <a class="btn btn-line" asp-action="Reports"><i class="bi bi-arrow-left"></i>Reports</a>
     </div>
 </div>
 
 <form asp-action="AuditLog" method="get" class="ht-card ht-filter mb-3">
     <div class="ht-input-icon flex-grow-1">
-        <i class="bi bi-search"></i>
+        <i class="icon-search"></i>
         <input type="search" name="actor" value="@actor" class="form-control" placeholder="Search by user email" aria-label="Search by user email" />
     </div>
     <select name="action" class="form-select" aria-label="Filter by action">
@@ -29,8 +27,8 @@
             <option value="@option" selected="@(action == option)">@option</option>
         }
     </select>
-    <input type="date" name="from" value="@from?.ToString("yyyy-MM-dd")" class="form-control" aria-label="From date" />
-    <input type="date" name="to" value="@to?.ToString("yyyy-MM-dd")" class="form-control" aria-label="To date" />
+    <input type="date" name="from" value="@from?.ToString("yyyy-MM-dd")" class="form-control w-auto" placeholder="From" aria-label="From date" />
+    <input type="date" name="to" value="@to?.ToString("yyyy-MM-dd")" class="form-control w-auto" placeholder="To" aria-label="To date" />
     @if (!string.IsNullOrEmpty(actor) || !string.IsNullOrEmpty(action) || from.HasValue || to.HasValue)
     {
         <a class="btn btn-line" asp-action="AuditLog">Clear</a>

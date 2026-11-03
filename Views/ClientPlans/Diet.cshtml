@@ -22,11 +22,11 @@
                 <h3 class="h5">@meal.MealType</h3>
                 @if (Model.LoggedTodayMealIds.Contains(meal.Id))
                 {
-                    <span class="ht-pill"><i class="bi bi-check2"></i>Logged today</span>
+                    <span class="ht-pill"><i class="icon-check"></i>Logged today</span>
                 }
                 else if (meal.CanLogOn(Model.Today))
                 {
-                    <a class="btn btn-line btn-sm" asp-controller="MealLogs" asp-action="Create" asp-route-planMealId="@meal.Id"><i class="bi bi-check2"></i>Log this meal</a>
+                    <a class="btn btn-line btn-sm" asp-controller="MealLogs" asp-action="Create" asp-route-planMealId="@meal.Id"><i class="icon-check"></i>Log this meal</a>
                 }
                 else
                 {

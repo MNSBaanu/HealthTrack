@@ -11,12 +11,6 @@
         <div class="ht-overline">Admin console &middot; @DateTime.Now.ToString("dddd d MMMM yyyy")</div>
         <h1 class="ht-title">System overview</h1>
     </div>
-    <div class="ht-head-actions">
-        <a class="btn btn-line" asp-action="SendNotification"><i class="bi bi-megaphone"></i>Broadcast</a>
-        <a class="btn btn-line" asp-action="CreateTrainer"><i class="bi bi-person-plus"></i>New trainer</a>
-        <a class="btn btn-line" asp-action="CreateAdmin"><i class="bi bi-shield-plus"></i>New admin</a>
-        <a class="btn btn-primary" asp-action="Reports"><i class="bi bi-journal-text"></i>Reports</a>
-    </div>
 </div>
 
 <div class="ht-ledger">
@@ -65,49 +59,24 @@
             <span class="ht-overline">Activity this week</span>
             <div class="big">@weeklyLogs</div>
             <ul class="ht-facts mt-0">
-                <li><span><i class="bi bi-lightning-charge me-2"></i>Workouts</span><strong>@Model.WorkoutLogsThisWeek</strong></li>
-                <li><span><i class="bi bi-cup-hot me-2"></i>Meals</span><strong>@Model.MealLogsThisWeek</strong></li>
-                <li><span><i class="bi bi-rulers me-2"></i>Measurements</span><strong>@Model.MetricsThisWeek</strong></li>
-                <li><span><i class="bi bi-calendar-check me-2"></i>Appointments</span><strong>@Model.AppointmentsThisWeek</strong></li>
-                <li><span><i class="bi bi-bell me-2"></i>Notifications</span><strong>@Model.NotificationsThisWeek</strong></li>
-                <li><span><i class="bi bi-clipboard-check me-2"></i>Trainer plans</span><strong>@Model.TrainerPlansThisWeek</strong></li>
-                <li><span><i class="bi bi-chat-left-text me-2"></i>Feedback</span><strong>@Model.FeedbackThisWeek</strong></li>
+                <li><span><i class="icon-zap me-2"></i>Workouts</span><strong>@Model.WorkoutLogsThisWeek</strong></li>
+                <li><span><i class="icon-coffee me-2"></i>Meals</span><strong>@Model.MealLogsThisWeek</strong></li>
+                <li><span><i class="icon-ruler me-2"></i>Measurements</span><strong>@Model.MetricsThisWeek</strong></li>
+                <li><span><i class="icon-calendar-check me-2"></i>Appointments</span><strong>@Model.AppointmentsThisWeek</strong></li>
+                <li><span><i class="icon-bell me-2"></i>Notifications</span><strong>@Model.NotificationsThisWeek</strong></li>
+                <li><span><i class="icon-clipboard-check me-2"></i>Trainer plans</span><strong>@Model.TrainerPlansThisWeek</strong></li>
+                <li><span><i class="icon-message-square-text me-2"></i>Feedback</span><strong>@Model.FeedbackThisWeek</strong></li>
             </ul>
         </section>
     </div>
 </div>
 
-<div class="row g-3 mb-3">
-    <div class="col-12">
-        <section class="ht-card">
-            <div class="ht-card-head"><h2>Trainer assignments</h2><a asp-controller="Assignments" asp-action="Index">Manage assignments <i class="bi bi-arrow-right"></i></a></div>
-            <div class="ht-card-body">
-                <div class="row g-3 mb-3">
-                    <div class="col-sm-4"><span class="ht-overline">Trainers</span><div class="fs-3 fw-semibold" data-stat="trainers">@Model.TotalTrainers</div></div>
-                    <div class="col-sm-4"><span class="ht-overline">Assigned Clients</span><div class="fs-3 fw-semibold" data-stat="assigned">@Model.AssignedClients</div></div>
-                    <div class="col-sm-4"><span class="ht-overline">Unassigned Clients</span><div class="fs-3 fw-semibold" data-stat="unassigned">@Model.UnassignedClients</div></div>
-                </div>
-                @if (Model.RecentAssignments.Any())
-                {
-                    <ul class="list-unstyled mb-0">
-                        @foreach (var assignment in Model.RecentAssignments)
-                        {
-                            <li class="py-1"><a asp-controller="Assignments" asp-action="Edit" asp-route-id="@assignment.ClientId">@assignment.ClientName</a> &middot; @assignment.TrainerName</li>
-                        }
-                    </ul>
-                }
-                else { <p class="text-muted mb-0">No Clients have been assigned a Trainer yet.</p> }
-            </div>
-        </section>
-    </div>
-</div>
-
 <div class="row g-3">
-    <div class="col-lg-5">
+    <div class="col-12">
         <section class="ht-card h-100">
             <div class="ht-card-head">
                 <h2>Personal workout activities</h2>
-                <a asp-action="Reports">Full report <i class="bi bi-arrow-right"></i></a>
+                <a asp-action="Reports">Full report <i class="icon-arrow-right"></i></a>
             </div>
             <div class="ht-card-body">
                 @if (Model.PopularActivities.Any())
@@ -130,45 +99,6 @@
                 {
                     <p class="text-muted mb-0">No workouts have been logged yet.</p>
                 }
-            </div>
-        </section>
-    </div>
-    <div class="col-lg-7">
-        <section class="ht-card h-100">
-            <div class="ht-card-head">
-                <h2>Newest members</h2>
-                <a asp-action="Users">All users <i class="bi bi-arrow-right"></i></a>
-            </div>
-            <div class="table-responsive">
-                <table class="ht-table">
-                    <thead>
-                        <tr>
-                            <th>Member</th>
-                            <th>Role</th>
-                            <th>Joined</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var user in Model.RecentUsers)
-                        {
-                            <tr>
-                                <td>
-                                    <div class="ht-member">
-                                        <span class="ht-monogram muted">@Person.GetInitials(user.Name)</span>
-                                        <div>
-                                            <div class="name">@user.Name</div>
-                                            <span class="sub">@user.Email</span>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td><partial name="_RolePill" model="user.Role" /></td>
-                                <td class="text-nowrap">@user.CreatedAt.ToString("d MMM yyyy")</td>
-                                <td><partial name="_StatusPill" model="user.IsLocked" /></td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
             </div>
         </section>
     </div>

@@ -1,7 +1,7 @@
 @model BookingPageViewModel
 @{
     ViewData["FormPage"] = "standard"; ViewData["Title"] = "Book a consultation"; }
-<a class="ht-back" asp-action="Index"><i class="bi bi-arrow-left"></i>My appointments</a>
+<a class="ht-back" asp-action="Index"><i class="icon-arrow-left"></i>My appointments</a>
 <div class="ht-head"><div><h1 class="ht-title">Book a consultation</h1><p class="ht-lede">Choose a provider and an available time. Times are shown in @Model.TimeZoneLabel.</p></div></div>
 @if (!Model.Providers.Any())
 {

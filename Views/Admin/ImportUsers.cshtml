@@ -5,13 +5,13 @@
     var generated = Model.Imported.Where(u => u.TemporaryPassword != null).ToList();
 }
 
-<a class="ht-back" asp-action="Users"><i class="bi bi-arrow-left"></i>All users</a>
+<a class="ht-back" asp-action="Users"><i class="icon-arrow-left"></i>All users</a>
 <div class="ht-head">
     <div>
         <h1 class="ht-title">Import users</h1>
         <p class="ht-lede">Add many clients and trainers at once from a CSV file.</p>
     </div>
-    <a class="btn btn-line" asp-action="ImportTemplate"><i class="bi bi-download"></i>Download template</a>
+    <a class="btn btn-line" asp-action="ImportTemplate"><i class="icon-download"></i>Download template</a>
 </div>
 
 <div class="row g-3">
@@ -21,7 +21,7 @@
                 <form asp-action="ImportUsers" method="post" enctype="multipart/form-data">
                     <label for="file" class="form-label">CSV file</label>
                     <input type="file" id="file" name="file" class="form-control mb-3" accept=".csv,text/csv" required />
-                    <button type="submit" class="btn btn-primary"><i class="bi bi-file-earmark-arrow-up"></i>Import</button>
+                    <button type="submit" class="btn btn-primary"><i class="icon-file-up"></i>Import</button>
                 </form>
                 <hr />
                 <p class="small text-muted mb-1"><strong>Columns:</strong> Name, Email, Role, DateOfBirth, HeightCm, FitnessGoal, Password</p>
@@ -39,7 +39,7 @@
     <div class="col-lg-7">
         @if (Model.FileError != null)
         {
-            <div class="ht-flash error alert" role="alert"><i class="bi bi-exclamation-octagon"></i><span>@Model.FileError</span></div>
+            <div class="ht-flash error alert" role="alert"><i class="icon-octagon-alert"></i><span>@Model.FileError</span></div>
         }
         @if (attempted)
         {

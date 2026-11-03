@@ -23,7 +23,7 @@
             toggle.setAttribute('aria-label', label);
             toggle.setAttribute('aria-pressed', String(visible));
             toggle.title = label;
-            icon.className = visible ? 'bi bi-eye-slash' : 'bi bi-eye';
+            icon.className = visible ? 'icon-eye-off' : 'icon-eye';
         };
         setVisible(false);
         toggle.addEventListener('click', () => setVisible(input.type === 'password'));

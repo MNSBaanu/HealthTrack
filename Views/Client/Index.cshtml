@@ -7,8 +7,8 @@
     var latest = Model.LatestMetric;
     var bmi = latest?.Bmi;
     var bmiPosition = bmi.HasValue ? Math.Clamp((bmi.Value - 15) / 20 * 100, 2, 98) : 0;
-    var noWorkouts = new EmptyStateViewModel("bi-lightning-charge", "Your journal is empty", "Log your first workout to start building your training history.");
-    var noMeals = new EmptyStateViewModel("bi-cup-hot", "No meals yet", "Log your first meal to start tracking what you eat.");
+    var noWorkouts = new EmptyStateViewModel("icon-zap", "Your journal is empty", "Log your first workout to start building your training history.");
+    var noMeals = new EmptyStateViewModel("icon-coffee", "No meals yet", "Log your first meal to start tracking what you eat.");
 }
 
 <div class="ht-head">
@@ -18,16 +18,16 @@
         <p class="ht-lede">
             @if (!string.IsNullOrWhiteSpace(Model.Client.FitnessGoal))
             {
-                <span><i class="bi bi-flag me-1"></i>Working towards: <strong class="text-dark">@Model.Client.FitnessGoal</strong></span>
+                <span><i class="icon-flag me-1"></i>Working towards: <strong class="text-dark">@Model.Client.FitnessGoal</strong></span>
             }
 
         </p>
         <p class="small text-muted mb-0">Trainer: <strong>@(Model.Client.TrainerAssignment?.Trainer.Name ?? "Not assigned yet")</strong></p>
     </div>
     <div class="ht-head-actions">
-        <a class="btn btn-line" asp-controller="HealthMetrics" asp-action="Create"><i class="bi bi-plus-lg"></i>Measurements</a>
-        <a class="btn btn-line" asp-controller="MealLogs" asp-action="Create"><i class="bi bi-plus-lg"></i>Meal</a>
-        <a class="btn btn-primary" asp-controller="WorkoutLogs" asp-action="Create"><i class="bi bi-plus-lg"></i>Log workout</a>
+        <a class="btn btn-line" asp-controller="HealthMetrics" asp-action="Create"><i class="icon-plus"></i>Measurements</a>
+        <a class="btn btn-line" asp-controller="MealLogs" asp-action="Create"><i class="icon-plus"></i>Meal</a>
+        <a class="btn btn-primary" asp-controller="WorkoutLogs" asp-action="Create"><i class="icon-plus"></i>Log workout</a>
     </div>
 </div>
 
@@ -40,7 +40,7 @@
                 @if (Model.WeightChangeKg is double change)
                 {
                     <span class="ht-pill on-ink">
-                        <i class="bi @(change <= 0 ? "bi-arrow-down" : "bi-arrow-up")"></i>@Math.Abs(change).ToString("0.0") kg since you started
+                        <i class="@(change <= 0 ? "icon-arrow-down" : "icon-arrow-up")"></i>@Math.Abs(change).ToString("0.0") kg since you started
                     </span>
                 }
             </div>
@@ -75,7 +75,7 @@
 
                 <div class="ht-hero-foot">
                     <span>Height @Model.Client.HeightCm.ToString("0.#") cm &middot; updated @latest.RecordedAt.ToString("d MMM")</span>
-                    <a asp-controller="HealthMetrics" asp-action="Create">New weigh-in <i class="bi bi-arrow-right"></i></a>
+                    <a asp-controller="HealthMetrics" asp-action="Create">New weigh-in <i class="icon-arrow-right"></i></a>
                 </div>
             }
             else
@@ -83,7 +83,7 @@
                 <div class="big">&ndash;</div>
                 <p class="mb-0">Record your first weigh-in to see your BMI here.</p>
                 <div class="ht-hero-foot">
-                    <a asp-controller="HealthMetrics" asp-action="Create">Record weight <i class="bi bi-arrow-right"></i></a>
+                    <a asp-controller="HealthMetrics" asp-action="Create">Record weight <i class="icon-arrow-right"></i></a>
                 </div>
             }
         </section>
@@ -93,25 +93,25 @@
         <div class="row g-3 h-100">
             <div class="col-sm-6">
                 <div class="ht-card ht-tile">
-                    <div class="ht-tile-top"><span class="ht-overline">Workouts this week</span><span class="ht-glyph saffron"><i class="bi bi-lightning-charge"></i></span></div>
+                    <div class="ht-tile-top"><span class="ht-overline">Workouts this week</span><span class="ht-glyph saffron"><i class="icon-zap"></i></span></div>
                     <div class="value">@Model.WorkoutsThisWeek<small>sessions</small></div>
                 </div>
             </div>
             <div class="col-sm-6">
                 <div class="ht-card ht-tile">
-                    <div class="ht-tile-top"><span class="ht-overline">Active minutes</span><span class="ht-glyph slate"><i class="bi bi-stopwatch"></i></span></div>
+                    <div class="ht-tile-top"><span class="ht-overline">Active minutes</span><span class="ht-glyph slate"><i class="icon-timer"></i></span></div>
                     <div class="value">@Model.MinutesThisWeek<small>min</small></div>
                 </div>
             </div>
             <div class="col-sm-6">
                 <div class="ht-card ht-tile">
-                    <div class="ht-tile-top"><span class="ht-overline">Burned this week</span><span class="ht-glyph clay"><i class="bi bi-fire"></i></span></div>
+                    <div class="ht-tile-top"><span class="ht-overline">Burned this week</span><span class="ht-glyph clay"><i class="icon-flame"></i></span></div>
                     <div class="value">@Model.CaloriesBurnedThisWeek.ToString("N0")<small>kcal</small></div>
                 </div>
             </div>
             <div class="col-sm-6">
                 <div class="ht-card ht-tile">
-                    <div class="ht-tile-top"><span class="ht-overline">Eaten today</span><span class="ht-glyph success"><i class="bi bi-cup-hot"></i></span></div>
+                    <div class="ht-tile-top"><span class="ht-overline">Eaten today</span><span class="ht-glyph success"><i class="icon-coffee"></i></span></div>
                     <div class="value">@Model.CaloriesConsumedToday.ToString("N0")<small>kcal</small></div>
                     @if (Model.DietTargetKcal is int target && target > 0)
                     {
@@ -134,7 +134,7 @@
         <section class="ht-card h-100">
             <div class="ht-card-head">
                 <h2>Training journal</h2>
-                <a asp-controller="WorkoutLogs" asp-action="Index">View all <i class="bi bi-arrow-right"></i></a>
+                <a asp-controller="WorkoutLogs" asp-action="Index">View all <i class="icon-arrow-right"></i></a>
             </div>
             @if (Model.RecentWorkouts.Any())
             {
@@ -163,7 +163,7 @@
         <section class="ht-card">
             <div class="ht-card-head">
                 <h2>Upcoming appointments</h2>
-                <a asp-controller="Appointments" asp-action="Index">View all <i class="bi bi-arrow-right"></i></a>
+                <a asp-controller="Appointments" asp-action="Index">View all <i class="icon-arrow-right"></i></a>
             </div>
             @if (Model.UpcomingAppointments.Any())
             {
@@ -209,13 +209,13 @@
                     }
                 </ul>
                 <div class="px-4 pb-3 pt-1">
-                    <a class="small fw-semibold" asp-controller="Notifications" asp-action="Index">Open all notifications <i class="bi bi-arrow-right"></i></a>
+                    <a class="small fw-semibold" asp-controller="Notifications" asp-action="Index">Open all notifications <i class="icon-arrow-right"></i></a>
                 </div>
             }
             else
             {
                 <div class="ht-card-body d-flex align-items-center gap-3">
-                    <span class="ht-glyph success"><i class="bi bi-check2"></i></span>
+                    <span class="ht-glyph success"><i class="icon-check"></i></span>
                     <span class="text-muted">No reminders for today.</span>
                 </div>
                 <div class="px-4 pb-3"><a class="small fw-semibold" asp-controller="Notifications" asp-action="Index">All notifications</a></div>
@@ -225,7 +225,7 @@
         <section class="ht-card flex-grow-1">
             <div class="ht-card-head">
                 <h2>Recent meals</h2>
-                <a asp-controller="MealLogs" asp-action="Index">View all <i class="bi bi-arrow-right"></i></a>
+                <a asp-controller="MealLogs" asp-action="Index">View all <i class="icon-arrow-right"></i></a>
             </div>
             @if (Model.RecentMeals.Any())
             {

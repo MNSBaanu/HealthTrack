@@ -6,7 +6,7 @@
     ViewData["Title"] = "New diet plan";
 }
 
-<a class="ht-back" asp-action="DietPlans"><i class="bi bi-arrow-left"></i>All diet plans</a>
+<a class="ht-back" asp-action="DietPlans"><i class="icon-arrow-left"></i>All diet plans</a>
 
 <div class="ht-head">
     <div>
@@ -74,7 +74,7 @@
                         <div class="ht-schedule-heading">
                             <legend class="mb-0">Meal Recommendations</legend>
                             <button type="button" class="btn btn-sm btn-line" id="addMealBtn">
-                                <i class="bi bi-plus-lg me-1"></i>Add meal
+                                <i class="icon-plus me-1"></i>Add meal
                             </button>
                         </div>
 
@@ -112,7 +112,7 @@
                                                 <input name="Meals[@i].Notes" value="@Model.Meals[i].Notes" class="form-control form-control-sm" placeholder="Optional note" />
                                             </td>
                                             <td class="text-end">
-                                                <button type="button" class="btn btn-sm btn-line-danger remove-meal-btn" title="Remove"><i class="bi bi-trash"></i></button>
+                                                <button type="button" class="btn btn-sm btn-line-danger remove-meal-btn" title="Remove"><i class="icon-trash"></i></button>
                                             </td>
                                         </tr>
                                     }
@@ -122,7 +122,7 @@
                     </fieldset>
 
                     <div class="ht-form-actions">
-                        <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1"></i>Save & assign diet plan</button>
+                        <button type="submit" class="btn btn-primary"><i class="icon-circle-check me-1"></i>Save & assign diet plan</button>
                         <a class="btn btn-line" asp-action="DietPlans">Cancel</a>
                     </div>
                 </form>
@@ -152,7 +152,7 @@
                 <td><input name="Meals[${rowCount}].FoodRecommendations" class="form-control form-control-sm" placeholder="Recommended foods" required /></td>
                 <td><input name="Meals[${rowCount}].ApproximateCalories" type="number" class="form-control form-control-sm" placeholder="kcal" /></td>
                 <td><input name="Meals[${rowCount}].Notes" class="form-control form-control-sm" placeholder="Optional note" /></td>
-                <td class="text-end"><button type="button" class="btn btn-sm btn-line-danger remove-meal-btn" title="Remove"><i class="bi bi-trash"></i></button></td>
+                <td class="text-end"><button type="button" class="btn btn-sm btn-line-danger remove-meal-btn" title="Remove"><i class="icon-trash"></i></button></td>
             `;
             tbody.appendChild(newRow);
         });

@@ -195,15 +195,27 @@ namespace HealthTrack.Controllers
 
             var model = new ProviderRatingsViewModel
             {
-                Providers = rated.GroupBy(a => a.Slot.ProviderId)
+                Providers = rated.Where(a => !a.RatingHidden).GroupBy(a => a.Slot.ProviderId)
                     .Select(g => new ProviderRatingRow(g.First().Slot.Provider.Name, g.First().Slot.Provider.Kind.ToString(),
                         g.First().Slot.Provider.Specialty, Math.Round(g.Average(a => a.Rating!.Value), 1), g.Count()))
                     .OrderByDescending(r => r.Average).ThenByDescending(r => r.Count).ToList(),
-                Recent = rated.OrderByDescending(a => a.RatedAtUtc).Take(10)
-                    .Select(a => new RecentRating(a.Slot.Provider.Name, a.Client.Name, a.Rating!.Value, a.RatingComment, _time.ToLocal(a.RatedAtUtc!.Value)))
+                Recent = rated.OrderByDescending(a => a.RatedAtUtc).Take(50)
+                    .Select(a => new RecentRating(a.Id, a.Slot.Provider.Name, a.Client.Name, a.Rating!.Value, a.RatingComment, _time.ToLocal(a.RatedAtUtc!.Value), a.RatingHidden))
                     .ToList()
             };
             return View(model);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ToggleRating(int id)
+        {
+            var appointment = await Context.Appointments.SingleOrDefaultAsync(a => a.Id == id && a.Rating != null);
+            if (appointment == null) return NotFound();
+            appointment.RatingHidden = !appointment.RatingHidden;
+            await Context.SaveChangesAsync();
+            await AuditAsync(appointment.RatingHidden ? "Hidden" : "Restored", "Rating", appointment.ClientId, $"Appointment {id}");
+            TempData["Success"] = appointment.RatingHidden ? "Rating hidden. It no longer counts towards the average." : "Rating restored.";
+            return RedirectToAction(nameof(Ratings));
         }
 
         [HttpGet]

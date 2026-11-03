@@ -15,7 +15,7 @@
     {
         <div class="ht-head-actions">
             <form asp-action="MarkAllAsRead" method="post">
-                <button type="submit" class="btn btn-line"><i class="bi bi-check2-all"></i>Mark all as read</button>
+                <button type="submit" class="btn btn-line"><i class="icon-check-check"></i>Mark all as read</button>
             </form>
         </div>
     }
@@ -80,11 +80,11 @@
                         @if (!note.IsRead)
                         {
                             <form asp-action="MarkAsRead" asp-route-id="@note.NotificationId" method="post">
-                                <button type="submit" class="btn-icon" title="Mark as read" aria-label="Mark as read"><i class="bi bi-check2"></i></button>
+                                <button type="submit" class="btn-icon" title="Mark as read" aria-label="Mark as read"><i class="icon-check"></i></button>
                             </form>
                         }
                         <form asp-action="Delete" asp-route-id="@note.NotificationId" method="post">
-                            <button type="submit" class="btn-icon danger" title="Delete" aria-label="Delete notification"><i class="bi bi-x-lg"></i></button>
+                            <button type="submit" class="btn-icon danger" title="Delete" aria-label="Delete notification"><i class="icon-x"></i></button>
                         </form>
                     </div>
                 </li>
@@ -94,7 +94,7 @@
     else
     {
         <div class="ht-empty">
-            <span class="ht-glyph success"><i class="bi bi-bell-slash"></i></span>
+            <span class="ht-glyph success"><i class="icon-bell-off"></i></span>
             <h3>Nothing here yet</h3>
             <p>Reminders about workouts, meals and messages from the HealthTrack team will appear here.</p>
         </div>

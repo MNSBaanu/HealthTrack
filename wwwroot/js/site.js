@@ -188,7 +188,7 @@ document.querySelectorAll('form.ht-filter, form[data-autofilter], form[data-jour
         if (filterable) {
             const bar = document.createElement('div');
             bar.className = 'ht-card ht-filter mb-3';
-            bar.innerHTML = '<div class="ht-input-icon flex-grow-1"><i class="bi bi-search"></i><input type="search" class="form-control" placeholder="Search" aria-label="Search list" /></div>';
+            bar.innerHTML = '<div class="ht-input-icon flex-grow-1"><i class="icon-search"></i><input type="search" class="form-control" placeholder="Search" aria-label="Search list" /></div>';
             const search = bar.querySelector('input');
             const selects = [];
             headers.forEach((title, column) => {

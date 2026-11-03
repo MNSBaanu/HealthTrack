@@ -1,6 +1,6 @@
 @model RescheduleRequestPageViewModel
 @{ ViewData["Title"] = "Request to reschedule"; }
-<a class="ht-back" asp-action="Details" asp-route-id="@Model.Appointment.Id"><i class="bi bi-arrow-left"></i>Back to appointment</a>
+<a class="ht-back" asp-action="Details" asp-route-id="@Model.Appointment.Id"><i class="icon-arrow-left"></i>Back to appointment</a>
 <div class="ht-head"><div><h1 class="ht-title">Request to reschedule</h1><p class="ht-lede">Your trainer must accept this request before you can choose a new time.</p></div></div>
 <div class="row"><div class="col-lg-8"><section class="ht-card"><div class="ht-card-body">
     <dl class="row mb-3">
@@ -16,7 +16,7 @@
             <span asp-validation-for="Reason" class="text-danger small"></span>
         </div>
         <div class="d-flex gap-2">
-            <button type="submit" class="btn btn-primary"><i class="bi bi-send me-1"></i>Send request</button>
+            <button type="submit" class="btn btn-primary"><i class="icon-send me-1"></i>Send request</button>
             <a asp-action="Details" asp-route-id="@Model.Appointment.Id" class="btn btn-line">Cancel</a>
         </div>
     </form>

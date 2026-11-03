@@ -4,7 +4,7 @@
     ViewData["Title"] = "Edit measurement";
 }
 
-<a class="ht-back" asp-action="Index"><i class="bi bi-arrow-left"></i>Health metrics</a>
+<a class="ht-back" asp-action="Index"><i class="icon-arrow-left"></i>Health metrics</a>
 <div class="ht-head">
     <div>
         <h1 class="ht-title">Edit measurement</h1>
@@ -18,7 +18,7 @@
                 <form asp-action="Edit" asp-route-id="@Model.MetricId" method="post" novalidate>
                     <partial name="_Form" model="Model" />
                     <div class="ht-form-actions">
-                        <button type="submit" class="btn btn-primary"><i class="bi bi-check2"></i>Save changes</button>
+                        <button type="submit" class="btn btn-primary"><i class="icon-check"></i>Save changes</button>
                         <a class="btn btn-line" asp-action="Index">Cancel</a>
                     </div>
                 </form>

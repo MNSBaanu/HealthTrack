@@ -1,7 +1,7 @@
 @model ProviderRatingsViewModel
 @{ ViewData["Title"] = "Consultation ratings"; }
 
-<a class="ht-back" asp-action="Reports"><i class="bi bi-arrow-left"></i>Reports</a>
+<a class="ht-back" asp-action="Reports"><i class="icon-arrow-left"></i>Reports</a>
 <div class="ht-head">
     <div>
         <h1 class="ht-title">Consultation ratings</h1>
@@ -27,7 +27,7 @@ else
                             <td>@row.Name<div class="small text-muted">@row.Specialty</div></td>
                             <td><span class="ht-pill">@row.Kind</span></td>
                             <td>
-                                @for (var star = 1; star <= 5; star++) { <i class="bi @(star <= Math.Round(row.Average) ? "bi-star-fill" : "bi-star") text-warning"></i> }
+                                @for (var star = 1; star <= 5; star++) { <i class="@(star <= Math.Round(row.Average) ? "icon-star" : "icon-star opacity-25") text-warning"></i> }
                                 <strong class="ms-1">@row.Average.ToString("0.0")</strong>
                             </td>
                             <td>@row.Count</td>
@@ -46,7 +46,7 @@ else
                 <article class="border-bottom pb-3 mb-3">
                     <div class="d-flex justify-content-between gap-2">
                         <strong>@rating.ProviderName</strong>
-                        <span>@for (var star = 1; star <= 5; star++) { <i class="bi @(star <= rating.Rating ? "bi-star-fill" : "bi-star") text-warning"></i> }</span>
+                        <span>@for (var star = 1; star <= 5; star++) { <i class="@(star <= rating.Rating ? "icon-star" : "icon-star opacity-25") text-warning"></i> }</span>
                     </div>
                     <div class="small text-muted">@rating.ClientName · @rating.RatedAt.ToString("d MMM yyyy")</div>
                     @if (!string.IsNullOrWhiteSpace(rating.Comment)) { <p class="mb-0 mt-1">@rating.Comment</p> }

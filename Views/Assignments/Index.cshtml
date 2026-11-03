@@ -2,8 +2,8 @@
 @{ ViewData["Title"] = "Trainer assignments"; }
 <div class="ht-head"><div><h1 class="ht-title">Trainer assignments</h1><p class="ht-lede">Manage the current Trainer for each Client.</p></div></div>
 <form asp-action="Index" method="get" class="ht-card ht-filter mb-3">
-    <input name="search" value="@Model.Search" type="search" class="form-control" placeholder="Search Client or Trainer" aria-label="Search assignments" />
-    <label class="text-nowrap"><input name="unassignedOnly" type="checkbox" value="true" checked="@Model.UnassignedOnly" /> Unassigned only</label>
+    <input name="search" value="@Model.Search" type="search" class="form-control w-auto flex-grow-1" placeholder="Search Client or Trainer" aria-label="Search assignments" />
+    <label class="text-nowrap mb-0"><input name="unassignedOnly" type="checkbox" value="true" checked="@Model.UnassignedOnly" /> Unassigned only</label>
     <a class="btn btn-line" asp-action="Index">Clear</a>
 </form>
 <section class="ht-card">

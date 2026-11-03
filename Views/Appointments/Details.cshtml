@@ -1,7 +1,7 @@
 @model AppointmentViewModel
 @{
     ViewData["FormPage"] = "standard"; ViewData["Title"] = "Appointment details"; }
-<a class="ht-back" asp-action="Index"><i class="bi bi-arrow-left"></i>My appointments</a>
+<a class="ht-back" asp-action="Index"><i class="icon-arrow-left"></i>My appointments</a>
 <div class="ht-head"><div><h1 class="ht-title">Appointment details</h1><p class="ht-lede">Current consultation information.</p></div></div>
 <div class="row"><div class="col-lg-8"><section class="ht-card"><div class="ht-card-body">
     <dl class="row mb-0">
@@ -67,13 +67,13 @@
             @if (Model.CanReschedule)
             {
                 <a asp-action="Reschedule" asp-route-appointmentId="@Model.Id" class="btn btn-primary">
-                    <i class="bi bi-calendar-event me-1"></i>Choose a new time
+                    <i class="icon-calendar-days me-1"></i>Choose a new time
                 </a>
             }
             else
             {
                 <a asp-action="RequestReschedule" asp-route-appointmentId="@Model.Id" class="btn btn-line">
-                    <i class="bi bi-arrow-repeat me-1"></i>Request to reschedule
+                    <i class="icon-refresh-cw me-1"></i>Request to reschedule
                 </a>
             }
         </div>
@@ -84,11 +84,11 @@
     <div class="ht-card-footer p-3 border-top">
         <div class="d-flex gap-2">
             <a asp-action="Reschedule" asp-route-appointmentId="@Model.Id" class="btn btn-primary">
-                <i class="bi bi-calendar-event me-1"></i>Reschedule
+                <i class="icon-calendar-days me-1"></i>Reschedule
             </a>
             <form asp-action="Cancel" method="post" asp-route-appointmentId="@Model.Id" class="d-inline" data-confirm="Cancel this appointment request?">
                 <button type="submit" class="btn btn-line-danger">
-                    <i class="bi bi-x-lg me-1"></i>Cancel request
+                    <i class="icon-x me-1"></i>Cancel request
                 </button>
             </form>
         </div>
@@ -110,7 +110,7 @@
                 <label class="form-label" for="message">Message (optional)</label>
                 <textarea class="form-control" id="message" name="message" rows="3" maxlength="500"></textarea>
             </div>
-            <button type="submit" class="btn btn-primary"><i class="bi bi-send me-1"></i>Send request</button>
+            <button type="submit" class="btn btn-primary"><i class="icon-send me-1"></i>Send request</button>
         </form>
     </div>
 }
@@ -119,7 +119,7 @@
     <div class="ht-card-footer p-3 border-top">
         <h2 class="h6">Your rating</h2>
         <p class="mb-1" aria-label="@givenRating out of 5">
-            @for (var star = 1; star <= 5; star++) { <i class="bi @(star <= givenRating ? "bi-star-fill" : "bi-star") text-warning"></i> }
+            @for (var star = 1; star <= 5; star++) { <i class="@(star <= givenRating ? "icon-star" : "icon-star opacity-25") text-warning"></i> }
         </p>
         @if (!string.IsNullOrWhiteSpace(ViewData["RatingComment"] as string)) { <p class="small text-muted mb-0">@ViewData["RatingComment"]</p> }
     </div>
@@ -144,7 +144,7 @@ else if (ViewData["CanRate"] is true)
                 <label class="form-label" for="ratingComment">Comment (optional)</label>
                 <textarea class="form-control" id="ratingComment" name="comment" rows="2" maxlength="500"></textarea>
             </div>
-            <button type="submit" class="btn btn-primary"><i class="bi bi-star me-1"></i>Submit rating</button>
+            <button type="submit" class="btn btn-primary"><i class="icon-star me-1"></i>Submit rating</button>
         </form>
     </div>
 }

@@ -6,7 +6,7 @@
     var change = latest != null && first != null && latest != first ? Math.Round(latest.WeightKg - first.WeightKg, 1) : (double?)null;
 }
 
-<a class="ht-back" asp-action="Users"><i class="bi bi-arrow-left"></i>All users</a>
+<a class="ht-back" asp-action="Users"><i class="icon-arrow-left"></i>All users</a>
 
 <section class="ht-card ink mb-3">
     <div class="ht-banner">
@@ -16,11 +16,11 @@
             <h2>@Model.Name</h2>
             <div class="ht-on-ink-muted">@Model.Email</div>
             <div class="facts">
-                <span class="ht-pill on-ink"><i class="bi bi-calendar3"></i>Joined @Model.CreatedAt.ToString("d MMM yyyy")</span>
-                <span class="ht-pill on-ink"><i class="bi bi-clock-history"></i>Last active @(Model.LastLoginAt?.ToString("d MMM, HH:mm") ?? "never")</span>
+                <span class="ht-pill on-ink"><i class="icon-calendar"></i>Joined @Model.CreatedAt.ToString("d MMM yyyy")</span>
+                <span class="ht-pill on-ink"><i class="icon-history"></i>Last active @(Model.LastLoginAt?.ToString("d MMM, HH:mm") ?? "never")</span>
                 @if (!string.IsNullOrWhiteSpace(Model.FitnessGoal))
                 {
-                    <span class="ht-pill saffron"><i class="bi bi-flag"></i>@Model.FitnessGoal</span>
+                    <span class="ht-pill saffron"><i class="icon-flag"></i>@Model.FitnessGoal</span>
                 }
             </div>
         </div>

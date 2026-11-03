@@ -9,8 +9,8 @@
         <h1 class="ht-title">My assigned clients</h1>
     </div>
     <div class="ht-head-actions">
-        <a class="btn btn-primary" asp-controller="TrainerPlans" asp-action="CreateWorkoutPlan"><i class="bi bi-plus-lg"></i>Prescribe workout</a>
-        <a class="btn btn-line" asp-controller="TrainerPlans" asp-action="CreateDietPlan"><i class="bi bi-plus-lg"></i>Prescribe diet</a>
+        <a class="btn btn-primary" asp-controller="TrainerPlans" asp-action="CreateWorkoutPlan"><i class="icon-plus"></i>Prescribe workout</a>
+        <a class="btn btn-line" asp-controller="TrainerPlans" asp-action="CreateDietPlan"><i class="icon-plus"></i>Prescribe diet</a>
     </div>
 </div>
 
@@ -69,13 +69,13 @@
                                         </td>
                                         <td class="text-end text-nowrap">
                                             <a asp-action="ClientDetails" asp-route-id="@client.ClientId" class="btn btn-sm btn-line">
-                                                <i class="bi bi-person-lines-fill me-1"></i>Inspect
+                                                <i class="icon-contact me-1"></i>Inspect
                                             </a>
                                             <a asp-controller="TrainerPlans" asp-action="CreateWorkoutPlan" asp-route-clientId="@client.ClientId" class="btn btn-sm btn-line ms-1" title="Prescribe Workout">
-                                                <i class="bi bi-lightning-charge"></i>
+                                                <i class="icon-zap"></i>
                                             </a>
                                             <a asp-controller="TrainerPlans" asp-action="CreateDietPlan" asp-route-clientId="@client.ClientId" class="btn btn-sm btn-line ms-1" title="Prescribe Diet">
-                                                <i class="bi bi-cup-hot"></i>
+                                                <i class="icon-coffee"></i>
                                             </a>
                                         </td>
                                     </tr>
@@ -87,7 +87,7 @@
                 else
                 {
                     <div class="p-4">
-                        <partial name="_EmptyState" model='new EmptyStateViewModel("bi bi-people", "No clients currently assigned", "When an administrator assigns clients to you, they will appear here with full health history.")' />
+                        <partial name="_EmptyState" model='new EmptyStateViewModel("icon-users", "No clients currently assigned", "When an administrator assigns clients to you, they will appear here with full health history.")' />
                     </div>
                 }
             </div>

@@ -6,21 +6,35 @@ namespace HealthTrack.Services;
 
 public class TemporaryPasswordMiddleware(RequestDelegate next)
 {
-    public async Task InvokeAsync(HttpContext context, UserManager<Person> users, TimeProvider clock)
+    public async Task InvokeAsync(HttpContext context, UserManager<Person> users, TimeProvider clock, HealthTrack.Models.Data.HealthTrackDbContext db)
     {
         if (context.User.Identity?.IsAuthenticated != true) { await next(context); return; }
         var user = await users.GetUserAsync(context.User);
-        if (user?.MustChangePassword != true) { await next(context); return; }
+        if (user == null) { await next(context); return; }
+        if (!user.MustChangePassword)
+        {
+            if (user is Admin && !user.TwoFactorEnabled && !IsPath(context, "/Account/EnableAuthenticator", "/Account/Logout")
+                && (await SystemSettings.LoadAsync(db)).RequireAdminTwoFactor)
+            {
+                context.Response.Redirect("/Account/EnableAuthenticator");
+                return;
+            }
+            await next(context);
+            return;
+        }
         if (TemporaryPasswordPolicy.IsExpired(user, clock.GetUtcNow().UtcDateTime))
         {
             await context.SignOutAsync(IdentityConstants.ApplicationScheme);
             context.Response.Redirect("/Account/Login?temporaryPasswordExpired=true");
             return;
         }
-        var path = context.Request.Path.Value?.TrimEnd('/');
-        if (string.Equals(path, "/Account/ChangePassword", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(path, "/Account/Logout", StringComparison.OrdinalIgnoreCase))
-        { await next(context); return; }
+        if (IsPath(context, "/Account/ChangePassword", "/Account/Logout")) { await next(context); return; }
         context.Response.Redirect("/Account/ChangePassword");
+    }
+
+    private static bool IsPath(HttpContext context, params string[] paths)
+    {
+        var path = context.Request.Path.Value?.TrimEnd('/');
+        return paths.Any(p => string.Equals(path, p, StringComparison.OrdinalIgnoreCase));
     }
 }

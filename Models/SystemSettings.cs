@@ -27,6 +27,9 @@ namespace HealthTrack.Models
         [Display(Name = "Lockout length (minutes)")]
         public int LockoutMinutes { get; set; } = 10;
 
+        [Display(Name = "Require two-factor sign-in for admins")]
+        public bool RequireAdminTwoFactor { get; set; }
+
         [Range(1, 5000)]
         [Display(Name = "Max rows per import")]
         public int ImportMaxRows { get; set; } = 500;

@@ -283,6 +283,10 @@ namespace HealthTrack.Controllers
             {
                 ModelState.AddModelError(nameof(model.BannerMessage), "Enter a message to show the banner.");
             }
+            if (model.RequireAdminTwoFactor && (await UserManager.GetUserAsync(User))?.TwoFactorEnabled != true)
+            {
+                ModelState.AddModelError(nameof(model.RequireAdminTwoFactor), "Set up two-factor sign-in for your own account (Account page) before requiring it for all admins.");
+            }
             if (!ModelState.IsValid)
             {
                 ViewData["MailConfigured"] = HttpContext.RequestServices.GetRequiredService<IMailSender>().IsConfigured;
@@ -300,6 +304,7 @@ namespace HealthTrack.Controllers
             settings.TemporaryPasswordHours = model.TemporaryPasswordHours;
             settings.MaxFailedAccessAttempts = model.MaxFailedAccessAttempts;
             settings.LockoutMinutes = model.LockoutMinutes;
+            settings.RequireAdminTwoFactor = model.RequireAdminTwoFactor;
             settings.ImportMaxRows = model.ImportMaxRows;
             settings.WeeklyReportEnabled = model.WeeklyReportEnabled;
             await Context.SaveChangesAsync();

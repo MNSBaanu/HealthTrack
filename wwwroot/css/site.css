@@ -2062,3 +2062,41 @@ tr[hidden], li[hidden], article[hidden] {
 .ht-remote-modal .ht-form-actions {
   margin-bottom: 0;
 }
+
+.ht-steps {
+  padding-left: 1.2rem;
+}
+
+.ht-steps li + li {
+  margin-top: 0.35rem;
+}
+
+.ht-qr {
+  border: 1px solid var(--ht-line);
+  border-radius: 0.5rem;
+  background: #fff;
+}
+
+.ht-setup-key {
+  font-size: 1.05rem;
+  letter-spacing: 0.05em;
+  word-break: break-all;
+}
+
+.ht-recovery-codes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+  gap: 0.5rem;
+  padding: 0;
+  margin: 0 0 1.5rem;
+  list-style: none;
+}
+
+.ht-recovery-codes code {
+  display: block;
+  padding: 0.45rem 0.6rem;
+  border: 1px dashed var(--ht-line-strong);
+  border-radius: 0.4rem;
+  text-align: center;
+  font-size: 0.95rem;
+}

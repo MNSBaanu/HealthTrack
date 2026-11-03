@@ -775,6 +775,9 @@ namespace HealthTrack.Migrations
                     b.Property<int>("MaxFailedAccessAttempts")
                         .HasColumnType("int");
 
+                    b.Property<bool>("RequireAdminTwoFactor")
+                        .HasColumnType("bit");
+
                     b.Property<int>("TemporaryPasswordHours")
                         .HasColumnType("int");
 

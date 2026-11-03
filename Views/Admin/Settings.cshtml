@@ -51,6 +51,12 @@
                                 <span asp-validation-for="TemporaryPasswordHours" class="text-danger"></span>
                             </div>
                         </div>
+                        <div class="form-check form-switch mt-3">
+                            <input asp-for="RequireAdminTwoFactor" class="form-check-input" role="switch" />
+                            <label asp-for="RequireAdminTwoFactor" class="form-check-label"></label>
+                        </div>
+                        <span asp-validation-for="RequireAdminTwoFactor" class="text-danger d-block"></span>
+                        <div class="form-text">Admins without it are asked to set up an authenticator app before they can continue. Set it up for your own account first from Account.</div>
                     </fieldset>
 
                     <fieldset class="ht-fieldset">

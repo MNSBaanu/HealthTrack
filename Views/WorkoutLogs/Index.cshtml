@@ -1,7 +1,7 @@
 @model List<WorkoutLog>
 @{
     ViewData["Title"] = "Workouts";
-    var emptyState = new EmptyStateViewModel("bi-lightning-charge", "No workouts yet", "Every session you log builds your training history and weekly totals.");
+    var emptyState = new EmptyStateViewModel("icon-zap", "No workouts yet", "Every session you log builds your training history and weekly totals.");
 }
 
 <div class="ht-head">
@@ -10,7 +10,7 @@
         <p class="ht-lede"><a asp-controller="ClientPlans" asp-action="Index">View assigned workout plans</a></p>
     </div>
     <div class="ht-head-actions">
-        <a class="btn btn-primary" asp-action="Create"><i class="bi bi-plus-lg"></i>Log workout</a>
+        <a class="btn btn-primary" asp-action="Create"><i class="icon-plus"></i>Log workout</a>
     </div>
 </div>
 
@@ -51,9 +51,9 @@
                     </div>
                     <div class="figure">@workout.CaloriesBurned.ToString("N0")<small>kcal</small></div>
                     <div class="ht-row-actions">
-                        <a class="btn-icon" asp-action="Create" asp-route-repeatId="@workout.WorkoutLogId" title="Repeat as a new workout" aria-label="Repeat workout"><i class="bi bi-copy"></i></a>
-                        <a class="btn-icon" asp-action="Edit" asp-route-id="@workout.WorkoutLogId" title="Edit" aria-label="Edit workout"><i class="bi bi-pencil"></i></a>
-                        <a class="btn-icon danger" asp-action="Delete" asp-route-id="@workout.WorkoutLogId" title="Delete" aria-label="Delete workout"><i class="bi bi-trash3"></i></a>
+                        <a class="btn-icon" asp-action="Create" asp-route-repeatId="@workout.WorkoutLogId" title="Repeat as a new workout" aria-label="Repeat workout"><i class="icon-copy"></i></a>
+                        <a class="btn-icon" asp-action="Edit" asp-route-id="@workout.WorkoutLogId" title="Edit" aria-label="Edit workout"><i class="icon-pencil"></i></a>
+                        <a class="btn-icon danger" asp-action="Delete" asp-route-id="@workout.WorkoutLogId" title="Delete" aria-label="Delete workout"><i class="icon-trash-2"></i></a>
                     </div>
                 </li>
             }

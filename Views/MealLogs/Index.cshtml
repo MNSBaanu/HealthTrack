@@ -2,7 +2,7 @@
 @{
     ViewData["Title"] = "Meals";
     var today = DateTime.Today;
-    var emptyState = new EmptyStateViewModel("bi-cup-hot", "No meals logged yet", "Log what you eat to see your daily calories next to the calories you burn.");
+    var emptyState = new EmptyStateViewModel("icon-coffee", "No meals logged yet", "Log what you eat to see your daily calories next to the calories you burn.");
 }
 
 <div class="ht-head">
@@ -11,7 +11,7 @@
         <p class="ht-lede"><a asp-controller="ClientPlans" asp-action="Index">View assigned meal plans</a></p>
     </div>
     <div class="ht-head-actions">
-        <a class="btn btn-primary" asp-action="Create"><i class="bi bi-plus-lg"></i>Log meal</a>
+        <a class="btn btn-primary" asp-action="Create"><i class="icon-plus"></i>Log meal</a>
     </div>
 </div>
 
@@ -64,9 +64,9 @@
                             <td data-label="Calories" class="num"><span>@meal.Calories.ToString("N0") <small>kcal</small></span></td>
                             <td data-label="Actions">
                                 <div class="ht-row-actions">
-                                    <a class="btn-icon" asp-action="Create" asp-route-repeatId="@meal.MealLogId" title="Repeat as a new meal" aria-label="Repeat meal"><i class="bi bi-copy"></i></a>
-                                    <a class="btn-icon" asp-action="Edit" asp-route-id="@meal.MealLogId" title="Edit" aria-label="Edit meal"><i class="bi bi-pencil"></i></a>
-                                    <a class="btn-icon danger" asp-action="Delete" asp-route-id="@meal.MealLogId" title="Delete" aria-label="Delete meal"><i class="bi bi-trash3"></i></a>
+                                    <a class="btn-icon" asp-action="Create" asp-route-repeatId="@meal.MealLogId" title="Repeat as a new meal" aria-label="Repeat meal"><i class="icon-copy"></i></a>
+                                    <a class="btn-icon" asp-action="Edit" asp-route-id="@meal.MealLogId" title="Edit" aria-label="Edit meal"><i class="icon-pencil"></i></a>
+                                    <a class="btn-icon danger" asp-action="Delete" asp-route-id="@meal.MealLogId" title="Delete" aria-label="Delete meal"><i class="icon-trash-2"></i></a>
                                 </div>
                             </td>
                         </tr>

@@ -2,7 +2,7 @@
 @{ ViewData["Title"] = "My appointments"; }
 <div class="ht-head">
     <div><h1 class="ht-title">My appointments</h1><p class="ht-lede">Consultation requests and their current status. Times shown in @Model.TimeZoneLabel.</p></div>
-    <a class="btn btn-primary" asp-action="Book"><i class="bi bi-calendar-plus"></i>Book a consultation</a>
+    <a class="btn btn-primary" asp-action="Book"><i class="icon-calendar-plus"></i>Book a consultation</a>
 </div>
 @{
     var upcoming = Model.Appointments.Where(a => a.Status is AppointmentStatus.Pending or AppointmentStatus.Approved).OrderBy(a => a.Start).ToList();

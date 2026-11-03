@@ -3,7 +3,7 @@
 @model ProviderSlotsViewModel
 @{
     ViewData["FormPage"] = "standard"; ViewData["Title"] = $"{Model.Provider.Name} availability"; }
-<a class="ht-back" asp-action="Providers"><i class="bi bi-arrow-left"></i>Healthcare professionals</a>
+<a class="ht-back" asp-action="Providers"><i class="icon-arrow-left"></i>Healthcare professionals</a>
 <div class="ht-head"><div><h1 class="ht-title">@Model.Provider.Name</h1><p class="text-muted mb-0">@(Model.Provider.Specialty ?? "Healthcare professional") · Times in @Model.TimeZoneLabel</p></div></div>
 <div class="row g-3">
     <div class="col-lg-5">
@@ -23,7 +23,7 @@
                         <span asp-validation-for="Form.EndLocal" class="text-danger small"></span>
                     </div>
                     <div class="ht-form-actions">
-                        <button type="submit" class="btn btn-primary"><i class="bi bi-plus-lg"></i>Add slot</button>
+                        <button type="submit" class="btn btn-primary"><i class="icon-plus"></i>Add slot</button>
                     </div>
                 </form>
             </div>

@@ -4,10 +4,11 @@
     ViewData["Title"] = "Users";
     var search = ViewData["Search"] as string;
     var role = ViewData["Role"] as string;
+    var status = ViewData["Status"] as string;
     var providers = ViewData["Providers"] as List<ConsultationProvider> ?? new();
     var total = Model.Count + providers.Count;
     var currentUserId = UserManager.GetUserId(User);
-    var isFiltered = !string.IsNullOrWhiteSpace(search) || !string.IsNullOrWhiteSpace(role);
+    var isFiltered = !string.IsNullOrWhiteSpace(search) || !string.IsNullOrWhiteSpace(role) || !string.IsNullOrWhiteSpace(status);
 }
 
 <div class="ht-head">
@@ -15,16 +16,16 @@
         <h1 class="ht-title">Users</h1>
     </div>
     <div class="ht-head-actions">
-        <a class="btn btn-line" asp-action="ImportUsers"><i class="bi bi-file-earmark-arrow-up"></i>Import CSV</a>
-        <a class="btn btn-line" asp-action="CreateProvider"><i class="bi bi-hospital"></i>New provider</a>
-        <a class="btn btn-primary" asp-action="CreateTrainer"><i class="bi bi-person-plus"></i>New trainer</a>
-        <a class="btn btn-line" asp-action="CreateAdmin"><i class="bi bi-shield-plus"></i>New user</a>
+        <button type="button" class="btn btn-line" data-bs-toggle="modal" data-bs-target="#importUsersModal"><i class="icon-file-up"></i>Import CSV</button>
+        <a class="btn btn-line" asp-action="CreateProvider"><i class="icon-hospital"></i>New provider</a>
+        <a class="btn btn-primary" asp-action="CreateTrainer"><i class="icon-user-plus"></i>New trainer</a>
+        <a class="btn btn-line" asp-action="CreateAdmin"><i class="icon-shield-plus"></i>New user</a>
     </div>
 </div>
 
 <form asp-action="Users" method="get" class="ht-card ht-filter mb-3">
     <div class="ht-input-icon flex-grow-1">
-        <i class="bi bi-search"></i>
+        <i class="icon-search"></i>
         <input type="search" name="search" value="@search" class="form-control" placeholder="Search by name or email" aria-label="Search users" />
     </div>
     <select name="role" class="form-select" aria-label="Filter by role">
@@ -33,6 +34,12 @@
         <option value="@AppRoles.Admin" selected="@(role == AppRoles.Admin)">Admins</option>
         <option value="@AppRoles.Trainer" selected="@(role == AppRoles.Trainer)">Trainers</option>
         <option value="@HealthTrack.Controllers.AdminController.ProviderRole" selected="@(role == HealthTrack.Controllers.AdminController.ProviderRole)">Providers</option>
+    </select>
+    <select name="status" class="form-select" aria-label="Filter by status">
+        <option value="">All statuses</option>
+        <option value="active" selected="@(status == "active")">Active</option>
+        <option value="locked" selected="@(status == "locked")">Locked</option>
+        <option value="off" selected="@(status == "off")">Turned off</option>
     </select>
     @if (isFiltered)
     {
@@ -64,7 +71,7 @@
                                 <div class="ht-member">
                                     <span class="ht-monogram @(isSelf ? "" : "muted")">@Person.GetInitials(user.Name)</span>
                                     <div>
-                                        <div class="name">@user.Name @if (isSelf) { <span class="ht-pill ms-1">You</span> }</div>
+                                        <div class="name">@if (user.Role == AppRoles.Client) { <a asp-action="ClientDetails" asp-route-id="@user.Id">@user.Name</a> } else if (user.Role == AppRoles.Trainer) { <a asp-action="TrainerDetails" asp-route-id="@user.Id">@user.Name</a> } else { @user.Name } @if (isSelf) { <span class="ht-pill ms-1">You</span> }</div>
                                         <span class="sub">@user.Email</span>
                                     </div>
                                 </div>
@@ -74,29 +81,24 @@
                             <td class="text-nowrap">@(user.LastLoginAt?.ToString("d MMM yyyy, HH:mm") ?? "Never")</td>
                             <td><partial name="_StatusPill" model="user.IsLocked" /></td>
                             <td>
-                                <div class="ht-row-actions">
-                                    <a class="btn-icon" asp-action="LoginHistory" asp-route-id="@user.Id" title="Login history" aria-label="Login history for @user.Name"><i class="bi bi-clock-history"></i></a>
+                                <div class="ht-row-actions plain">
+                                    <a class="btn-icon" asp-action="LoginHistory" asp-route-id="@user.Id" title="Login history" aria-label="Login history for @user.Name"><i class="icon-history"></i></a>
                                     @if (user.Role == AppRoles.Client)
                                     {
-                                        <a class="btn-icon" asp-action="ClientDetails" asp-route-id="@user.Id" title="View client" aria-label="View @user.Name"><i class="bi bi-eye"></i></a>
-                                        <a class="btn-icon" asp-controller="Assignments" asp-action="Edit" asp-route-id="@user.Id" title="Manage Trainer assignment" aria-label="Manage Trainer for @user.Name"><i class="bi bi-person-check"></i></a>
-                                    }
-                                    @if (user.Role == AppRoles.Trainer)
-                                    {
-                                        <a class="btn-icon" asp-action="TrainerDetails" asp-route-id="@user.Id" title="View trainer" aria-label="View @user.Name"><i class="bi bi-eye"></i></a>
+                                        <a class="btn-icon" asp-controller="Assignments" asp-action="Edit" asp-route-id="@user.Id" title="Manage Trainer assignment" aria-label="Manage Trainer for @user.Name"><i class="icon-user-check"></i></a>
                                     }
                                     @if (!isSelf)
                                     {
-                                        <a class="btn-icon" asp-action="ResetPassword" asp-route-id="@user.Id" title="Reset temporary password" aria-label="Reset temporary password for @user.Name"><i class="bi bi-key"></i></a>
+                                        <a class="btn-icon" asp-action="ResetPassword" asp-route-id="@user.Id" title="Reset temporary password" aria-label="Reset temporary password for @user.Name"><i class="icon-key-round"></i></a>
                                         <form asp-action="ToggleLock" asp-route-id="@user.Id" method="post"
                                               data-confirm="@(user.IsLocked ? $"Unlock {user.Name}'s account?" : $"Lock {user.Name}'s account? They will be signed out and unable to sign in.")">
                                             <button type="submit" class="btn-icon" title="@(user.IsLocked ? "Unlock" : "Lock")" aria-label="@(user.IsLocked ? "Unlock" : "Lock") @user.Name">
-                                                <i class="bi @(user.IsLocked ? "bi-unlock" : "bi-lock")"></i>
+                                                <i class="@(user.IsLocked ? "icon-lock-open" : "icon-lock")"></i>
                                             </button>
                                         </form>
                                         <form asp-action="DeleteUser" asp-route-id="@user.Id" method="post"
                                               data-confirm="Permanently delete @user.Name and all of their records? This can't be undone.">
-                                            <button type="submit" class="btn-icon danger" title="Delete" aria-label="Delete @user.Name"><i class="bi bi-trash3"></i></button>
+                                            <button type="submit" class="btn-icon danger" title="Delete" aria-label="Delete @user.Name"><i class="icon-trash-2"></i></button>
                                         </form>
                                     }
                                 </div>
@@ -121,19 +123,19 @@
                             <td>
                                 @if (provider.IsActive)
                                 {
-                                    <span class="ht-pill success"><i class="bi bi-circle-fill ht-status-dot"></i>Active</span>
+                                    <span class="ht-pill success"><i class="icon-circle ht-status-dot"></i>Active</span>
                                 }
                                 else
                                 {
-                                    <span class="ht-pill"><i class="bi bi-toggle-off"></i>Turned off</span>
+                                    <span class="ht-pill"><i class="icon-toggle-left"></i>Turned off</span>
                                 }
                             </td>
                             <td>
-                                <div class="ht-row-actions">
-                                    <a class="btn-icon" asp-action="ProviderSlots" asp-route-id="@provider.Id" title="Availability" aria-label="Availability for @provider.Name"><i class="bi bi-calendar-plus"></i></a>
-                                    <a class="btn-icon" asp-action="EditProvider" asp-route-id="@provider.Id" title="Edit" aria-label="Edit @provider.Name"><i class="bi bi-pencil"></i></a>
+                                <div class="ht-row-actions plain">
+                                    <a class="btn-icon" asp-action="ProviderSlots" asp-route-id="@provider.Id" title="Availability" aria-label="Availability for @provider.Name"><i class="icon-calendar-plus"></i></a>
+                                    <a class="btn-icon" asp-action="EditProvider" asp-route-id="@provider.Id" title="Edit" aria-label="Edit @provider.Name"><i class="icon-pencil"></i></a>
                                     <form method="post" asp-action="ToggleProvider" asp-route-id="@provider.Id" data-confirm="@(provider.IsActive ? $"Turn off {provider.Name}? Clients will no longer see them when booking." : $"Turn on {provider.Name}?")">
-                                        <button type="submit" class="btn-icon @(provider.IsActive ? "danger" : "")" title="@(provider.IsActive ? "Turn off" : "Turn on")" aria-label="@(provider.IsActive ? "Turn off" : "Turn on") @provider.Name"><i class="bi @(provider.IsActive ? "bi-toggle-on" : "bi-toggle-off")"></i></button>
+                                        <button type="submit" class="btn-icon @(provider.IsActive ? "danger" : "")" title="@(provider.IsActive ? "Turn off" : "Turn on")" aria-label="@(provider.IsActive ? "Turn off" : "Turn on") @provider.Name"><i class="@(provider.IsActive ? "icon-toggle-right" : "icon-toggle-left")"></i></button>
                                     </form>
                                 </div>
                             </td>
@@ -142,15 +144,47 @@
                 </tbody>
             </table>
         </div>
-        <div class="ht-table-foot">Showing @(total == 1 ? "1 member" : $"{total} members")</div>
     }
     else
     {
         <div class="ht-empty">
-            <span class="ht-glyph saffron"><i class="bi bi-search"></i></span>
+            <span class="ht-glyph saffron"><i class="icon-search"></i></span>
             <h3>No matching users</h3>
             <p>Try a different name, email or role.</p>
             <a class="btn btn-line" asp-action="Users">Clear filters</a>
         </div>
     }
 </section>
+
+<div class="modal fade ht-modal" id="importUsersModal" tabindex="-1" aria-labelledby="importUsersTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-action="ImportUsers" method="post" enctype="multipart/form-data">
+                <div class="modal-header">
+                    <div>
+                        <h2 class="modal-title" id="importUsersTitle">Import users</h2>
+                        <p class="small text-muted mb-0">Add many clients and trainers at once from a CSV file.</p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label for="importFile" class="form-label">CSV file</label>
+                    <input type="file" id="importFile" name="file" class="form-control mb-3" accept=".csv,text/csv" required />
+                    <p class="small text-muted mb-1"><strong>Columns:</strong> Name, Email, Role, DateOfBirth, HeightCm, FitnessGoal, Password</p>
+                    <ul class="small text-muted mb-0 ps-3">
+                        <li>Role is <em>Client</em> or <em>Trainer</em>.</li>
+                        <li>DateOfBirth is written as yyyy-MM-dd.</li>
+                        <li>HeightCm (50–250) is required for clients.</li>
+                        <li>Leave Password empty to generate one. All imported passwords expire after 48 hours and must be changed on first sign-in.</li>
+                        <li>Up to @HealthTrack.Services.UserImportService.MaxRows rows and 1 MB per file.</li>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <a class="btn btn-line me-auto" asp-action="ImportTemplate"><i class="icon-download"></i>Template</a>
+                    <button type="button" class="btn btn-line" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="icon-file-up"></i>Import</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

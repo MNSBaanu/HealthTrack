@@ -4,7 +4,7 @@
     ViewData["Title"] = $"Edit workout plan: {Model.Title}";
 }
 
-<a class="ht-back" asp-action="WorkoutPlans"><i class="bi bi-arrow-left"></i>All workout plans</a>
+<a class="ht-back" asp-action="WorkoutPlans"><i class="icon-arrow-left"></i>All workout plans</a>
 
 <div class="ht-head">
     <div>
@@ -62,7 +62,7 @@
                         <div class="ht-schedule-heading">
                             <legend class="mb-0">Exercises & Schedule</legend>
                             <button type="button" class="btn btn-sm btn-line" id="addExerciseBtn">
-                                <i class="bi bi-plus-lg me-1"></i>Add exercise
+                                <i class="icon-plus me-1"></i>Add exercise
                             </button>
                         </div>
 
@@ -111,7 +111,7 @@
                                                 <input name="Items[@i].Instructions" value="@Model.Items[i].Instructions" class="form-control form-control-sm" />
                                             </td>
                                             <td class="text-end">
-                                                <button type="button" class="btn btn-sm btn-line-danger remove-row-btn" title="Remove"><i class="bi bi-trash"></i></button>
+                                                <button type="button" class="btn btn-sm btn-line-danger remove-row-btn" title="Remove"><i class="icon-trash"></i></button>
                                             </td>
                                         </tr>
                                     }
@@ -121,7 +121,7 @@
                     </fieldset>
 
                     <div class="ht-form-actions">
-                        <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1"></i>Update workout plan</button>
+                        <button type="submit" class="btn btn-primary"><i class="icon-circle-check me-1"></i>Update workout plan</button>
                         <a class="btn btn-line" asp-action="WorkoutPlans">Cancel</a>
                     </div>
                 </form>
@@ -156,7 +156,7 @@
                 <td><input name="Items[${rowCount}].Reps" type="number" class="form-control form-control-sm" placeholder="Reps" /></td>
                 <td><input name="Items[${rowCount}].DurationMinutes" type="number" class="form-control form-control-sm" placeholder="Min" /></td>
                 <td><input name="Items[${rowCount}].Instructions" class="form-control form-control-sm" placeholder="Rest/guidance" /></td>
-                <td class="text-end"><button type="button" class="btn btn-sm btn-line-danger remove-row-btn" title="Remove"><i class="bi bi-trash"></i></button></td>
+                <td class="text-end"><button type="button" class="btn btn-sm btn-line-danger remove-row-btn" title="Remove"><i class="icon-trash"></i></button></td>
             `;
             tbody.appendChild(newRow);
         });

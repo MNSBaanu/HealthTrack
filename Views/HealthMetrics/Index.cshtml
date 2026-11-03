@@ -1,7 +1,7 @@
 @model List<HealthMetric>
 @{
     ViewData["Title"] = "Health metrics";
-    var emptyState = new EmptyStateViewModel("bi-rulers", "No measurements yet", "Record your weight to start tracking your BMI over time.");
+    var emptyState = new EmptyStateViewModel("icon-ruler", "No measurements yet", "Record your weight to start tracking your BMI over time.");
 }
 
 <div class="ht-head">
@@ -9,7 +9,7 @@
         <h1 class="ht-title">Health metrics</h1>
     </div>
     <div class="ht-head-actions">
-        <a class="btn btn-primary" asp-action="Create"><i class="bi bi-plus-lg"></i>Record health measurements</a>
+        <a class="btn btn-primary" asp-action="Create"><i class="icon-plus"></i>Record health measurements</a>
     </div>
 </div>
 
@@ -77,8 +77,8 @@
                             <td data-label="Sleep" class="num">@(metric.SleepHours.HasValue ? metric.SleepHours.Value.ToString("0.#") + " h" : "–")</td>
                             <td data-label="Actions">
                                 <div class="ht-row-actions">
-                                    <a class="btn-icon" asp-action="Edit" asp-route-id="@metric.MetricId" title="Edit" aria-label="Edit measurement"><i class="bi bi-pencil"></i></a>
-                                    <a class="btn-icon danger" asp-action="Delete" asp-route-id="@metric.MetricId" title="Delete" aria-label="Delete measurement"><i class="bi bi-trash3"></i></a>
+                                    <a class="btn-icon" asp-action="Edit" asp-route-id="@metric.MetricId" title="Edit" aria-label="Edit measurement"><i class="icon-pencil"></i></a>
+                                    <a class="btn-icon danger" asp-action="Delete" asp-route-id="@metric.MetricId" title="Delete" aria-label="Delete measurement"><i class="icon-trash-2"></i></a>
                                 </div>
                             </td>
                         </tr>

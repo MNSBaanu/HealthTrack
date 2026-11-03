@@ -6,6 +6,8 @@
     var role = ViewData["Role"] as string;
     var status = ViewData["Status"] as string;
     var providers = ViewData["Providers"] as List<ConsultationProvider> ?? new();
+    var trainers = ViewData["Trainers"] as List<SelectListItem> ?? new();
+    var inactiveCutoff = DateTime.Now.AddDays(-HealthTrack.Controllers.AdminController.InactiveDays);
     var total = Model.Count + providers.Count;
     var currentUserId = UserManager.GetUserId(User);
     var isFiltered = !string.IsNullOrWhiteSpace(search) || !string.IsNullOrWhiteSpace(role) || !string.IsNullOrWhiteSpace(status);
@@ -40,6 +42,7 @@
         <option value="active" selected="@(status == "active")">Active</option>
         <option value="locked" selected="@(status == "locked")">Locked</option>
         <option value="off" selected="@(status == "off")">Turned off</option>
+        <option value="inactive" selected="@(status == "inactive")">Inactive clients (@HealthTrack.Controllers.AdminController.InactiveDays+ days)</option>
     </select>
     @if (isFiltered)
     {
@@ -50,10 +53,29 @@
 <section class="ht-card">
     @if (total > 0)
     {
+        <form id="bulkUsers" asp-action="BulkUsers" method="post" class="ht-bulk-bar" hidden>
+            <span class="fw-semibold" data-bulk-count>0 selected</span>
+            <select name="bulkAction" class="form-select w-auto" aria-label="Bulk action" required>
+                <option value="">Choose action</option>
+                <option value="assign">Assign trainer</option>
+                <option value="remind">Send reminder</option>
+                <option value="signout">Sign out everywhere</option>
+                <option value="lock">Lock</option>
+                <option value="unlock">Unlock</option>
+                <option value="export">Export CSV</option>
+                <option value="delete">Delete</option>
+            </select>
+            <select name="trainerId" asp-items="trainers" class="form-select w-auto" aria-label="Trainer" hidden>
+                <option value="">Select a trainer</option>
+            </select>
+            <button type="submit" class="btn btn-primary"><i class="icon-check"></i>Apply</button>
+            <button type="button" class="btn btn-line" data-bulk-clear>Clear selection</button>
+        </form>
         <div class="table-responsive">
             <table class="ht-table">
                 <thead>
                     <tr>
+                        <th class="ht-check"><input type="checkbox" class="form-check-input" id="selectAllUsers" aria-label="Select all users" /></th>
                         <th>Member</th>
                         <th>Role</th>
                         <th>Joined</th>
@@ -66,7 +88,14 @@
                     @foreach (var user in Model)
                     {
                         var isSelf = user.Id == currentUserId;
+                        var isInactive = user.Role == AppRoles.Client && (user.LastLoginAt == null || user.LastLoginAt < inactiveCutoff);
                         <tr>
+                            <td class="ht-check">
+                                @if (!isSelf)
+                                {
+                                    <input type="checkbox" class="form-check-input" name="ids" value="@user.Id" form="bulkUsers" aria-label="Select @user.Name" />
+                                }
+                            </td>
                             <td>
                                 <div class="ht-member">
                                     <span class="ht-monogram @(isSelf ? "" : "muted")">@Person.GetInitials(user.Name)</span>
@@ -78,18 +107,17 @@
                             </td>
                             <td><partial name="_RolePill" model="user.Role" /></td>
                             <td class="text-nowrap">@user.CreatedAt.ToString("d MMM yyyy")</td>
-                            <td class="text-nowrap">@(user.LastLoginAt?.ToString("d MMM yyyy, HH:mm") ?? "Never")</td>
+                            <td class="text-nowrap">@(user.LastLoginAt?.ToString("d MMM yyyy, HH:mm") ?? "Never")@if (isInactive) { <span class="ht-pill clay ms-1">Inactive</span> }</td>
                             <td><partial name="_StatusPill" model="user.IsLocked" /></td>
                             <td>
                                 <div class="ht-row-actions plain">
-                                    <a class="btn-icon" asp-action="LoginHistory" asp-route-id="@user.Id" title="Login history" aria-label="Login history for @user.Name"><i class="icon-history"></i></a>
+                                    <a class="btn-icon" asp-action="EditUser" asp-route-id="@user.Id" title="Edit details" aria-label="Edit @user.Name"><i class="icon-pencil"></i></a>
                                     @if (user.Role == AppRoles.Client)
                                     {
                                         <a class="btn-icon" asp-controller="Assignments" asp-action="Edit" asp-route-id="@user.Id" title="Manage Trainer assignment" aria-label="Manage Trainer for @user.Name"><i class="icon-user-check"></i></a>
                                     }
                                     @if (!isSelf)
                                     {
-                                        <a class="btn-icon" asp-action="ResetPassword" asp-route-id="@user.Id" title="Reset temporary password" aria-label="Reset temporary password for @user.Name"><i class="icon-key-round"></i></a>
                                         <form asp-action="ToggleLock" asp-route-id="@user.Id" method="post"
                                               data-confirm="@(user.IsLocked ? $"Unlock {user.Name}'s account?" : $"Lock {user.Name}'s account? They will be signed out and unable to sign in.")">
                                             <button type="submit" class="btn-icon" title="@(user.IsLocked ? "Unlock" : "Lock")" aria-label="@(user.IsLocked ? "Unlock" : "Lock") @user.Name">
@@ -101,6 +129,29 @@
                                             <button type="submit" class="btn-icon danger" title="Delete" aria-label="Delete @user.Name"><i class="icon-trash-2"></i></button>
                                         </form>
                                     }
+                                    <div class="dropdown">
+                                        <button type="button" class="btn-icon" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" title="More" aria-label="More actions for @user.Name"><i class="icon-ellipsis-vertical"></i></button>
+                                        <ul class="dropdown-menu dropdown-menu-end ht-menu">
+                                            <li><a class="dropdown-item" asp-action="LoginHistory" asp-route-id="@user.Id"><i class="icon-history me-2"></i>Login history</a></li>
+                                            @if (!isSelf)
+                                            {
+                                                <li><a class="dropdown-item" asp-action="ResetPassword" asp-route-id="@user.Id"><i class="icon-key-round me-2"></i>Reset temporary password</a></li>
+                                                <li>
+                                                    <form asp-action="SignOutUser" asp-route-id="@user.Id" method="post" data-confirm="Sign @user.Name out of all sessions?">
+                                                        <button type="submit" class="dropdown-item"><i class="icon-log-out me-2"></i>Sign out everywhere</button>
+                                                    </form>
+                                                </li>
+                                            }
+                                            @if (isInactive)
+                                            {
+                                                <li>
+                                                    <form asp-action="SendReminder" asp-route-id="@user.Id" method="post">
+                                                        <button type="submit" class="dropdown-item"><i class="icon-bell-ring me-2"></i>Send reminder</button>
+                                                    </form>
+                                                </li>
+                                            }
+                                        </ul>
+                                    </div>
                                 </div>
                             </td>
                         </tr>
@@ -108,6 +159,7 @@
                     @foreach (var provider in providers)
                     {
                         <tr>
+                            <td class="ht-check"></td>
                             <td>
                                 <div class="ht-member">
                                     <span class="ht-monogram muted">@Person.GetInitials(provider.Name)</span>
@@ -188,3 +240,49 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const bulk = document.getElementById("bulkUsers");
+            if (!bulk) return;
+            const all = document.getElementById("selectAllUsers");
+            const count = bulk.querySelector("[data-bulk-count]");
+            const action = bulk.elements.bulkAction;
+            const trainer = bulk.elements.trainerId;
+            const messages = {
+                assign: "Assign the selected clients to this trainer? Existing plans and appointments are unchanged.",
+                remind: "Send a reminder to the selected clients?",
+                signout: "Sign the selected users out of all sessions?",
+                lock: "Lock the selected accounts? They will be signed out and unable to sign in.",
+                unlock: "Unlock the selected accounts?",
+                delete: "Permanently delete the selected users and all of their records? This can't be undone."
+            };
+            const boxes = () => [...document.querySelectorAll('input[name="ids"][form="bulkUsers"]')];
+            const sync = () => {
+                const selected = boxes().filter(b => b.checked).length;
+                bulk.hidden = selected === 0;
+                count.textContent = selected + " selected";
+                const visible = boxes().filter(b => b.offsetParent !== null);
+                all.checked = visible.length > 0 && visible.every(b => b.checked);
+                all.indeterminate = !all.checked && visible.some(b => b.checked);
+            };
+            document.addEventListener("change", e => {
+                if (e.target === all) boxes().forEach(b => { if (b.offsetParent !== null) b.checked = all.checked; });
+                if (e.target === all || e.target.name === "ids") sync();
+            });
+            bulk.querySelector("[data-bulk-clear]").addEventListener("click", () => {
+                boxes().forEach(b => { b.checked = false; });
+                sync();
+            });
+            action.addEventListener("change", () => {
+                trainer.hidden = action.value !== "assign";
+                trainer.required = action.value === "assign";
+                const message = messages[action.value];
+                if (message) bulk.setAttribute("data-confirm", message); else bulk.removeAttribute("data-confirm");
+                delete bulk.dataset.confirmed;
+            });
+            bulk.addEventListener("submit", () => setTimeout(() => { delete bulk.dataset.confirmed; }, 0));
+        })();
+    </script>
+}

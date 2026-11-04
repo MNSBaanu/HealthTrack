@@ -38,16 +38,21 @@ namespace HealthTrack.Controllers
         [EnableRateLimiting("auth")]
         public async Task<IActionResult> Register(RegisterViewModel model)
         {
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                return RedirectToAction("Index", "Home");
+            }
             ValidatePastDate(model.DateOfBirth, nameof(model.DateOfBirth));
             if (!ModelState.IsValid)
             {
                 return View(model);
             }
 
+            var email = model.Email.Trim();
             var client = new Client
             {
-                UserName = model.Email,
-                Email = model.Email,
+                UserName = email,
+                Email = email,
                 Name = model.Name.Trim(),
                 DateOfBirth = model.DateOfBirth!.Value,
                 HeightCm = model.HeightCm!.Value,
@@ -56,14 +61,14 @@ namespace HealthTrack.Controllers
             };
             client.HealthMetrics.Add(new HealthMetric { WeightKg = model.WeightKg!.Value });
 
-            var result = await UserManager.CreateAsync(client, model.Password);
+            // Account, role and starting weight are saved together or not at all.
+            var result = await AccountProvisioner.CreateAsync(Context, UserManager, client, model.Password, AppRoles.Client);
             if (!result.Succeeded)
             {
                 AddErrors(result);
                 return View(model);
             }
 
-            await UserManager.AddToRoleAsync(client, AppRoles.Client);
             await _signInManager.SignInAsync(client, isPersistent: false);
             _logger.LogInformation("New client registered: {Email}", client.Email);
             return RedirectToAction("Index", client.DashboardController);

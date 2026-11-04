@@ -23,9 +23,12 @@ namespace HealthTrack.Controllers
             HttpContext.RequestServices.GetRequiredService<HealthTrack.Services.IAuditService>()
                 .RecordAsync(User, action, entity, subjectClientId, detail);
 
+        // Controllers that work in the application's time zone override this.
+        protected virtual DateTime LocalNow => DateTime.Now;
+
         protected void ValidateNotInFuture(DateTime date, string fieldName)
         {
-            if (date > DateTime.Now)
+            if (date > LocalNow)
             {
                 ModelState.AddModelError(fieldName, "Date cannot be in the future.");
             }
@@ -33,9 +36,13 @@ namespace HealthTrack.Controllers
 
         protected void ValidatePastDate(DateTime? date, string fieldName)
         {
-            if (date >= DateTime.Today)
+            if (date >= LocalNow.Date)
             {
                 ModelState.AddModelError(fieldName, "Date must be in the past.");
+            }
+            else if (date < new DateTime(1900, 1, 1))
+            {
+                ModelState.AddModelError(fieldName, "Enter a valid date.");
             }
         }
 

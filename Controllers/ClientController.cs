@@ -41,9 +41,9 @@ namespace HealthTrack.Controllers
                 .OrderBy(m => m.RecordedAt)
                 .ToListAsync();
 
-            var today = DateTime.Today;
             var nowUtc = _clock.GetUtcNow().UtcDateTime;
-            var planToday = _appointmentTime.ToLocal(nowUtc).Date;
+            var planToday = LocalToday;
+            var today = planToday;
             var upcoming = await Context.Appointments.AsNoTracking()
                 .Include(a => a.Slot).ThenInclude(s => s.Provider)
                 .Where(a => a.ClientId == clientId && a.Slot.StartUtc > nowUtc
@@ -96,7 +96,7 @@ namespace HealthTrack.Controllers
                 MinutesThisWeek = weekWorkouts.Sum(w => w.DurationMinutes),
                 CaloriesBurnedThisWeek = weekWorkouts.Sum(w => w.CaloriesBurned),
                 CaloriesConsumedToday = await Context.MealLogs
-                    .Where(m => m.ClientId == clientId && m.LoggedAt >= today)
+                    .Where(m => m.ClientId == clientId && m.LoggedAt >= today && m.LoggedAt < today.AddDays(1))
                     .SumAsync(m => m.Calories),
                 RecentWorkouts = await Context.WorkoutLogs
                     .Where(w => w.ClientId == clientId)
@@ -146,7 +146,7 @@ namespace HealthTrack.Controllers
             model.Email = client.Email ?? string.Empty;
             model.HasPhoto = client.ProfilePhoto != null;
             ValidatePastDate(model.DateOfBirth, nameof(model.DateOfBirth));
-            if (model.TargetDate.HasValue && model.TargetDate.Value.Date <= DateTime.Today)
+            if (model.TargetDate.HasValue && model.TargetDate.Value.Date <= LocalToday)
                 ModelState.AddModelError(nameof(model.TargetDate), "Choose a target date in the future.");
             byte[]? photo = null;
             string? photoType = null;
@@ -216,7 +216,7 @@ namespace HealthTrack.Controllers
             var workoutDates = await Context.WorkoutLogs.AsNoTracking().Where(w => w.ClientId == client.Id)
                 .Select(w => w.LoggedAt).ToListAsync();
             var meals = await Context.MealLogs.CountAsync(m => m.ClientId == client.Id);
-            var today = _appointmentTime.ToLocal(_clock.GetUtcNow().UtcDateTime).Date;
+            var today = LocalToday;
             ViewData["Achievements"] = ClientAchievements.Compute(workoutDates, today, meals, metrics.Count,
                 (ViewData["Goal"] as GoalProgressViewModel)?.Reached == true);
             return View();
@@ -227,7 +227,7 @@ namespace HealthTrack.Controllers
         {
             var clientId = CurrentUserId;
             days = Math.Clamp(days, 7, 365);
-            var from = DateTime.Today.AddDays(-(days - 1));
+            var from = LocalToday.AddDays(-(days - 1));
             var client = await Context.Clients.FirstAsync(c => c.Id == clientId);
 
             var weights = await Context.HealthMetrics
@@ -347,7 +347,7 @@ namespace HealthTrack.Controllers
                     notifications.Select(n => new object?[] { n.CreatedAt, n.Type, n.Message })));
             }
 
-            var fileName = $"{(all ? "HealthTrack_MyData" : "HealthTrack_Progress")}_{DateTime.Now:yyyyMMdd}";
+            var fileName = $"{(all ? "HealthTrack_MyData" : "HealthTrack_Progress")}_{LocalNow:yyyyMMdd}";
             _logger.LogInformation("Client {ClientId} exported {Scope} as {Format}", clientId, all ? "all data" : "progress", format);
             await AuditAsync("Exported", all ? "AllMyData" : "ProgressReport", clientId, format);
             if (format.Equals("pdf", StringComparison.OrdinalIgnoreCase))

@@ -10,19 +10,21 @@ namespace HealthTrack.Controllers
     public class WorkoutLogsController : ClientBaseController
     {
         private readonly ILogger<WorkoutLogsController> _logger;
-        private readonly AppointmentTime _time;
-        private readonly TimeProvider _clock;
 
-        public WorkoutLogsController(ILogger<WorkoutLogsController> logger, HealthTrackDbContext context, UserManager<Person> userManager,
-            AppointmentTime time, TimeProvider clock)
+        public WorkoutLogsController(ILogger<WorkoutLogsController> logger, HealthTrackDbContext context, UserManager<Person> userManager)
             : base(context, userManager)
         {
             _logger = logger;
-            _time = time;
-            _clock = clock;
         }
 
-        private DateTime LocalNow => _time.ToLocal(_clock.GetUtcNow().UtcDateTime);
+        // True when the plan exercise already has a journal entry on that calendar day.
+        private Task<bool> HasPlanLogOnAsync(int planItemId, DateTime day, int? exceptLogId = null)
+        {
+            var start = day.Date;
+            var end = start.AddDays(1);
+            return Context.WorkoutLogs.AnyAsync(l => l.ClientId == CurrentUserId && l.WorkoutPlanItemId == planItemId
+                && l.LoggedAt >= start && l.LoggedAt < end && (exceptLogId == null || l.WorkoutLogId != exceptLogId));
+        }
 
         private Task<WorkoutLog?> FindOwnedAsync(int id)
         {
@@ -77,6 +79,11 @@ namespace HealthTrack.Controllers
                     TempData["Error"] = "This exercise can only be marked as done on its scheduled day while the plan is active.";
                     return RedirectToAction("Workout", "ClientPlans", new { id = item.WorkoutPlanId });
                 }
+                if (await HasPlanLogOnAsync(item.Id, log.LoggedAt))
+                {
+                    TempData["Error"] = "This exercise already has a saved workout for today.";
+                    return RedirectToAction("Workout", "ClientPlans", new { id = item.WorkoutPlanId });
+                }
 
                 log.WorkoutPlanItemId = item.Id;
                 log.Activity = item.ExerciseName;
@@ -104,6 +111,10 @@ namespace HealthTrack.Controllers
                 {
                     ModelState.AddModelError(nameof(log.LoggedAt),
                         "Planned exercises can only be marked as done for today, on their scheduled day while the plan is active.");
+                }
+                else if (await HasPlanLogOnAsync(planItem.Id, log.LoggedAt))
+                {
+                    ModelState.AddModelError(string.Empty, "This exercise already has a saved workout for today.");
                 }
             }
             if (!ModelState.IsValid)
@@ -149,6 +160,10 @@ namespace HealthTrack.Controllers
                 {
                     ModelState.AddModelError(nameof(input.LoggedAt),
                         "The workout date must match the exercise's scheduled day and fall within the plan's active dates.");
+                }
+                else if (await HasPlanLogOnAsync(item.Id, input.LoggedAt, id))
+                {
+                    ModelState.AddModelError(nameof(input.LoggedAt), "This exercise already has a saved workout on that day.");
                 }
             }
             if (!ModelState.IsValid)

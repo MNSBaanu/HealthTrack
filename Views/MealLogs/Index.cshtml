@@ -1,7 +1,7 @@
 @model List<MealLog>
 @{
     ViewData["Title"] = "Meals";
-    var today = DateTime.Today;
+    var today = (ViewData["LocalNow"] as DateTime? ?? DateTime.Now).Date;
     var emptyState = new EmptyStateViewModel("icon-coffee", "No meals logged yet", "Log what you eat to see your daily calories next to the calories you burn.");
 }
 

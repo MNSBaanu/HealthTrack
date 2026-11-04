@@ -1,7 +1,8 @@
 @model ClientDashboardViewModel
 @{
     ViewData["Title"] = "Overview";
-    var hour = DateTime.Now.Hour;
+    var localNow = (ViewData["LocalNow"] as DateTime? ?? DateTime.Now);
+    var hour = localNow.Hour;
     var greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
     var firstName = Model.Client.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? Model.Client.Name;
     var latest = Model.LatestMetric;
@@ -13,7 +14,7 @@
 
 <div class="ht-head">
     <div>
-        <div class="ht-overline">@DateTime.Now.ToString("dddd · d MMMM yyyy")</div>
+        <div class="ht-overline">@localNow.ToString("dddd · d MMMM yyyy")</div>
         <h1 class="ht-title">@greeting, @firstName.</h1>
         <p class="ht-lede">
             @if (!string.IsNullOrWhiteSpace(Model.Client.FitnessGoal))

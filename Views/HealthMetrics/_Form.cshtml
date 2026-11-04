@@ -12,7 +12,7 @@
     </div>
     <div class="col-md-6">
         <label asp-for="RecordedAt" class="form-label">Date &amp; time</label>
-        <input asp-for="RecordedAt" asp-format="{0:yyyy-MM-ddTHH:mm}" class="form-control" max="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" />
+        <input asp-for="RecordedAt" asp-format="{0:yyyy-MM-ddTHH:mm}" class="form-control" max="@(ViewData["LocalNow"] as DateTime? ?? DateTime.Now).ToString("yyyy-MM-ddTHH:mm")" />
         <span asp-validation-for="RecordedAt" class="text-danger"></span>
     </div>
     <div class="col-md-6">

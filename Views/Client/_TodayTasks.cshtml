@@ -4,9 +4,14 @@
     var done = counted.Count(t => t.Completed);
 }
 <link rel="stylesheet" href="~/css/workout-checklist.css" asp-append-version="true" />
-<section class="ht-card mb-3" data-workout-checklist data-dashboard-checklist>
-    <div class="ht-card-head"><h2>Today's tasks</h2><span class="small text-muted">@Model.PlanToday.ToString("dddd, d MMM")</span></div>
-    <div class="ht-card-body">
+<div class="modal fade ht-modal" id="todayTasksModal" tabindex="-1" aria-labelledby="todayTasksTitle" aria-hidden="true">
+<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+<div class="modal-content" data-workout-checklist data-dashboard-checklist>
+    <div class="modal-header">
+        <div><h2 class="modal-title" id="todayTasksTitle">Today's tasks</h2><span class="small text-muted">@Model.PlanToday.ToString("dddd, d MMM")</span></div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body">
         @if (counted.Any())
         {
         <div class="workout-checklist-summary" aria-live="polite" aria-atomic="true">
@@ -56,4 +61,6 @@
         }
         @if (counted.Any()) { <p class="small text-muted mt-3 mb-0">Complete today's tasks. Progress saves automatically.</p> }
     </div>
-</section>
+</div>
+</div>
+</div>

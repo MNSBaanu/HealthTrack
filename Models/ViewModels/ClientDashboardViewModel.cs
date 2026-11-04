@@ -3,8 +3,6 @@ namespace HealthTrack.Models.ViewModels
     public class ClientDashboardViewModel
     {
         public List<ClientTaskViewModel> TodayTasks { get; set; } = new();
-        public List<WorkoutPlan> AssignedWorkoutPlans { get; set; } = new();
-        public List<DietPlan> AssignedDietPlans { get; set; } = new();
         public DateTime PlanToday { get; set; }
         public Client Client { get; set; } = null!;
         public HealthMetric? LatestMetric { get; set; }

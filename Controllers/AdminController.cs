@@ -191,11 +191,13 @@ namespace HealthTrack.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> ToggleRating(int id)
+        public async Task<IActionResult> ToggleRating(int id, bool hide)
         {
             var appointment = await Context.Appointments.SingleOrDefaultAsync(a => a.Id == id && a.Rating != null);
             if (appointment == null) return NotFound();
-            appointment.RatingHidden = !appointment.RatingHidden;
+            // The form says which state is wanted, so a double submit cannot flip it back.
+            if (appointment.RatingHidden == hide) return RedirectToAction(nameof(Ratings));
+            appointment.RatingHidden = hide;
             await Context.SaveChangesAsync();
             await AuditAsync(appointment.RatingHidden ? "Hidden" : "Restored", "Rating", appointment.ClientId, $"Appointment {id}");
             TempData["Success"] = appointment.RatingHidden ? "Rating hidden. It no longer counts towards the average." : "Rating restored.";
@@ -254,6 +256,14 @@ namespace HealthTrack.Controllers
                 return RedirectToAction(nameof(Appointments));
             }
             appointment.Status = AppointmentStatus.Cancelled;
+            // A cancelled appointment can no longer be moved, so its open reschedule request is closed too.
+            var closedAt = _clock.GetUtcNow().UtcDateTime;
+            foreach (var request in await Context.RescheduleRequests.Where(r => r.AppointmentId == id
+                && (r.Status == RescheduleRequestStatus.Pending || r.Status == RescheduleRequestStatus.Accepted)).ToListAsync())
+            {
+                request.Status = RescheduleRequestStatus.Closed;
+                request.DecidedAtUtc ??= closedAt;
+            }
             await Context.SaveChangesAsync();
 
             var when = $"{_time.ToLocal(appointment.Slot.StartUtc):ddd, d MMM yyyy HH:mm}";
@@ -377,7 +387,7 @@ namespace HealthTrack.Controllers
             });
             _logger.LogInformation("Admin {AdminId} exported data for user {UserId}", CurrentUserId, id);
             await AuditAsync("Exported", "UserData", user is Client ? id : null, user.Name);
-            return File(json, "application/json", $"healthtrack-data-{user.Id[..8]}-{DateTime.Today:yyyyMMdd}.json");
+            return File(json, "application/json", $"healthtrack-data-{user.Id[..8]}-{_time.ToLocal(_clock.GetUtcNow().UtcDateTime):yyyyMMdd}.json");
         }
 
         [HttpGet]
@@ -444,10 +454,11 @@ namespace HealthTrack.Controllers
                 return View(model);
             }
 
+            var email = model.Email.Trim();
             var admin = new Admin
             {
-                UserName = model.Email,
-                Email = model.Email,
+                UserName = email,
+                Email = email,
                 EmailConfirmed = true,
                 Name = model.Name.Trim(),
                 DateOfBirth = model.DateOfBirth!.Value,
@@ -482,10 +493,11 @@ namespace HealthTrack.Controllers
                 return View(model);
             }
 
+            var email = model.Email.Trim();
             var trainer = new Trainer
             {
-                UserName = model.Email,
-                Email = model.Email,
+                UserName = email,
+                Email = email,
                 EmailConfirmed = true,
                 Name = model.Name.Trim(),
                 DateOfBirth = model.DateOfBirth!.Value,
@@ -652,7 +664,8 @@ namespace HealthTrack.Controllers
                     new ReportSection("Users", new[] { "Name", "Email", "Role", "Joined", "Last active", "Status" },
                         rows.Select(u => new object?[] { u.Name, u.Email, u.Role, u.CreatedAt, u.LastLoginAt, u.IsLocked ? "Locked" : "Active" }))
                 });
-                return File(csv, "text/csv", $"healthtrack-users-{DateTime.Today:yyyy-MM-dd}.csv");
+                await AuditAsync("Exported", "Users", null, $"{rows.Count} users");
+                return File(csv, "text/csv", $"healthtrack-users-{_time.ToLocal(_clock.GetUtcNow().UtcDateTime):yyyy-MM-dd}.csv");
             }
 
             ids = ids.Where(i => i != CurrentUserId).ToArray();
@@ -877,7 +890,7 @@ namespace HealthTrack.Controllers
             var sections = await ReportData.BuildSectionsAsync(report, from, to, MailConfigured, actor, action);
             var title = AdminReportService.Title(report);
 
-            var fileName = $"HealthTrack_{title.Replace(' ', '_')}_{DateTime.Now:yyyyMMdd}";
+            var fileName = $"HealthTrack_{title.Replace(' ', '_')}_{_time.ToLocal(_clock.GetUtcNow().UtcDateTime):yyyyMMdd}";
             _logger.LogInformation("Admin {AdminId} exported {Report} as {Format}", CurrentUserId, title, format);
             await AuditAsync("Exported", title, null, format);
             if (format.Equals("pdf", StringComparison.OrdinalIgnoreCase))
@@ -1143,6 +1156,10 @@ namespace HealthTrack.Controllers
                 else if (startUtc <= nowUtc)
                 {
                     ModelState.AddModelError(string.Empty, "Slot start time must be in the future.");
+                }
+                else if (endUtc - startUtc < TimeSpan.FromMinutes(15) || endUtc - startUtc > TimeSpan.FromHours(8))
+                {
+                    ModelState.AddModelError(string.Empty, "A slot must last between 15 minutes and 8 hours.");
                 }
                 else if (await Context.AvailabilitySlots.AnyAsync(s => s.ProviderId == provider.Id && s.StartUtc < endUtc && s.EndUtc > startUtc))
                 {

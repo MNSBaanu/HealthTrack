@@ -26,9 +26,7 @@
         <p class="small text-muted mb-0">Trainer: <strong>@(Model.Client.TrainerAssignment?.Trainer.Name ?? "Not assigned yet")</strong></p>
     </div>
     <div class="ht-head-actions">
-        <a class="btn btn-line" asp-controller="HealthMetrics" asp-action="Create"><i class="icon-plus"></i>Measurements</a>
-        <a class="btn btn-line" asp-controller="MealLogs" asp-action="Create"><i class="icon-plus"></i>Meal</a>
-        <a class="btn btn-primary" asp-controller="WorkoutLogs" asp-action="Create"><i class="icon-plus"></i>Log workout</a>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#todayTasksModal"><i class="icon-check"></i>Today's tasks</button>
     </div>
 </div>
 
@@ -127,8 +125,6 @@
 </div>
 
 <partial name="_Achievements" model="Model.Achievements" />
-
-<partial name="_AssignedPlanSummaries" model="Model" />
 
 <div class="row g-3">
     <div class="col-lg-7">

@@ -78,14 +78,6 @@ namespace HealthTrack.Controllers
                 PlannedWorkoutsToday = todayTasks.Count(t => t.Kind == "Workout"),
                 DoneWorkoutsToday = todayTasks.Count(t => t.Kind == "Workout" && t.Completed),
                 Achievements = ClientAchievements.Compute(workoutDates, planToday, mealCount, metrics.Count, goalReached),
-                AssignedWorkoutPlans = await Context.WorkoutPlans.AsNoTracking().Include(p => p.Trainer)
-                    .Where(p => p.ClientId == clientId)
-                    .OrderByDescending(p => p.IsActive && p.StartDate.Date <= planToday && (!p.EndDate.HasValue || p.EndDate.Value.Date >= planToday))
-                    .ThenByDescending(p => p.IsActive).ThenByDescending(p => p.StartDate).ThenByDescending(p => p.Id).ToListAsync(),
-                AssignedDietPlans = await Context.DietPlans.AsNoTracking().Include(p => p.Trainer)
-                    .Where(p => p.ClientId == clientId)
-                    .OrderByDescending(p => p.IsActive && p.StartDate.Date <= planToday && (!p.EndDate.HasValue || p.EndDate.Value.Date >= planToday))
-                    .ThenByDescending(p => p.IsActive).ThenByDescending(p => p.StartDate).ThenByDescending(p => p.Id).ToListAsync(),
                 UpcomingAppointments = upcoming.Select(_appointmentTime.ToViewModel).ToList(),
                 AppointmentTimeZone = _appointmentTime.Label,
                 LatestMetric = metrics.LastOrDefault(),

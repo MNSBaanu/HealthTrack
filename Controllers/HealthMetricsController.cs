@@ -23,6 +23,15 @@ namespace HealthTrack.Controllers
                 .FirstOrDefaultAsync(m => m.MetricId == id && m.ClientId == CurrentUserId);
         }
 
+        private void ValidateBloodPressure(HealthMetric metric)
+        {
+            if (metric.SystolicBp.HasValue != metric.DiastolicBp.HasValue)
+                ModelState.AddModelError(metric.SystolicBp.HasValue ? nameof(HealthMetric.DiastolicBp) : nameof(HealthMetric.SystolicBp),
+                    "Enter both blood pressure values, or leave both empty.");
+            else if (metric.SystolicBp <= metric.DiastolicBp)
+                ModelState.AddModelError(nameof(HealthMetric.SystolicBp), "Systolic pressure must be higher than diastolic pressure.");
+        }
+
         public async Task<IActionResult> Index(DateTime? from = null, DateTime? to = null)
         {
             if (!SetJournalFilters(from, to)) return View(new List<HealthMetric>());
@@ -47,7 +56,7 @@ namespace HealthTrack.Controllers
                 .FirstOrDefaultAsync();
             return View(new HealthMetric
             {
-                RecordedAt = DateTime.Now,
+                RecordedAt = LocalNow,
                 WeightKg = last?.WeightKg ?? 0,
                 BodyFatPercent = last?.BodyFatPercent,
                 RestingHeartRate = last?.RestingHeartRate,
@@ -64,6 +73,7 @@ namespace HealthTrack.Controllers
             metric.ClientId = CurrentUserId;
             ModelState.Remove(nameof(HealthMetric.ClientId));
             ValidateNotInFuture(metric.RecordedAt, nameof(metric.RecordedAt));
+            ValidateBloodPressure(metric);
             if (!ModelState.IsValid)
             {
                 return View(metric);
@@ -94,6 +104,7 @@ namespace HealthTrack.Controllers
 
             ModelState.Remove(nameof(HealthMetric.ClientId));
             ValidateNotInFuture(input.RecordedAt, nameof(input.RecordedAt));
+            ValidateBloodPressure(input);
             if (!ModelState.IsValid)
             {
                 input.MetricId = id;

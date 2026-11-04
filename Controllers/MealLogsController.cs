@@ -10,19 +10,23 @@ namespace HealthTrack.Controllers
     public class MealLogsController : ClientBaseController
     {
         private readonly ILogger<MealLogsController> _logger;
-        private readonly AppointmentTime _time;
-        private readonly TimeProvider _clock;
 
-        public MealLogsController(ILogger<MealLogsController> logger, HealthTrackDbContext context, UserManager<Person> userManager,
-            AppointmentTime time, TimeProvider clock)
+        public MealLogsController(ILogger<MealLogsController> logger, HealthTrackDbContext context, UserManager<Person> userManager)
             : base(context, userManager)
         {
             _logger = logger;
-            _time = time;
-            _clock = clock;
         }
 
-        private DateTime LocalNow => _time.ToLocal(_clock.GetUtcNow().UtcDateTime);
+        // True when the plan meal already has a journal entry on that calendar day.
+        private Task<bool> HasPlanLogOnAsync(int planMealId, DateTime day, int? exceptLogId = null)
+        {
+            var start = day.Date;
+            var end = start.AddDays(1);
+            return Context.MealLogs.AnyAsync(l => l.ClientId == CurrentUserId && l.DietPlanMealId == planMealId
+                && l.LoggedAt >= start && l.LoggedAt < end && (exceptLogId == null || l.MealLogId != exceptLogId));
+        }
+
+        private static string? CleanFoodItems(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
         private Task<MealLog?> FindOwnedAsync(int id)
         {
@@ -71,6 +75,11 @@ namespace HealthTrack.Controllers
                     TempData["Error"] = "This meal can only be logged on its scheduled day while the plan is active.";
                     return RedirectToAction("Diet", "ClientPlans", new { id = meal.DietPlanId });
                 }
+                if (await HasPlanLogOnAsync(meal.Id, log.LoggedAt))
+                {
+                    TempData["Error"] = "This meal is already logged for today.";
+                    return RedirectToAction("Diet", "ClientPlans", new { id = meal.DietPlanId });
+                }
 
                 log.DietPlanMealId = meal.Id;
                 log.MealType = meal.MealType;
@@ -103,11 +112,15 @@ namespace HealthTrack.Controllers
                 var today = LocalNow.Date;
                 if (!planMeal.CanLogOn(today) || log.LoggedAt.Date != today)
                     ModelState.AddModelError(nameof(log.LoggedAt), "Planned meals must be logged for today, on their scheduled day while the plan is active.");
+                else if (await HasPlanLogOnAsync(planMeal.Id, log.LoggedAt))
+                    ModelState.AddModelError(string.Empty, "This meal is already logged for today.");
             }
             if (!ModelState.IsValid)
             {
                 return View(log);
             }
+
+            log.FoodItems = CleanFoodItems(log.FoodItems);
 
             Context.MealLogs.Add(log);
             await Context.SaveChangesAsync();
@@ -144,6 +157,8 @@ namespace HealthTrack.Controllers
                     || input.LoggedAt.Date < meal.DietPlan!.StartDate.Date
                     || (meal.DietPlan.EndDate.HasValue && input.LoggedAt.Date > meal.DietPlan.EndDate.Value.Date))
                     ModelState.AddModelError(nameof(input.LoggedAt), "The date must match the meal's scheduled day and fall within the plan's dates.");
+                else if (await HasPlanLogOnAsync(meal.Id, input.LoggedAt, id))
+                    ModelState.AddModelError(nameof(input.LoggedAt), "This meal is already logged on that day.");
             }
             if (!ModelState.IsValid)
             {
@@ -153,7 +168,7 @@ namespace HealthTrack.Controllers
 
             log.MealType = input.MealType;
             log.Calories = input.Calories;
-            log.FoodItems = input.FoodItems;
+            log.FoodItems = CleanFoodItems(input.FoodItems);
             log.LoggedAt = input.LoggedAt;
             await Context.SaveChangesAsync();
             TempData["Success"] = "Meal updated.";

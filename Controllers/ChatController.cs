@@ -33,10 +33,10 @@ namespace HealthTrack.Controllers
         [Authorize(Roles = AppRoles.Client)]
         public async Task<IActionResult> Own([FromBody] ChatRequest request)
         {
-            var question = Normalize(request.Question);
+            var question = Normalize(request?.Question);
             if (question.Length == 0) return Json(new { answer = (string?)null });
             var clientId = CurrentUserId;
-            var today = DateTime.Today;
+            var today = _time.ToLocal(_clock.GetUtcNow().UtcDateTime).Date;
 
             if (Regex.IsMatch(question, @"\bbmi\b|body mass"))
             {
@@ -49,7 +49,7 @@ namespace HealthTrack.Controllers
             if (Regex.IsMatch(question, @"\b(my|current|latest) weight\b|how much do i weigh"))
             {
                 var latest = await Context.HealthMetrics.Where(m => m.ClientId == clientId)
-                    .OrderByDescending(m => m.RecordedAt).Select(m => new { m.WeightKg, m.RecordedAt }).FirstOrDefaultAsync();
+                    .OrderByDescending(m => m.RecordedAt).ThenByDescending(m => m.MetricId).Select(m => new { m.WeightKg, m.RecordedAt }).FirstOrDefaultAsync();
                 if (latest == null) return Reply("You haven't recorded a weight yet.", "/HealthMetrics", "Record weight");
                 return Reply($"Your latest weight is {latest.WeightKg:0.#} kg, recorded on {latest.RecordedAt:d MMM yyyy}.", "/HealthMetrics", "Open metrics");
             }
@@ -74,7 +74,7 @@ namespace HealthTrack.Controllers
             }
             if (Regex.IsMatch(question, @"calories (today|have i)|how many calories|my calories|eaten today"))
             {
-                var calories = await Context.MealLogs.Where(m => m.ClientId == clientId && m.LoggedAt >= today).SumAsync(m => (int?)m.Calories) ?? 0;
+                var calories = await Context.MealLogs.Where(m => m.ClientId == clientId && m.LoggedAt >= today && m.LoggedAt < today.AddDays(1)).SumAsync(m => (int?)m.Calories) ?? 0;
                 return Reply($"You've logged {calories:N0} kcal from meals today.", "/MealLogs", "Open meal journal");
             }
             if (Regex.IsMatch(question, @"my (trainer|coach)|who is my trainer"))
@@ -93,7 +93,7 @@ namespace HealthTrack.Controllers
         [HttpPost]
         public async Task<IActionResult> Fallback([FromBody] ChatRequest request, CancellationToken cancellationToken)
         {
-            var question = (request.Question ?? string.Empty).Trim();
+            var question = (request?.Question ?? string.Empty).Trim();
             if (question.Length == 0) return Json(new { answer = (string?)null });
             if (question.Length > 300) question = question[..300];
 
@@ -129,7 +129,7 @@ namespace HealthTrack.Controllers
             Json(new { answer, link, linkText });
 
         private Task<double?> LatestWeightAsync(string clientId) =>
-            Context.HealthMetrics.Where(m => m.ClientId == clientId).OrderByDescending(m => m.RecordedAt)
+            Context.HealthMetrics.Where(m => m.ClientId == clientId).OrderByDescending(m => m.RecordedAt).ThenByDescending(m => m.MetricId)
                 .Select(m => (double?)m.WeightKg).FirstOrDefaultAsync();
     }
 }

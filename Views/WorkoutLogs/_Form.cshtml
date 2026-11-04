@@ -35,7 +35,7 @@
     </div>
     <div class="col-md-6">
         <label asp-for="LoggedAt" class="form-label">Date &amp; time</label>
-        <input asp-for="LoggedAt" asp-format="{0:yyyy-MM-ddTHH:mm}" class="form-control" max="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" />
+        <input asp-for="LoggedAt" asp-format="{0:yyyy-MM-ddTHH:mm}" class="form-control" max="@(ViewData["LocalNow"] as DateTime? ?? DateTime.Now).ToString("yyyy-MM-ddTHH:mm")" />
         <span asp-validation-for="LoggedAt" class="text-danger"></span>
     </div>
 </div>

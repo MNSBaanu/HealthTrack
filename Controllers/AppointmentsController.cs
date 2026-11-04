@@ -107,10 +107,15 @@ public class AppointmentsController : ClientBaseController
             return RedirectToAction(nameof(Details), new { id });
         }
 
-        record.Rating = rating;
-        record.RatingComment = comment;
-        record.RatedAtUtc = DateTime.UtcNow;
-        await Context.SaveChangesAsync();
+        // Only the first rating is kept if the form is submitted twice.
+        var saved = await Context.Appointments.Where(a => a.Id == id && a.ClientId == CurrentUserId && a.Rating == null)
+            .ExecuteUpdateAsync(s => s.SetProperty(a => a.Rating, rating).SetProperty(a => a.RatingComment, comment)
+                .SetProperty(a => a.RatedAtUtc, DateTime.UtcNow));
+        if (saved == 0)
+        {
+            TempData["Error"] = "This appointment cannot be rated.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
         TempData["Success"] = "Thanks for your rating.";
         return RedirectToAction(nameof(Details), new { id });
     }
@@ -147,6 +152,11 @@ public class AppointmentsController : ClientBaseController
             return RedirectToAction(nameof(Details), new { id });
         }
 
+        if (requestType is not ("Reschedule" or "Cancel") || message?.Length > 500)
+        {
+            TempData["Error"] = "Choose Reschedule or Cancel. The message can be at most 500 characters.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
         var action = requestType == "Reschedule" ? "RESCHEDULE" : "CANCEL";
         var start = _time.ToLocal(record.Slot.StartUtc);
         var note = string.IsNullOrWhiteSpace(message) ? "" : $" Message: {message.Trim()}";

@@ -196,21 +196,37 @@ namespace HealthTrack.Controllers
 
         [HttpPost]
         [Authorize]
-        public async Task<IActionResult> GenerateRecoveryCodes()
+        [EnableRateLimiting("auth")]
+        public async Task<IActionResult> GenerateRecoveryCodes(string? password)
         {
             var user = await UserManager.GetUserAsync(User);
             if (user == null) return RedirectToAction(nameof(Login));
             if (!user.TwoFactorEnabled) return RedirectToAction(nameof(ChangePassword));
+            if (!await PasswordConfirmedAsync(user, password))
+            {
+                TempData["Error"] = "Enter your current password to make new recovery codes.";
+                return RedirectToAction(nameof(ChangePassword));
+            }
             var codes = await UserManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 10);
             return View("RecoveryCodes", codes?.ToArray() ?? Array.Empty<string>());
         }
 
+        // Sensitive account changes need the password again, so a stolen session cannot weaken sign-in.
+        private async Task<bool> PasswordConfirmedAsync(Person user, string? password) =>
+            !string.IsNullOrEmpty(password) && await UserManager.CheckPasswordAsync(user, password);
+
         [HttpPost]
         [Authorize]
-        public async Task<IActionResult> DisableTwoFactor()
+        [EnableRateLimiting("auth")]
+        public async Task<IActionResult> DisableTwoFactor(string? password)
         {
             var user = await UserManager.GetUserAsync(User);
             if (user == null) return RedirectToAction(nameof(Login));
+            if (!await PasswordConfirmedAsync(user, password))
+            {
+                TempData["Error"] = "Enter your current password to turn off two-factor sign-in.";
+                return RedirectToAction(nameof(ChangePassword));
+            }
             if (user is Admin && (await SystemSettings.LoadAsync(Context)).RequireAdminTwoFactor)
             {
                 TempData["Error"] = "Two-factor sign-in is required for administrators, so it can't be turned off.";

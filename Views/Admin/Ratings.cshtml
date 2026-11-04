@@ -53,6 +53,7 @@ else
                             <span>@for (var star = 1; star <= 5; star++) { <i class="@(star <= rating.Rating ? "icon-star" : "icon-star opacity-25") text-warning"></i> }</span>
                             <form asp-action="ToggleRating" asp-route-id="@rating.AppointmentId" method="post"
                                   data-confirm="@(rating.Hidden ? "Restore this rating? It will count towards the average again." : "Hide this rating? It will no longer count towards the average.")">
+                                <input type="hidden" name="hide" value="@((!rating.Hidden).ToString().ToLowerInvariant())" />
                                 <button type="submit" class="btn btn-sm btn-line"><i class="@(rating.Hidden ? "icon-eye" : "icon-eye-off")"></i>@(rating.Hidden ? "Restore" : "Hide")</button>
                             </form>
                         </div>

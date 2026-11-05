@@ -5,6 +5,7 @@ using Microsoft.Data.SqlClient;
 
 namespace HealthTrack.Services
 {
+    // Creates and reads in-app notifications and generates reminders.
     public class NotificationService : INotificationService
     {
         private readonly HealthTrackDbContext _context;
@@ -38,6 +39,7 @@ namespace HealthTrack.Services
             }
         }
 
+        // Creates a notification for one user.
         public async Task SendAsync(string personId, string message, NotificationType type, DateTime? scheduledFor = null)
         {
             var notification = new Notification
@@ -53,6 +55,7 @@ namespace HealthTrack.Services
             if (!scheduledFor.HasValue) await EmailAsync(new[] { personId }, message);
         }
 
+        // Creates a notification for every client.
         public async Task SendToAllClientsAsync(string message, NotificationType type, DateTime? scheduledFor = null)
         {
             var clientIds = await _context.Clients.Select(c => c.Id).ToListAsync();
@@ -69,6 +72,7 @@ namespace HealthTrack.Services
             if (!scheduledFor.HasValue) await EmailAsync(clientIds, message);
         }
 
+        // Creates a notification for every trainer.
         public async Task SendToAllTrainersAsync(string message, NotificationType type, DateTime? scheduledFor = null)
         {
             var trainerIds = await _context.Trainers.Select(t => t.Id).ToListAsync();
@@ -91,6 +95,7 @@ namespace HealthTrack.Services
                 notification.EmailDelivery = new NotificationEmail { DueAtUtc = _appointmentTime.ToUtc(scheduledFor.Value) };
         }
 
+        // Returns the user's notifications that are due and not dismissed.
         public async Task<List<Notification>> GetVisibleAsync(string personId, bool unreadOnly)
         {
             await GenerateAppointmentRemindersAsync(personId);
@@ -102,6 +107,7 @@ namespace HealthTrack.Services
                 .ToListAsync();
         }
 
+        // Counts the user's unread notifications.
         public async Task<int> GetUnreadCountAsync(string personId)
         {
             await GenerateAppointmentRemindersAsync(personId);
@@ -110,60 +116,53 @@ namespace HealthTrack.Services
                 && (n.ScheduledFor == null || n.ScheduledFor <= now));
         }
 
+        // Creates today's workout and meal reminders for a client if they do not exist yet.
         public async Task GenerateDailyRemindersAsync(string clientId)
         {
             var client = await _context.Clients.AsNoTracking().FirstOrDefaultAsync(c => c.Id == clientId);
             if (client == null) return;
-            var today = DateTime.Today;
-            var hour = _clock.GetLocalNow().Hour;
+            // Reminders follow the application's time zone, like the client's journals and plans.
+            var now = _appointmentTime.ToLocal(_clock.GetUtcNow().UtcDateTime);
+            var today = now.Date;
+            var hour = now.Hour;
+            // Match on the message so unrelated notifications of the same type (e.g. a
+            // trainer's message) never suppress a reminder.
             var remindedToday = await _context.Notifications
                 .Where(n => n.PersonId == clientId && n.CreatedAt >= today)
-                .Select(n => n.Type)
+                .Select(n => n.Message)
                 .ToListAsync();
             var reminders = new List<string>();
 
-            if (client.WorkoutReminderEnabled && hour >= client.WorkoutReminderHour
-                && !remindedToday.Contains(NotificationType.Workout)
-                && !await _context.WorkoutLogs.AnyAsync(w => w.ClientId == clientId && w.LoggedAt >= today))
+            void AddReminder(NotificationType type, string message)
             {
                 _context.Notifications.Add(new Notification
                 {
-                    PersonId = clientId,
-                    Type = NotificationType.Workout,
-                    Message = "You haven't logged a workout today. Keep your streak going!"
+                    PersonId = clientId, Type = type, Message = message, CreatedAt = now
                 });
-                reminders.Add("You haven't logged a workout today. Keep your streak going!");
+                reminders.Add(message);
             }
 
+            if (client.WorkoutReminderEnabled && hour >= client.WorkoutReminderHour
+                && !remindedToday.Contains(WorkoutReminderMessage)
+                && !await _context.WorkoutLogs.AnyAsync(w => w.ClientId == clientId && w.LoggedAt >= today)
+                // Ticking off a planned exercise also counts as training today.
+                && !await _context.WorkoutPlanCompletions.AnyAsync(c => c.ClientId == clientId && c.CompletedOn == today))
+                AddReminder(NotificationType.Workout, WorkoutReminderMessage);
+
             if (client.MealReminderEnabled && hour >= client.MealReminderHour
-                && !remindedToday.Contains(NotificationType.Meal)
+                && !remindedToday.Contains(MealReminderMessage)
                 && !await _context.MealLogs.AnyAsync(m => m.ClientId == clientId && m.LoggedAt >= today))
-            {
-                _context.Notifications.Add(new Notification
-                {
-                    PersonId = clientId,
-                    Type = NotificationType.Meal,
-                    Message = "Don't forget to log your meals for today."
-                });
-                reminders.Add("Don't forget to log your meals for today.");
-            }
+                AddReminder(NotificationType.Meal, MealReminderMessage);
 
             var lastMetric = await _context.HealthMetrics
                 .Where(m => m.ClientId == clientId)
                 .MaxAsync(m => (DateTime?)m.RecordedAt);
             if (client.WeightReminderEnabled && hour >= client.WeightReminderHour
-                && !remindedToday.Contains(NotificationType.General)
+                && !remindedToday.Contains(WeightReminderMessage)
                 && (lastMetric == null || lastMetric < today.AddDays(-7)))
-            {
-                _context.Notifications.Add(new Notification
-                {
-                    PersonId = clientId,
-                    Type = NotificationType.General,
-                    Message = "It's been over a week since your last weight check-in. Record a new measurement."
-                });
-                reminders.Add("It's been over a week since your last weight check-in. Record a new measurement.");
-            }
+                AddReminder(NotificationType.General, WeightReminderMessage);
 
+            if (reminders.Count == 0) return;
             await _context.SaveChangesAsync();
             foreach (var reminder in reminders)
             {
@@ -171,6 +170,11 @@ namespace HealthTrack.Services
             }
         }
 
+        private const string WorkoutReminderMessage = "You haven't logged a workout today. Keep your streak going!";
+        private const string MealReminderMessage = "Don't forget to log your meals for today.";
+        private const string WeightReminderMessage = "It's been over a week since your last weight check-in. Record a new measurement.";
+
+        // Creates reminders for appointments that start soon.
         public async Task GenerateAppointmentRemindersAsync(string clientId)
         {
             // A page request and the background worker may discover the same reminder.

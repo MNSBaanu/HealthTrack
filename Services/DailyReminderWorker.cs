@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthTrack.Services;
 
+// Background worker that creates daily workout and meal reminders.
 public class DailyReminderWorker(IServiceScopeFactory scopes,
     ILogger<DailyReminderWorker> logger) : BackgroundService
 {

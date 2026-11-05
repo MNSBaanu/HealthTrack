@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace HealthTrack.Models;
 
+// A notification an admin sent to a group of users.
 public class AdminBroadcast
 {
     public int Id { get; set; }

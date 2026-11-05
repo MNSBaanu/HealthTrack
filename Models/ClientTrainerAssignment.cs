@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace HealthTrack.Models;
 
+// Links a client to their current trainer.
 public class ClientTrainerAssignment
 {
     // The primary key guarantees one current Trainer per Client.

@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthTrack.Controllers
 {
+    // Reports on the trainer's clients: performance, popular routines and engagement.
     public class TrainerReportsController : TrainerBaseController
     {
         private readonly IExportService _exportService;
@@ -21,6 +22,7 @@ namespace HealthTrack.Controllers
             _exportService = exportService;
         }
 
+        // Shows the trainer's client reports.
         public async Task<IActionResult> Index()
         {
             var trainerId = CurrentUserId;
@@ -55,6 +57,7 @@ namespace HealthTrack.Controllers
             return View(model);
         }
 
+        // Downloads the trainer's client report as PDF, CSV or Excel.
         [HttpGet]
         public async Task<IActionResult> ExportReport(string format = "csv")
         {

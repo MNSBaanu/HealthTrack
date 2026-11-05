@@ -3,6 +3,7 @@ using System.Text.Json;
 
 namespace HealthTrack.Services;
 
+// Optional client for the external chat service, used when no FAQ answer matches.
 public class ChatAiClient(HttpClient http, IConfiguration configuration, ILogger<ChatAiClient> logger)
 {
     private const string SystemPrompt = "You are the HealthTrack help assistant. Answer only questions about how to use the HealthTrack "
@@ -12,6 +13,7 @@ public class ChatAiClient(HttpClient http, IConfiguration configuration, ILogger
 
     public bool IsConfigured => !string.IsNullOrWhiteSpace(configuration["Anthropic:ApiKey"]);
 
+    // Sends the question to the chat service, or returns null when it is not configured or fails.
     public async Task<string?> AskAsync(string question, CancellationToken cancellationToken)
     {
         if (!IsConfigured) return null;

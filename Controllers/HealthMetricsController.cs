@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthTrack.Controllers
 {
+    // Lets clients record and manage health measurements.
     public class HealthMetricsController : ClientBaseController
     {
         private readonly ILogger<HealthMetricsController> _logger;
@@ -23,6 +24,16 @@ namespace HealthTrack.Controllers
                 .FirstOrDefaultAsync(m => m.MetricId == id && m.ClientId == CurrentUserId);
         }
 
+        private void ValidateBloodPressure(HealthMetric metric)
+        {
+            if (metric.SystolicBp.HasValue != metric.DiastolicBp.HasValue)
+                ModelState.AddModelError(metric.SystolicBp.HasValue ? nameof(HealthMetric.DiastolicBp) : nameof(HealthMetric.SystolicBp),
+                    "Enter both blood pressure values, or leave both empty.");
+            else if (metric.SystolicBp <= metric.DiastolicBp)
+                ModelState.AddModelError(nameof(HealthMetric.SystolicBp), "Systolic pressure must be higher than diastolic pressure.");
+        }
+
+        // Lists the client's measurements with date filters.
         public async Task<IActionResult> Index(DateTime? from = null, DateTime? to = null)
         {
             if (!SetJournalFilters(from, to)) return View(new List<HealthMetric>());
@@ -37,6 +48,7 @@ namespace HealthTrack.Controllers
             return View(metrics);
         }
 
+        // Shows the new measurement form.
         [HttpGet]
         public async Task<IActionResult> Create()
         {
@@ -47,7 +59,7 @@ namespace HealthTrack.Controllers
                 .FirstOrDefaultAsync();
             return View(new HealthMetric
             {
-                RecordedAt = DateTime.Now,
+                RecordedAt = LocalNow,
                 WeightKg = last?.WeightKg ?? 0,
                 BodyFatPercent = last?.BodyFatPercent,
                 RestingHeartRate = last?.RestingHeartRate,
@@ -58,12 +70,14 @@ namespace HealthTrack.Controllers
             });
         }
 
+        // Saves a new measurement.
         [HttpPost]
         public async Task<IActionResult> Create([Bind("WeightKg,BodyFatPercent,RestingHeartRate,SystolicBp,DiastolicBp,Steps,SleepHours,RecordedAt")] HealthMetric metric)
         {
             metric.ClientId = CurrentUserId;
             ModelState.Remove(nameof(HealthMetric.ClientId));
             ValidateNotInFuture(metric.RecordedAt, nameof(metric.RecordedAt));
+            ValidateBloodPressure(metric);
             if (!ModelState.IsValid)
             {
                 return View(metric);
@@ -76,6 +90,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // Shows the edit form for a measurement.
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
@@ -83,6 +98,7 @@ namespace HealthTrack.Controllers
             return metric == null ? NotFound() : View(metric);
         }
 
+        // Saves changes to a measurement.
         [HttpPost]
         public async Task<IActionResult> Edit(int id, [Bind("WeightKg,BodyFatPercent,RestingHeartRate,SystolicBp,DiastolicBp,Steps,SleepHours,RecordedAt")] HealthMetric input)
         {
@@ -94,6 +110,7 @@ namespace HealthTrack.Controllers
 
             ModelState.Remove(nameof(HealthMetric.ClientId));
             ValidateNotInFuture(input.RecordedAt, nameof(input.RecordedAt));
+            ValidateBloodPressure(input);
             if (!ModelState.IsValid)
             {
                 input.MetricId = id;
@@ -113,6 +130,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // Shows the delete confirmation for a measurement.
         [HttpGet]
         public async Task<IActionResult> Delete(int id)
         {
@@ -120,6 +138,7 @@ namespace HealthTrack.Controllers
             return metric == null ? NotFound() : View(metric);
         }
 
+        // Deletes the measurement.
         [HttpPost, ActionName("Delete")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {

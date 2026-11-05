@@ -3,15 +3,39 @@ using HealthTrack.Models.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using HealthTrack.Models.ViewModels;
+using HealthTrack.Services;
+using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace HealthTrack.Controllers
 {
+    // Base for client-only pages; restricts access to the Client role and shares journal helpers.
     [Authorize(Roles = AppRoles.Client)]
     public abstract class ClientBaseController : BaseController
     {
         protected ClientBaseController(HealthTrackDbContext context, UserManager<Person> userManager)
             : base(context, userManager)
         {
+        }
+
+        // Client data is recorded in the application's time zone, not the server's.
+        protected override DateTime LocalNow
+        {
+            get
+            {
+                var services = HttpContext.RequestServices;
+                return services.GetRequiredService<AppointmentTime>()
+                    .ToLocal(services.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime);
+            }
+        }
+
+        protected DateTime LocalToday => LocalNow.Date;
+
+        // Passes the client's local time to every view.
+        public override void OnActionExecuting(ActionExecutingContext context)
+        {
+            // Views use this for "max" attributes and greetings instead of the server clock.
+            ViewData["LocalNow"] = LocalNow;
+            base.OnActionExecuting(context);
         }
 
         protected bool SetJournalFilters(DateTime? from, DateTime? to, string? q = null, MealType? mealType = null, bool meals = false)

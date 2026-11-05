@@ -1,5 +1,6 @@
 namespace HealthTrack.Services
 {
+    // One titled table in a report export.
     public class ReportSection
     {
         public ReportSection(string title, string[] headers, IEnumerable<object?[]> rows)

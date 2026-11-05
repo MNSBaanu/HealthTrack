@@ -1,5 +1,6 @@
 namespace HealthTrack.Services
 {
+    // SMTP settings read from configuration.
     public class EmailOptions
     {
         public string Host { get; set; } = string.Empty;

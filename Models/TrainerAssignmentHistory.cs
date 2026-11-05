@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace HealthTrack.Models;
 
+// A past trainer assignment, kept for history.
 public class TrainerAssignmentHistory
 {
     public int Id { get; set; }

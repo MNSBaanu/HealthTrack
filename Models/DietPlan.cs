@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace HealthTrack.Models;
 
+// A trainer's diet plan for a client with a daily calorie target.
 public class DietPlan
 {
     public int Id { get; set; }

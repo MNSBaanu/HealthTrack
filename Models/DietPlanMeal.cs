@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace HealthTrack.Models;
 
+// A meal within a diet plan.
 public class DietPlanMeal
 {
     public int Id { get; set; }
@@ -13,6 +14,7 @@ public class DietPlanMeal
 
     public DayOfWeek? Day { get; set; }
 
+    // Returns true when the plan is active on the given date.
     public bool CanLogOn(DateTime date) => DietPlan is { IsActive: true } plan
         && date.Date >= plan.StartDate.Date
         && (!plan.EndDate.HasValue || date.Date <= plan.EndDate.Value.Date)

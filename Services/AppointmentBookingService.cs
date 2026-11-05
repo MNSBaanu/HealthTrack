@@ -6,11 +6,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthTrack.Services;
 
+// Outcome of a booking attempt.
 public record BookingResult(int? AppointmentId, string? Error);
 
+// Books appointment slots safely so a slot cannot be double-booked.
 public class AppointmentBookingService(HealthTrackDbContext context, TimeProvider clock,
     INotificationService notifications, AppointmentTime time)
 {
+    // Reserves the slot and creates a pending appointment in one transaction.
     public async Task<BookingResult> BookAsync(string clientId, int slotId, string? notes)
     {
         // Serialize the availability and conflict checks with the insert. This also

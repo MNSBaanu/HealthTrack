@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthTrack.Services;
 
+// Background worker that deletes client accounts inactive for longer than the retention period.
 public class DataRetentionWorker(IServiceScopeFactory scopes, IConfiguration configuration,
     ILogger<DataRetentionWorker> logger, TimeProvider clock) : BackgroundService
 {

@@ -1,11 +1,15 @@
 namespace HealthTrack.Services
 {
+    // An achievement badge shown on the client dashboard.
     public record Badge(string Icon, string Title, string Description, bool Earned);
 
+    // Streak and badges earned by a client.
     public record AchievementSummary(int CurrentStreak, int LongestStreak, List<Badge> Badges);
 
+    // Works out workout streaks and achievement badges.
     public static class ClientAchievements
     {
+        // Calculates the current streak and earned badges from the client's activity.
         public static AchievementSummary Compute(IEnumerable<DateTime> workoutDates, DateTime today, int totalMeals, int totalWeighIns, bool goalReached)
         {
             var days = workoutDates.Select(d => d.Date).Distinct().OrderBy(d => d).ToList();

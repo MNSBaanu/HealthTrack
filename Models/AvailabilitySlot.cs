@@ -1,5 +1,6 @@
 namespace HealthTrack.Models;
 
+// A time window when a provider can be booked.
 public class AvailabilitySlot
 {
     public int Id { get; set; }

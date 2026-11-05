@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace HealthTrack.Models
 {
+    // Client user with health profile details; inherits from Person.
     public class Client : Person
     {
         [Range(50, 250)]

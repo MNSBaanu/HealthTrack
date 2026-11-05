@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace HealthTrack.Models;
 
+// A trainer's workout plan for a client.
 public class WorkoutPlan
 {
     public int Id { get; set; }

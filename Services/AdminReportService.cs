@@ -6,8 +6,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthTrack.Services
 {
+    // Builds the data behind admin reports, exports and system health.
     public class AdminReportService(HealthTrackDbContext context, AppointmentTime time)
     {
+        // Returns the display title for a report type.
         public static string Title(string? report) => report switch
         {
             "health" => "System health report",
@@ -18,6 +20,7 @@ namespace HealthTrack.Services
             _ => "General report"
         };
 
+        // Builds the table sections for the selected report export.
         public async Task<List<ReportSection>> BuildSectionsAsync(string? report, DateTime? from, DateTime? to, bool emailConfigured,
             string? actor = null, string? action = null)
         {
@@ -51,6 +54,7 @@ namespace HealthTrack.Services
             return sections;
         }
 
+        // Collects user counts, sign-in activity and email status for the system health page.
         public async Task<SystemHealthViewModel> GetSystemHealthAsync(bool emailConfigured)
         {
             var now = DateTime.Now;
@@ -84,6 +88,7 @@ namespace HealthTrack.Services
             };
         }
 
+        // Loads appointment ratings with client and provider names.
         public async Task<ProviderRatingsViewModel> GetRatingsAsync(int recent)
         {
             var rated = await context.Appointments.AsNoTracking()
@@ -120,6 +125,7 @@ namespace HealthTrack.Services
             (await context.ChatQuestions.AsNoTracking().OrderByDescending(q => q.CreatedAtUtc).Take(500).ToListAsync(),
              await context.ChatFaqs.AsNoTracking().OrderBy(f => f.Question).ToListAsync());
 
+        // Groups similar chatbot questions and counts them.
         public static List<ChatQuestionGroup> GroupChatQuestions(IEnumerable<ChatQuestion> questions) =>
             questions.GroupBy(q => q.Question.Trim().ToLowerInvariant())
                 .Select(g => new ChatQuestionGroup(g.First().Question, g.Count(), string.Join(", ", g.Select(q => q.Role).Distinct()),
@@ -202,6 +208,7 @@ namespace HealthTrack.Services
             };
         }
 
+        // Returns the most logged workout activities.
         public Task<List<ActivityStatViewModel>> GetPopularActivitiesAsync(int count, DateTime? from = null, DateTime? to = null)
         {
             var start = from?.Date;
@@ -274,6 +281,7 @@ namespace HealthTrack.Services
             return (exercises, plans);
         }
 
+        // Summarises each client's workouts, calories and weight change.
         public async Task<List<ClientPerformanceViewModel>> GetClientPerformanceAsync(DateTime? from = null, DateTime? to = null)
         {
             var start = from?.Date;

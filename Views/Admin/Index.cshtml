@@ -71,6 +71,56 @@
     </div>
 </div>
 
+<div class="row g-3 mb-3">
+    <div class="col-lg-4">
+        <section class="ht-card h-100">
+            <div class="ht-card-head">
+                <h2>Trainer assignments</h2>
+            </div>
+            <div class="ht-card-body">
+                <ul class="ht-facts mt-0">
+                    <li><span><i class="icon-users me-2"></i>Trainers</span><strong>@Model.TotalTrainers</strong></li>
+                    <li><span><i class="icon-user-check me-2"></i>Trainers with clients</span><strong>@Model.TrainersWithClients</strong></li>
+                    <li><span><i class="icon-link me-2"></i>Assigned clients</span><strong>@Model.AssignedClients</strong></li>
+                    <li><span><i class="icon-user-x me-2"></i>Unassigned clients</span><strong>@Model.UnassignedClients</strong></li>
+                </ul>
+            </div>
+        </section>
+    </div>
+    <div class="col-lg-8">
+        <section class="ht-card h-100">
+            <div class="ht-card-head">
+                <h2>Recent assignments</h2>
+                <a asp-controller="Assignments" asp-action="Index">Manage assignments <i class="icon-arrow-right"></i></a>
+            </div>
+            @if (Model.RecentAssignments.Any())
+            {
+                <div class="table-responsive">
+                    <table class="ht-table" data-nofilter>
+                        <thead>
+                            <tr><th>Client</th><th>Trainer</th><th>Assigned</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var assignment in Model.RecentAssignments)
+                            {
+                                <tr>
+                                    <td><strong>@assignment.Client.Name</strong></td>
+                                    <td>@assignment.Trainer.Name</td>
+                                    <td class="text-nowrap text-muted small">@assignment.AssignedAtUtc.ToString("d MMM yyyy")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="ht-card-body text-muted">No clients assigned yet.</div>
+            }
+        </section>
+    </div>
+</div>
+
 <div class="row g-3">
     <div class="col-12">
         <section class="ht-card h-100">

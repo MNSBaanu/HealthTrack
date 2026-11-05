@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace HealthTrack.Models;
 
+// A weekly check-in a trainer requested and the client answered.
 public class WeeklyCheckIn
 {
     public int Id { get; set; }

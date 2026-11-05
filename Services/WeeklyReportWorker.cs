@@ -3,6 +3,7 @@ using HealthTrack.Models.Data;
 
 namespace HealthTrack.Services;
 
+// Background worker that sends the weekly report on schedule.
 public class WeeklyReportWorker(IServiceScopeFactory scopes, AppointmentTime time, TimeProvider clock,
     ILogger<WeeklyReportWorker> logger) : BackgroundService
 {

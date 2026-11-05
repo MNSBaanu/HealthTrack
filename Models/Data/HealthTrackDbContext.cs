@@ -1,14 +1,18 @@
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthTrack.Models.Data
 {
+    // Entity Framework database context for HealthTrack, including the Identity tables.
     public class HealthTrackDbContext : IdentityDbContext<Person>
     {
-        public HealthTrackDbContext(DbContextOptions<HealthTrackDbContext> options) : base(options)
-        {
+        private readonly IDataProtector _protector;
 
+        public HealthTrackDbContext(DbContextOptions<HealthTrackDbContext> options, IDataProtectionProvider dataProtection) : base(options)
+        {
+            _protector = dataProtection.CreateProtector("HealthTrack.SensitiveData");
         }
 
         public DbSet<Client> Clients { get; set; }
@@ -42,6 +46,13 @@ namespace HealthTrack.Models.Data
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+            var encrypted = new EncryptedStringConverter(_protector);
+            builder.Entity<Client>().Property(c => c.FitnessGoal).HasConversion(encrypted).HasColumnType("nvarchar(max)");
+            builder.Entity<Appointment>().Property(a => a.Notes).HasConversion(encrypted).HasColumnType("nvarchar(max)");
+            builder.Entity<WeeklyCheckIn>().Property(c => c.Note).HasConversion(encrypted).HasColumnType("nvarchar(max)");
+            builder.Entity<WeeklyCheckIn>().Property(c => c.Comment).HasConversion(encrypted).HasColumnType("nvarchar(max)");
+            builder.Entity<TrainerFeedback>().Property(f => f.Comments).HasConversion(encrypted).HasColumnType("nvarchar(max)");
+            builder.Entity<TrainerFeedback>().Property(f => f.ClientReply).HasConversion(encrypted).HasColumnType("nvarchar(max)");
             builder.Entity<SystemSettings>().Property(s => s.Id).ValueGeneratedNever();
             builder.Entity<Notification>().HasOne(n => n.AdminBroadcast).WithMany(b => b.Notifications)
                 .HasForeignKey(n => n.AdminBroadcastId).OnDelete(DeleteBehavior.SetNull);

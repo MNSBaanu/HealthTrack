@@ -1,5 +1,6 @@
 namespace HealthTrack.Services;
 
+// Background worker that regularly runs the notification email dispatcher.
 public class NotificationEmailWorker(IServiceScopeFactory scopes, ILogger<NotificationEmailWorker> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)

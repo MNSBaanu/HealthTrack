@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace HealthTrack.Models
 {
+    // Administrator user; inherits shared account details from Person.
     public class Admin : Person
     {
         // Legacy database value. All administrators use the same Admin role permissions.

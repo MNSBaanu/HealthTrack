@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthTrack.Controllers
 {
+    // Administrator console: system overview, user management, providers, reports, settings and audit tools.
     [Authorize(Roles = AppRoles.Admin)]
     public class AdminController : BaseController
     {
@@ -37,6 +38,7 @@ namespace HealthTrack.Controllers
             _clock = clock;
         }
 
+        // Dashboard with user counts, weekly activity, trainer assignments and popular activities.
         public async Task<IActionResult> Index()
         {
             var now = _clock.GetUtcNow();
@@ -59,11 +61,18 @@ namespace HealthTrack.Controllers
                     + await Context.DietPlans.CountAsync(p => p.CreatedAtUtc >= weekStartUtc),
                 FeedbackThisWeek = await Context.TrainerFeedbacks.CountAsync(f => f.CreatedAtUtc >= weekStartUtc),
                 MetricsThisWeek = await Context.HealthMetrics.CountAsync(m => m.RecordedAt >= weekStart),
-                PopularActivities = await ReportData.GetPopularActivitiesAsync(5)
+                PopularActivities = await ReportData.GetPopularActivitiesAsync(5),
+                TotalTrainers = await Context.Trainers.CountAsync(),
+                AssignedClients = await Context.ClientTrainerAssignments.CountAsync(),
+                TrainersWithClients = await Context.ClientTrainerAssignments.Select(a => a.TrainerId).Distinct().CountAsync(),
+                RecentAssignments = await Context.ClientTrainerAssignments.AsNoTracking()
+                    .Include(a => a.Client).Include(a => a.Trainer)
+                    .OrderByDescending(a => a.AssignedAtUtc).Take(5).ToListAsync()
             };
             return View(model);
         }
 
+        // Returns daily activity counts as JSON for the system usage chart.
         [HttpGet]
         public async Task<IActionResult> UsageData(int days = 14)
         {
@@ -95,6 +104,7 @@ namespace HealthTrack.Controllers
             return Json(model);
         }
 
+        // Lists all users with search, role and status filters.
         public async Task<IActionResult> Users(string? search, string? role, string? status)
         {
             var query = QueryUserSummaries();
@@ -140,6 +150,7 @@ namespace HealthTrack.Controllers
             return View(users);
         }
 
+        // Shows a client's profile, metrics, logs and trainer assignment.
         public async Task<IActionResult> ClientDetails(string id)
         {
             var client = await Context.Clients
@@ -154,6 +165,7 @@ namespace HealthTrack.Controllers
             return View(client);
         }
 
+        // Shows a trainer's profile, assigned clients and plans.
         public async Task<IActionResult> TrainerDetails(string id)
         {
             var trainer = await Context.Trainers
@@ -175,6 +187,7 @@ namespace HealthTrack.Controllers
             return View(trainer);
         }
 
+        // Lists recent sign-in attempts for security review.
         public async Task<IActionResult> LoginHistory(string id)
         {
             var person = await UserManager.FindByIdAsync(id);
@@ -184,24 +197,29 @@ namespace HealthTrack.Controllers
                 .OrderByDescending(l => l.LoggedInAt).Take(100).ToListAsync());
         }
 
+        // Lists appointment ratings left by clients.
         [HttpGet]
         public async Task<IActionResult> Ratings()
         {
             return View(await ReportData.GetRatingsAsync(50));
         }
 
+        // Hides or shows an appointment rating.
         [HttpPost]
-        public async Task<IActionResult> ToggleRating(int id)
+        public async Task<IActionResult> ToggleRating(int id, bool hide)
         {
             var appointment = await Context.Appointments.SingleOrDefaultAsync(a => a.Id == id && a.Rating != null);
             if (appointment == null) return NotFound();
-            appointment.RatingHidden = !appointment.RatingHidden;
+            // The form says which state is wanted, so a double submit cannot flip it back.
+            if (appointment.RatingHidden == hide) return RedirectToAction(nameof(Ratings));
+            appointment.RatingHidden = hide;
             await Context.SaveChangesAsync();
             await AuditAsync(appointment.RatingHidden ? "Hidden" : "Restored", "Rating", appointment.ClientId, $"Appointment {id}");
             TempData["Success"] = appointment.RatingHidden ? "Rating hidden. It no longer counts towards the average." : "Rating restored.";
             return RedirectToAction(nameof(Ratings));
         }
 
+        // Lists all appointments across providers.
         [HttpGet]
         public async Task<IActionResult> Appointments(string? search, AppointmentStatus? status, DateTime? from, DateTime? to)
         {
@@ -237,6 +255,7 @@ namespace HealthTrack.Controllers
                 _time.ToLocal(a.StartUtc), a.Status, _time.ToLocal(a.RequestedAtUtc))).ToList());
         }
 
+        // Cancels an appointment on behalf of the system and notifies the client.
         [HttpPost]
         public async Task<IActionResult> CancelAppointment(int id)
         {
@@ -254,6 +273,14 @@ namespace HealthTrack.Controllers
                 return RedirectToAction(nameof(Appointments));
             }
             appointment.Status = AppointmentStatus.Cancelled;
+            // A cancelled appointment can no longer be moved, so its open reschedule request is closed too.
+            var closedAt = _clock.GetUtcNow().UtcDateTime;
+            foreach (var request in await Context.RescheduleRequests.Where(r => r.AppointmentId == id
+                && (r.Status == RescheduleRequestStatus.Pending || r.Status == RescheduleRequestStatus.Accepted)).ToListAsync())
+            {
+                request.Status = RescheduleRequestStatus.Closed;
+                request.DecidedAtUtc ??= closedAt;
+            }
             await Context.SaveChangesAsync();
 
             var when = $"{_time.ToLocal(appointment.Slot.StartUtc):ddd, d MMM yyyy HH:mm}";
@@ -269,6 +296,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Appointments));
         }
 
+        // Shows the system-wide security and reminder settings.
         [HttpGet]
         public async Task<IActionResult> Settings()
         {
@@ -276,6 +304,7 @@ namespace HealthTrack.Controllers
             return View(await SystemSettings.LoadAsync(Context));
         }
 
+        // Saves system settings and applies the new lockout rules immediately.
         [HttpPost]
         public async Task<IActionResult> Settings(SystemSettings model)
         {
@@ -315,6 +344,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Settings));
         }
 
+        // Emails the weekly system report straight away.
         [HttpPost]
         public async Task<IActionResult> SendWeeklyReport()
         {
@@ -331,6 +361,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Settings));
         }
 
+        // Downloads a CSV of all users.
         [HttpGet]
         public async Task<IActionResult> ExportUserData(string id)
         {
@@ -377,9 +408,10 @@ namespace HealthTrack.Controllers
             });
             _logger.LogInformation("Admin {AdminId} exported data for user {UserId}", CurrentUserId, id);
             await AuditAsync("Exported", "UserData", user is Client ? id : null, user.Name);
-            return File(json, "application/json", $"healthtrack-data-{user.Id[..8]}-{DateTime.Today:yyyyMMdd}.json");
+            return File(json, "application/json", $"healthtrack-data-{user.Id[..8]}-{_time.ToLocal(_clock.GetUtcNow().UtcDateTime):yyyyMMdd}.json");
         }
 
+        // Shows user counts, sign-in activity and email status.
         [HttpGet]
         public async Task<IActionResult> SystemHealth()
         {
@@ -390,18 +422,21 @@ namespace HealthTrack.Controllers
 
         private bool MailConfigured => HttpContext.RequestServices.GetRequiredService<IMailSender>().IsConfigured;
 
+        // Shows the bulk user import page.
         [HttpGet]
         public IActionResult ImportUsers()
         {
             return View(new UserImportResult());
         }
 
+        // Downloads the CSV template used for bulk import.
         [HttpGet]
         public IActionResult ImportTemplate()
         {
             return File(Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(UserImportService.Template)).ToArray(), "text/csv", "HealthTrack_UserImport_Template.csv");
         }
 
+        // Validates an uploaded CSV and creates the accounts it contains.
         [HttpPost]
         [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
         public async Task<IActionResult> ImportUsers(IFormFile? file)
@@ -429,12 +464,14 @@ namespace HealthTrack.Controllers
             return View(result);
         }
 
+        // Shows the form for adding an administrator.
         [HttpGet]
         public IActionResult CreateAdmin()
         {
             return View(new CreateAdminViewModel());
         }
 
+        // Creates an administrator account with a temporary password.
         [HttpPost]
         public async Task<IActionResult> CreateAdmin(CreateAdminViewModel model)
         {
@@ -444,10 +481,11 @@ namespace HealthTrack.Controllers
                 return View(model);
             }
 
+            var email = model.Email.Trim();
             var admin = new Admin
             {
-                UserName = model.Email,
-                Email = model.Email,
+                UserName = email,
+                Email = email,
                 EmailConfirmed = true,
                 Name = model.Name.Trim(),
                 DateOfBirth = model.DateOfBirth!.Value,
@@ -467,12 +505,14 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Users));
         }
 
+        // Shows the form for adding a trainer.
         [HttpGet]
         public IActionResult CreateTrainer()
         {
             return View(new CreateTrainerViewModel());
         }
 
+        // Creates a trainer account with a temporary password.
         [HttpPost]
         public async Task<IActionResult> CreateTrainer(CreateTrainerViewModel model)
         {
@@ -482,10 +522,11 @@ namespace HealthTrack.Controllers
                 return View(model);
             }
 
+            var email = model.Email.Trim();
             var trainer = new Trainer
             {
-                UserName = model.Email,
-                Email = model.Email,
+                UserName = email,
+                Email = email,
                 EmailConfirmed = true,
                 Name = model.Name.Trim(),
                 DateOfBirth = model.DateOfBirth!.Value,
@@ -505,6 +546,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Users));
         }
 
+        // Locks or unlocks a user account.
         [HttpPost]
         public async Task<IActionResult> ToggleLock(string id)
         {
@@ -533,6 +575,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Users));
         }
 
+        // Deletes a user account and its related data.
         [HttpPost]
         public async Task<IActionResult> DeleteUser(string id)
         {
@@ -559,6 +602,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Users));
         }
 
+        // Shows the edit form for a user.
         [HttpGet]
         public async Task<IActionResult> EditUser(string id)
         {
@@ -573,6 +617,7 @@ namespace HealthTrack.Controllers
             });
         }
 
+        // Saves changes to a user's details and role information.
         [HttpPost]
         public async Task<IActionResult> EditUser(EditUserViewModel model)
         {
@@ -609,6 +654,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Users));
         }
 
+        // Ends a user's active sessions so they must sign in again.
         [HttpPost]
         public async Task<IActionResult> SignOutUser(string id)
         {
@@ -630,6 +676,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Users));
         }
 
+        // Sends a manual reminder notification to a user.
         [HttpPost]
         public async Task<IActionResult> SendReminder(string id)
         {
@@ -640,6 +687,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Users), new { status = "inactive" });
         }
 
+        // Applies a lock, unlock or delete action to several selected users.
         [HttpPost]
         public async Task<IActionResult> BulkUsers(string bulkAction, string[] ids, string? trainerId)
         {
@@ -652,7 +700,8 @@ namespace HealthTrack.Controllers
                     new ReportSection("Users", new[] { "Name", "Email", "Role", "Joined", "Last active", "Status" },
                         rows.Select(u => new object?[] { u.Name, u.Email, u.Role, u.CreatedAt, u.LastLoginAt, u.IsLocked ? "Locked" : "Active" }))
                 });
-                return File(csv, "text/csv", $"healthtrack-users-{DateTime.Today:yyyy-MM-dd}.csv");
+                await AuditAsync("Exported", "Users", null, $"{rows.Count} users");
+                return File(csv, "text/csv", $"healthtrack-users-{_time.ToLocal(_clock.GetUtcNow().UtcDateTime):yyyy-MM-dd}.csv");
             }
 
             ids = ids.Where(i => i != CurrentUserId).ToArray();
@@ -812,6 +861,7 @@ namespace HealthTrack.Controllers
             return changed.Count;
         }
 
+        // Shows the reset password form for a user.
         [HttpGet]
         [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
         public async Task<IActionResult> ResetPassword(string id)
@@ -825,6 +875,7 @@ namespace HealthTrack.Controllers
             return View(new ResetUserPasswordViewModel());
         }
 
+        // Sets a temporary password that the user must change on next sign-in.
         [HttpPost]
         [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
         public async Task<IActionResult> ResetPassword(string id, ResetUserPasswordViewModel model)
@@ -856,6 +907,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Users));
         }
 
+        // Shows client performance, popular routines and engagement reports.
         public async Task<IActionResult> Reports(DateTime? from, DateTime? to)
         {
             if (from > to) (from, to) = (to, from);
@@ -869,6 +921,7 @@ namespace HealthTrack.Controllers
             return View(await reports.GetClientPerformanceAsync(from, to));
         }
 
+        // Downloads the selected report as PDF, CSV or Excel.
         [HttpGet]
         public async Task<IActionResult> ExportReport(string format = "csv", string? report = null, DateTime? from = null, DateTime? to = null,
             string? actor = null, string? action = null)
@@ -877,7 +930,7 @@ namespace HealthTrack.Controllers
             var sections = await ReportData.BuildSectionsAsync(report, from, to, MailConfigured, actor, action);
             var title = AdminReportService.Title(report);
 
-            var fileName = $"HealthTrack_{title.Replace(' ', '_')}_{DateTime.Now:yyyyMMdd}";
+            var fileName = $"HealthTrack_{title.Replace(' ', '_')}_{_time.ToLocal(_clock.GetUtcNow().UtcDateTime):yyyyMMdd}";
             _logger.LogInformation("Admin {AdminId} exported {Report} as {Format}", CurrentUserId, title, format);
             await AuditAsync("Exported", title, null, format);
             if (format.Equals("pdf", StringComparison.OrdinalIgnoreCase))
@@ -891,6 +944,7 @@ namespace HealthTrack.Controllers
             return File(_exportService.ToCsv(sections), "text/csv", fileName + ".csv");
         }
 
+        // Lists recorded data changes for accountability.
         [HttpGet]
         public async Task<IActionResult> AuditLog(string? actor, string? action, DateTime? from, DateTime? to)
         {
@@ -904,6 +958,7 @@ namespace HealthTrack.Controllers
             return View(entries);
         }
 
+        // Groups questions asked to the chatbot so admins can turn them into FAQs.
         [HttpGet]
         public async Task<IActionResult> ChatQuestions()
         {
@@ -912,6 +967,7 @@ namespace HealthTrack.Controllers
             return View(questions);
         }
 
+        // Adds or updates a chatbot FAQ answer.
         [HttpPost]
         public async Task<IActionResult> SaveFaq(string question, string answer)
         {
@@ -931,6 +987,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(ChatQuestions));
         }
 
+        // Removes a chatbot FAQ.
         [HttpPost]
         public async Task<IActionResult> DeleteFaq(int id)
         {
@@ -943,6 +1000,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(ChatQuestions));
         }
 
+        // Shows the broadcast notification form.
         [HttpGet]
         public async Task<IActionResult> SendNotification()
         {
@@ -950,6 +1008,7 @@ namespace HealthTrack.Controllers
             return View(new SendNotificationViewModel());
         }
 
+        // Sends a broadcast notification to clients, trainers or everyone.
         [HttpPost]
         public async Task<IActionResult> SendNotification(SendNotificationViewModel model)
         {
@@ -1036,11 +1095,14 @@ namespace HealthTrack.Controllers
                 b.ScheduledFor > now ? "Scheduled" : "Available in app", b.Sent, b.Pending, b.Failed)).ToList();
         }
 
+        // Lists consultation providers (trainers and healthcare professionals).
         public IActionResult Providers() => RedirectToAction(nameof(Users), new { role = ProviderRole });
 
+        // Shows the form for adding a healthcare professional.
         [HttpGet]
         public IActionResult CreateProvider() => View("ProviderForm", new ProviderForm());
 
+        // Creates a consultation provider.
         [HttpPost]
         public async Task<IActionResult> CreateProvider(ProviderForm model)
         {
@@ -1065,6 +1127,7 @@ namespace HealthTrack.Controllers
         private Task<ConsultationProvider?> FindProfessionalAsync(int id) =>
             Context.ConsultationProviders.FirstOrDefaultAsync(p => p.Id == id && p.Kind == ConsultationProviderKind.HealthcareProfessional);
 
+        // Shows the edit form for a provider.
         [HttpGet]
         public async Task<IActionResult> EditProvider(int id)
         {
@@ -1077,6 +1140,7 @@ namespace HealthTrack.Controllers
             return View("ProviderForm", new ProviderForm { Id = provider.Id, Name = provider.Name, Specialty = provider.Specialty });
         }
 
+        // Saves changes to a provider.
         [HttpPost]
         public async Task<IActionResult> EditProvider(int id, ProviderForm model)
         {
@@ -1099,6 +1163,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Providers));
         }
 
+        // Activates or deactivates a provider for booking.
         [HttpPost]
         public async Task<IActionResult> ToggleProvider(int id)
         {
@@ -1115,6 +1180,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Providers));
         }
 
+        // Lists a provider's availability slots.
         [HttpGet]
         public async Task<IActionResult> ProviderSlots(int id)
         {
@@ -1122,6 +1188,7 @@ namespace HealthTrack.Controllers
             return provider == null ? NotFound() : View(await LoadProviderSlotsAsync(provider, new AddAvailabilitySlotForm()));
         }
 
+        // Adds an availability slot for a provider.
         [HttpPost]
         public async Task<IActionResult> AddProviderSlot(int id, [Bind(Prefix = "Form")] AddAvailabilitySlotForm form)
         {
@@ -1144,6 +1211,10 @@ namespace HealthTrack.Controllers
                 {
                     ModelState.AddModelError(string.Empty, "Slot start time must be in the future.");
                 }
+                else if (endUtc - startUtc < TimeSpan.FromMinutes(15) || endUtc - startUtc > TimeSpan.FromHours(8))
+                {
+                    ModelState.AddModelError(string.Empty, "A slot must last between 15 minutes and 8 hours.");
+                }
                 else if (await Context.AvailabilitySlots.AnyAsync(s => s.ProviderId == provider.Id && s.StartUtc < endUtc && s.EndUtc > startUtc))
                 {
                     ModelState.AddModelError(string.Empty, "This slot overlaps an existing slot.");
@@ -1160,6 +1231,7 @@ namespace HealthTrack.Controllers
             return View(nameof(ProviderSlots), await LoadProviderSlotsAsync(provider, form));
         }
 
+        // Removes an unbooked availability slot.
         [HttpPost]
         public async Task<IActionResult> DeleteProviderSlot(int id, int slotId)
         {

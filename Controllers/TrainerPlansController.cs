@@ -31,6 +31,11 @@ namespace HealthTrack.Controllers
             var today = _time.ToLocal(_clock.GetUtcNow().UtcDateTime).Date;
             if (startDate.Date < today)
                 ModelState.AddModelError("StartDate", "Start date cannot be in the past.");
+            ValidatePlanEndDate(startDate, endDate);
+        }
+
+        private void ValidatePlanEndDate(DateTime startDate, DateTime? endDate)
+        {
             if (endDate.HasValue && endDate.Value.Date < startDate.Date)
                 ModelState.AddModelError("EndDate", "End date cannot be before the start date.");
         }
@@ -82,6 +87,7 @@ namespace HealthTrack.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateWorkoutPlan(WorkoutPlanFormViewModel model)
         {
+            model.Id = 0;
             ValidateNewPlanDates(model.StartDate, model.EndDate);
             var trainerId = CurrentUserId;
             if (!await _planService.IsClientAssignedToTrainerAsync(trainerId, model.ClientId))
@@ -141,13 +147,17 @@ namespace HealthTrack.Controllers
         public async Task<IActionResult> EditWorkoutPlan(WorkoutPlanFormViewModel model)
         {
             var trainerId = CurrentUserId;
+            ValidatePlanEndDate(model.StartDate, model.EndDate);
             if (!ModelState.IsValid)
             {
+                var plan = await _planService.GetWorkoutPlanByIdAsync(model.Id, trainerId);
+                if (plan == null) return NotFound();
+                model.ClientName = plan.Client?.Name;
                 model.AssignedClients = await _planService.GetAssignedClientSelectListAsync(trainerId);
                 return View(model);
             }
 
-            await _planService.SaveWorkoutPlanAsync(trainerId, model);
+            if (await _planService.SaveWorkoutPlanAsync(trainerId, model) == 0) return NotFound();
             TempData["Success"] = "Workout plan updated successfully.";
             return RedirectToAction(nameof(WorkoutPlans), new { clientId = model.ClientId });
         }
@@ -235,6 +245,7 @@ namespace HealthTrack.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateDietPlan(DietPlanFormViewModel model)
         {
+            model.Id = 0;
             ValidateNewPlanDates(model.StartDate, model.EndDate);
             var trainerId = CurrentUserId;
             if (!await _planService.IsClientAssignedToTrainerAsync(trainerId, model.ClientId))
@@ -294,13 +305,17 @@ namespace HealthTrack.Controllers
         public async Task<IActionResult> EditDietPlan(DietPlanFormViewModel model)
         {
             var trainerId = CurrentUserId;
+            ValidatePlanEndDate(model.StartDate, model.EndDate);
             if (!ModelState.IsValid)
             {
+                var plan = await _planService.GetDietPlanByIdAsync(model.Id, trainerId);
+                if (plan == null) return NotFound();
+                model.ClientName = plan.Client?.Name;
                 model.AssignedClients = await _planService.GetAssignedClientSelectListAsync(trainerId);
                 return View(model);
             }
 
-            await _planService.SaveDietPlanAsync(trainerId, model);
+            if (await _planService.SaveDietPlanAsync(trainerId, model) == 0) return NotFound();
             TempData["Success"] = "Diet plan updated successfully.";
             return RedirectToAction(nameof(DietPlans), new { clientId = model.ClientId });
         }

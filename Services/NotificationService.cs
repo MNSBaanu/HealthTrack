@@ -21,10 +21,13 @@ namespace HealthTrack.Services
             _mail = mail;
         }
 
+        // Scheduled times are entered in the application's time zone, so they are compared with the same clock.
+        private DateTime LocalNow => _appointmentTime.ToLocal(_clock.GetUtcNow().UtcDateTime);
+
         // Scheduled notifications are only shown later, so they are not emailed now.
         private async Task EmailAsync(IReadOnlyCollection<string> personIds, string message, DateTime? scheduledFor = null)
         {
-            if (!_mail.IsConfigured || (scheduledFor != null && scheduledFor > DateTime.Now))
+            if (!_mail.IsConfigured || (scheduledFor != null && scheduledFor > LocalNow))
             {
                 return;
             }
@@ -47,7 +50,8 @@ namespace HealthTrack.Services
                 PersonId = personId,
                 Message = message.Length > 300 ? message[..300] : message,
                 Type = type,
-                ScheduledFor = scheduledFor
+                ScheduledFor = scheduledFor,
+                CreatedAt = LocalNow
             };
             AddScheduledEmail(notification, scheduledFor);
             _context.Notifications.Add(notification);
@@ -64,7 +68,8 @@ namespace HealthTrack.Services
                 PersonId = id,
                 Message = message,
                 Type = type,
-                ScheduledFor = scheduledFor
+                ScheduledFor = scheduledFor,
+                CreatedAt = LocalNow
             }).ToList();
             foreach (var notification in notifications) AddScheduledEmail(notification, scheduledFor);
             _context.Notifications.AddRange(notifications);
@@ -81,7 +86,8 @@ namespace HealthTrack.Services
                 PersonId = id,
                 Message = message,
                 Type = type,
-                ScheduledFor = scheduledFor
+                ScheduledFor = scheduledFor,
+                CreatedAt = LocalNow
             }).ToList();
             foreach (var notification in notifications) AddScheduledEmail(notification, scheduledFor);
             _context.Notifications.AddRange(notifications);
@@ -99,7 +105,7 @@ namespace HealthTrack.Services
         public async Task<List<Notification>> GetVisibleAsync(string personId, bool unreadOnly)
         {
             await GenerateAppointmentRemindersAsync(personId);
-            var now = DateTime.Now;
+            var now = LocalNow;
             return await _context.Notifications
                 .Where(n => n.PersonId == personId && !n.IsDismissed && (n.ScheduledFor == null || n.ScheduledFor <= now))
                 .Where(n => !unreadOnly || !n.IsRead)
@@ -111,7 +117,7 @@ namespace HealthTrack.Services
         public async Task<int> GetUnreadCountAsync(string personId)
         {
             await GenerateAppointmentRemindersAsync(personId);
-            var now = DateTime.Now;
+            var now = LocalNow;
             return await _context.Notifications.CountAsync(n => n.PersonId == personId && !n.IsRead && !n.IsDismissed
                 && (n.ScheduledFor == null || n.ScheduledFor <= now));
         }
@@ -125,6 +131,10 @@ namespace HealthTrack.Services
             var now = _appointmentTime.ToLocal(_clock.GetUtcNow().UtcDateTime);
             var today = now.Date;
             var hour = now.Hour;
+            // The dashboard and the background worker can run this at the same time, so one waits for the other.
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+            await _context.Database.ExecuteSqlInterpolatedAsync(
+                $"EXEC sp_getapplock @Resource = {"DailyReminders:" + clientId}, @LockMode = 'Exclusive', @LockOwner = 'Transaction', @LockTimeout = 10000");
             // Match on the message so unrelated notifications of the same type (e.g. a
             // trainer's message) never suppress a reminder.
             var remindedToday = await _context.Notifications
@@ -164,6 +174,7 @@ namespace HealthTrack.Services
 
             if (reminders.Count == 0) return;
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
             foreach (var reminder in reminders)
             {
                 await EmailAsync(new[] { clientId }, reminder);
@@ -225,7 +236,7 @@ namespace HealthTrack.Services
                     reminder.Message = message;
                     reminder.IsRead = false;
                     reminder.IsDismissed = false;
-                    reminder.CreatedAt = DateTime.Now;
+                    reminder.CreatedAt = LocalNow;
                 }
             }
             await _context.SaveChangesAsync();

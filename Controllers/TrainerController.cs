@@ -291,7 +291,15 @@ namespace HealthTrack.Controllers
             }
 
             Context.WeeklyCheckIns.Add(new WeeklyCheckIn { TrainerId = trainerId, ClientId = clientId, Note = note });
-            await Context.SaveChangesAsync();
+            try
+            {
+                await Context.SaveChangesAsync();
+            }
+            catch (DbUpdateException exception) when (exception.InnerException is Microsoft.Data.SqlClient.SqlException { Number: 2601 or 2627 })
+            {
+                TempData["Error"] = "This client already has a check-in waiting for an answer.";
+                return RedirectToAction(nameof(ClientDetails), new { id = clientId });
+            }
             await _notifications.SendAsync(clientId, "Your Trainer asked for your weekly check-in. Open Feedback to answer.", NotificationType.General);
             TempData["Success"] = "Weekly check-in sent to the client.";
             return RedirectToAction(nameof(ClientDetails), new { id = clientId });

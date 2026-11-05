@@ -18,6 +18,8 @@ namespace HealthTrack.Models.ViewModels
         public List<Notification> Notifications { get; set; } = new();
         public List<AppointmentViewModel> UpcomingAppointments { get; set; } = new();
         public string AppointmentTimeZone { get; set; } = string.Empty;
+        public List<WorkoutPlan> ActiveWorkoutPlans { get; set; } = new();
+        public List<DietPlan> ActiveDietPlans { get; set; } = new();
         public int? DietTargetKcal { get; set; }
         public int PlannedWorkoutsToday { get; set; }
         public int DoneWorkoutsToday { get; set; }

@@ -111,7 +111,7 @@
                             <li>
                                 <div class="row-top">
                                     <strong>@activity.Activity</strong>
-                                    <span class="text-muted">@activity.Sessions sessions &middot; @activity.TotalMinutes min &middot; @(activity.ClientCount == 1 ? "1 client" : $"{activity.ClientCount} clients")</span>
+                                    <span class="text-muted">@(activity.Sessions == 1 ? "1 session" : $"{activity.Sessions} sessions") &middot; @activity.TotalMinutes min &middot; @(activity.ClientCount == 1 ? "1 client" : $"{activity.ClientCount} clients")</span>
                                 </div>
                                 <div class="ht-bar"><span style="width: @width.ToString("0.#", CultureInfo.InvariantCulture)%"></span></div>
                             </li>

@@ -921,6 +921,10 @@ namespace HealthTrack.Migrations
 
                     b.HasIndex("ClientId", "RequestedAtUtc");
 
+                    b.HasIndex("ClientId", "TrainerId")
+                        .IsUnique()
+                        .HasFilter("[RespondedAtUtc] IS NULL");
+
                     b.ToTable("WeeklyCheckIns");
                 });
 

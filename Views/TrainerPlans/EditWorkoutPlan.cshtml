@@ -84,6 +84,7 @@
                                     {
                                         <tr class="exercise-row">
                                             <td>
+                                                <input type="hidden" name="Items[@i].Id" value="@Model.Items[i].Id" />
                                                 <select name="Items[@i].DayOfWeek" class="form-select form-select-sm">
                                                     <option value="">Daily</option>
                                                     <option value="1" selected="@(Model.Items[i].DayOfWeek == DayOfWeek.Monday)">Mon</option>

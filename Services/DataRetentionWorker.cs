@@ -42,7 +42,15 @@ public class DataRetentionWorker(IServiceScopeFactory scopes, IConfiguration con
             .ToListAsync(cancellationToken);
         foreach (var client in inactive)
         {
-            var result = await users.DeleteAsync(client);
+            IdentityResult result;
+            // A client with linked records is skipped so the remaining clients are still processed.
+            try { result = await users.DeleteAsync(client); }
+            catch (DbUpdateException exception)
+            {
+                context.ChangeTracker.Clear();
+                logger.LogWarning(exception, "Could not delete inactive client {ClientId}", client.Id);
+                continue;
+            }
             if (!result.Succeeded)
             {
                 logger.LogWarning("Could not delete inactive client {ClientId}", client.Id);

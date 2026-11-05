@@ -94,6 +94,7 @@
                                     {
                                         <tr class="meal-row">
                                             <td>
+                                                <input type="hidden" name="Meals[@i].Id" value="@Model.Meals[i].Id" />
                                                 <select name="Meals[@i].MealType" class="form-select form-select-sm">
                                                     <option value="0" selected="@(Model.Meals[i].MealType == MealType.Breakfast)">Breakfast</option>
                                                     <option value="1" selected="@(Model.Meals[i].MealType == MealType.Lunch)">Lunch</option>

@@ -62,7 +62,7 @@ public class TrainerScheduleService : ITrainerScheduleService
         var nowUtc = _clock.GetUtcNow().UtcDateTime;
 
         var slots = await _context.AvailabilitySlots
-            .Where(s => s.ProviderId == provider.Id && s.EndUtc >= nowUtc)
+            .Where(s => s.ProviderId == provider.Id && s.IsAvailable && s.EndUtc >= nowUtc)
             .OrderBy(s => s.StartUtc)
             .Select(s => new TrainerAvailabilitySlotViewModel
             {
@@ -163,6 +163,11 @@ public class TrainerScheduleService : ITrainerScheduleService
             return (false, "Slot end time must be after start time.");
         }
 
+        if (endLocal - startLocal < TimeSpan.FromMinutes(15) || endLocal - startLocal > TimeSpan.FromHours(8))
+        {
+            return (false, "A slot must last between 15 minutes and 8 hours.");
+        }
+
         var startUtc = _time.ToUtc(startLocal);
         var endUtc = _time.ToUtc(endLocal);
         var nowUtc = _clock.GetUtcNow().UtcDateTime;
@@ -177,6 +182,7 @@ public class TrainerScheduleService : ITrainerScheduleService
         // Check for overlapping slots
         var hasOverlap = await _context.AvailabilitySlots.AnyAsync(s =>
             s.ProviderId == provider.Id &&
+            s.IsAvailable &&
             s.StartUtc < endUtc &&
             s.EndUtc > startUtc);
 
@@ -203,7 +209,7 @@ public class TrainerScheduleService : ITrainerScheduleService
         var provider = await GetOrCreateTrainerProviderAsync(trainerId);
         var slot = await _context.AvailabilitySlots
             .Include(s => s.Appointments)
-            .FirstOrDefaultAsync(s => s.Id == slotId && s.ProviderId == provider.Id);
+            .FirstOrDefaultAsync(s => s.Id == slotId && s.ProviderId == provider.Id && s.IsAvailable);
 
         if (slot == null) return (false, "Slot not found.");
 
@@ -212,7 +218,9 @@ public class TrainerScheduleService : ITrainerScheduleService
             return (false, "Cannot delete a slot that has an active booking. Cancel the appointment first.");
         }
 
-        _context.AvailabilitySlots.Remove(slot);
+        // Slots with cancelled bookings are hidden instead of deleted so the appointment history stays intact.
+        if (slot.Appointments.Any()) slot.IsAvailable = false;
+        else _context.AvailabilitySlots.Remove(slot);
         await _context.SaveChangesAsync();
         return (true, null);
     }
@@ -222,7 +230,7 @@ public class TrainerScheduleService : ITrainerScheduleService
     {
         var provider = await GetOrCreateTrainerProviderAsync(trainerId);
         return await _context.AvailabilitySlots
-            .FirstOrDefaultAsync(s => s.Id == slotId && s.ProviderId == provider.Id);
+            .FirstOrDefaultAsync(s => s.Id == slotId && s.ProviderId == provider.Id && s.IsAvailable);
     }
 
     public async Task<(bool Success, string? Error)> UpdateSlotAsync(string trainerId, int slotId, DateTime startLocal, DateTime endLocal)
@@ -230,6 +238,11 @@ public class TrainerScheduleService : ITrainerScheduleService
         if (endLocal <= startLocal)
         {
             return (false, "Slot end time must be after start time.");
+        }
+
+        if (endLocal - startLocal < TimeSpan.FromMinutes(15) || endLocal - startLocal > TimeSpan.FromHours(8))
+        {
+            return (false, "A slot must last between 15 minutes and 8 hours.");
         }
 
         var startUtc = _time.ToUtc(startLocal);
@@ -244,7 +257,7 @@ public class TrainerScheduleService : ITrainerScheduleService
         var provider = await GetOrCreateTrainerProviderAsync(trainerId);
         var slot = await _context.AvailabilitySlots
             .Include(s => s.Appointments)
-            .FirstOrDefaultAsync(s => s.Id == slotId && s.ProviderId == provider.Id);
+            .FirstOrDefaultAsync(s => s.Id == slotId && s.ProviderId == provider.Id && s.IsAvailable);
 
         if (slot == null) return (false, "Slot not found.");
 
@@ -257,6 +270,7 @@ public class TrainerScheduleService : ITrainerScheduleService
         // Check for overlapping slots with other existing slots
         var hasOverlap = await _context.AvailabilitySlots.AnyAsync(s =>
             s.ProviderId == provider.Id &&
+            s.IsAvailable &&
             s.Id != slotId &&
             s.StartUtc < endUtc &&
             s.EndUtc > startUtc);
@@ -298,6 +312,11 @@ public class TrainerScheduleService : ITrainerScheduleService
             if (appointment.Status != AppointmentStatus.Pending)
             {
                 return (false, $"Cannot approve appointment that is already {appointment.Status}.");
+            }
+
+            if (appointment.Slot.StartUtc <= _clock.GetUtcNow().UtcDateTime)
+            {
+                return (false, "This appointment time has already passed.");
             }
 
             appointment.Status = AppointmentStatus.Approved;
@@ -392,6 +411,9 @@ public class TrainerScheduleService : ITrainerScheduleService
 
         if (appointment.Status == AppointmentStatus.Completed)
             return (false, "Cannot reschedule a completed appointment.");
+
+        if (appointment.Slot.StartUtc <= _clock.GetUtcNow().UtcDateTime)
+            return (false, "This appointment time has already passed.");
 
         var newSlot = await _context.AvailabilitySlots.Include(s => s.Provider)
             .FirstOrDefaultAsync(s => s.Id == newSlotId && s.ProviderId == provider.Id);

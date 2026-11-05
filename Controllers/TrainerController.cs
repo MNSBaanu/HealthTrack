@@ -42,48 +42,7 @@ namespace HealthTrack.Controllers
                 .Select(a => a.ClientId)
                 .ToListAsync();
 
-            var clients = await Context.Clients
-                .Where(c => assignedClientIds.Contains(c.Id))
-                .Include(c => c.HealthMetrics)
-                .Include(c => c.WorkoutLogs)
-                .Include(c => c.MealLogs)
-                .Include(c => c.WorkoutPlans)
-                .Include(c => c.DietPlans)
-                .AsSplitQuery()
-                .ToListAsync();
-
-            var clientSummaries = clients.Select(c =>
-            {
-                var latestMetric = c.HealthMetrics.OrderByDescending(m => m.RecordedAt).FirstOrDefault();
-                var bmi = latestMetric != null ? HealthMetric.CalculateBmi(latestMetric.WeightKg, c.HeightCm) : (double?)null;
-
-                var lastWorkout = c.WorkoutLogs.OrderByDescending(w => w.LoggedAt).FirstOrDefault()?.LoggedAt;
-                var lastMeal = c.MealLogs.OrderByDescending(m => m.LoggedAt).FirstOrDefault()?.LoggedAt;
-                var lastMetricDate = latestMetric?.RecordedAt;
-
-                DateTime? lastActive = new[] { lastWorkout, lastMeal, lastMetricDate, c.LastLoginAt }
-                    .Where(d => d.HasValue)
-                    .Select(d => d!.Value)
-                    .DefaultIfEmpty(DateTime.MinValue)
-                    .Max();
-
-                if (lastActive == DateTime.MinValue) lastActive = null;
-
-                return new TrainerClientSummaryViewModel
-                {
-                    ClientId = c.Id,
-                    Name = c.Name,
-                    Email = c.Email ?? string.Empty,
-                    FitnessGoal = c.FitnessGoal,
-                    HeightCm = c.HeightCm,
-                    CurrentWeightKg = latestMetric?.WeightKg,
-                    CurrentBmi = bmi,
-                    BmiCategory = bmi.HasValue ? HealthMetric.GetBmiCategory(bmi.Value) : null,
-                    LastActiveAt = lastActive,
-                    ActiveWorkoutPlansCount = c.WorkoutPlans.Count(p => p.TrainerId == trainerId && p.IsActive),
-                    ActiveDietPlansCount = c.DietPlans.Count(p => p.TrainerId == trainerId && p.IsActive)
-                };
-            }).OrderBy(c => c.Name).ToList();
+            var clientSummaries = await LoadClientSummariesAsync(trainerId, assignedClientIds, includeActivity: true);
 
             var recentActivities = new List<ClientRecentActivityViewModel>();
 
@@ -144,7 +103,7 @@ namespace HealthTrack.Controllers
             var model = new TrainerDashboardViewModel
             {
                 TrainerName = trainer.Name,
-                TotalAssignedClients = clients.Count,
+                TotalAssignedClients = clientSummaries.Count,
                 PendingAppointmentsCount = schedule.PendingAppointments.Count,
                 RescheduleRequestsCount = schedule.RescheduleRequests.Count,
                 ActiveWorkoutPlansCount = await Context.WorkoutPlans.CountAsync(p => p.TrainerId == trainerId && p.IsActive),
@@ -167,19 +126,39 @@ namespace HealthTrack.Controllers
                 .Select(a => a.ClientId)
                 .ToListAsync();
 
-            var clients = await Context.Clients
-                .Where(c => assignedClientIds.Contains(c.Id))
-                .Include(c => c.HealthMetrics)
-                .Include(c => c.WorkoutPlans)
-                .Include(c => c.DietPlans)
-                .AsSplitQuery()
-                .OrderBy(c => c.Name)
+            var list = await LoadClientSummariesAsync(trainerId, assignedClientIds, includeActivity: false);
+
+            return View(list);
+        }
+
+        // Builds one summary row per client in SQL instead of loading every log and metric.
+        private async Task<List<TrainerClientSummaryViewModel>> LoadClientSummariesAsync(string trainerId, List<string> clientIds, bool includeActivity)
+        {
+            var rows = await Context.Clients
+                .Where(c => clientIds.Contains(c.Id))
+                .Select(c => new
+                {
+                    c.Id,
+                    c.Name,
+                    c.Email,
+                    c.FitnessGoal,
+                    c.HeightCm,
+                    c.LastLoginAt,
+                    LatestWeight = c.HealthMetrics.OrderByDescending(m => m.RecordedAt).Select(m => (double?)m.WeightKg).FirstOrDefault(),
+                    LastMetric = c.HealthMetrics.Max(m => (DateTime?)m.RecordedAt),
+                    LastWorkout = includeActivity ? c.WorkoutLogs.Max(w => (DateTime?)w.LoggedAt) : null,
+                    LastMeal = includeActivity ? c.MealLogs.Max(m => (DateTime?)m.LoggedAt) : null,
+                    ActiveWorkoutPlans = c.WorkoutPlans.Count(p => p.TrainerId == trainerId && p.IsActive),
+                    ActiveDietPlans = c.DietPlans.Count(p => p.TrainerId == trainerId && p.IsActive)
+                })
                 .ToListAsync();
 
-            var list = clients.Select(c =>
+            return rows.Select(c =>
             {
-                var latestMetric = c.HealthMetrics.OrderByDescending(m => m.RecordedAt).FirstOrDefault();
-                var bmi = latestMetric != null ? HealthMetric.CalculateBmi(latestMetric.WeightKg, c.HeightCm) : (double?)null;
+                var bmi = c.LatestWeight.HasValue ? HealthMetric.CalculateBmi(c.LatestWeight.Value, c.HeightCm) : null;
+                var lastActive = includeActivity
+                    ? new[] { c.LastWorkout, c.LastMeal, c.LastMetric, c.LastLoginAt }.Max()
+                    : c.LastLoginAt;
 
                 return new TrainerClientSummaryViewModel
                 {
@@ -188,16 +167,14 @@ namespace HealthTrack.Controllers
                     Email = c.Email ?? string.Empty,
                     FitnessGoal = c.FitnessGoal,
                     HeightCm = c.HeightCm,
-                    CurrentWeightKg = latestMetric?.WeightKg,
+                    CurrentWeightKg = c.LatestWeight,
                     CurrentBmi = bmi,
                     BmiCategory = bmi.HasValue ? HealthMetric.GetBmiCategory(bmi.Value) : null,
-                    LastActiveAt = c.LastLoginAt,
-                    ActiveWorkoutPlansCount = c.WorkoutPlans.Count(p => p.TrainerId == trainerId && p.IsActive),
-                    ActiveDietPlansCount = c.DietPlans.Count(p => p.TrainerId == trainerId && p.IsActive)
+                    LastActiveAt = lastActive,
+                    ActiveWorkoutPlansCount = c.ActiveWorkoutPlans,
+                    ActiveDietPlansCount = c.ActiveDietPlans
                 };
-            }).ToList();
-
-            return View(list);
+            }).OrderBy(c => c.Name).ToList();
         }
 
         // Shows an assigned client's metrics, logs, plans and feedback.
@@ -291,7 +268,15 @@ namespace HealthTrack.Controllers
             }
 
             Context.WeeklyCheckIns.Add(new WeeklyCheckIn { TrainerId = trainerId, ClientId = clientId, Note = note });
-            await Context.SaveChangesAsync();
+            try
+            {
+                await Context.SaveChangesAsync();
+            }
+            catch (DbUpdateException exception) when (exception.InnerException is Microsoft.Data.SqlClient.SqlException { Number: 2601 or 2627 })
+            {
+                TempData["Error"] = "This client already has a check-in waiting for an answer.";
+                return RedirectToAction(nameof(ClientDetails), new { id = clientId });
+            }
             await _notifications.SendAsync(clientId, "Your Trainer asked for your weekly check-in. Open Feedback to answer.", NotificationType.General);
             TempData["Success"] = "Weekly check-in sent to the client.";
             return RedirectToAction(nameof(ClientDetails), new { id = clientId });
@@ -303,33 +288,12 @@ namespace HealthTrack.Controllers
             [Bind(Prefix = nameof(TrainerClientDetailsViewModel.NewFeedbackForm))] TrainerFeedbackFormViewModel model)
         {
             var trainerId = CurrentUserId;
-            
-            // Check if this client exists first
-            var clientExists = await Context.Clients.AnyAsync(c => c.Id == model.ClientId);
-            if (!clientExists)
-            {
-                TempData["Error"] = "Client not found.";
-                return RedirectToAction(nameof(Clients));
-            }
-            
-            // Check assignment with detailed error handling
             var isAssigned = await Context.ClientTrainerAssignments
                 .AnyAsync(a => a.TrainerId == trainerId && a.ClientId == model.ClientId);
 
             if (!isAssigned)
             {
-                // Check if there's an assignment at all for this client
-                var anyAssignment = await Context.ClientTrainerAssignments
-                    .FirstOrDefaultAsync(a => a.ClientId == model.ClientId);
-                
-                if (anyAssignment != null && anyAssignment.TrainerId != trainerId)
-                {
-                    TempData["Error"] = "This client is assigned to a different trainer.";
-                }
-                else
-                {
-                    TempData["Error"] = "Client is not assigned to you.";
-                }
+                TempData["Error"] = "Client is not assigned to you.";
                 return RedirectToAction(nameof(Clients));
             }
 
@@ -351,7 +315,11 @@ namespace HealthTrack.Controllers
             var trainerId = CurrentUserId;
             var model = await _feedbackService.GetFeedbackForEditAsync(trainerId, id);
 
-            if (model == null) return NotFound();
+            if (model == null)
+            {
+                TempData["Error"] = "Feedback not found, or the client has already replied to it.";
+                return RedirectToAction(nameof(Clients));
+            }
 
             return View(model);
         }
@@ -360,17 +328,20 @@ namespace HealthTrack.Controllers
         [HttpPost]
         public async Task<IActionResult> EditFeedback(int id, TrainerFeedbackFormViewModel model)
         {
+            var trainerId = CurrentUserId;
             if (!ModelState.IsValid)
             {
+                model.ClientName = await Context.TrainerFeedbacks
+                    .Where(f => f.Id == id && f.TrainerId == trainerId)
+                    .Select(f => f.Client.Name).FirstOrDefaultAsync();
                 return View(model);
             }
 
-            var trainerId = CurrentUserId;
             var success = await _feedbackService.UpdateFeedbackAsync(trainerId, id, model);
 
             if (!success)
             {
-                TempData["Error"] = "Feedback not found or you don't have permission to edit it.";
+                TempData["Error"] = "Feedback not found, or the client has already replied to it.";
                 return RedirectToAction(nameof(Clients));
             }
 

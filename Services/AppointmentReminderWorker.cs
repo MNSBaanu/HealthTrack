@@ -30,6 +30,19 @@ public class AppointmentReminderWorker(IServiceScopeFactory scopes,
                     stoppingToken.ThrowIfCancellationRequested();
                     await notifications.GenerateAppointmentRemindersAsync(clientId);
                 }
+
+                // Trainers get one reminder per consultation; the time is in the message so a moved consultation is reminded again.
+                var time = scope.ServiceProvider.GetRequiredService<AppointmentTime>();
+                var trainerSessions = await context.Appointments.AsNoTracking()
+                    .Where(a => a.Status == AppointmentStatus.Approved && a.Slot.StartUtc > now && a.Slot.StartUtc <= cutoff && a.Slot.Provider.PersonId != null)
+                    .Select(a => new { TrainerId = a.Slot.Provider.PersonId!, ClientName = a.Client.Name, a.Slot.StartUtc })
+                    .ToListAsync(stoppingToken);
+                foreach (var session in trainerSessions)
+                {
+                    var message = $"Consultation reminder: {session.ClientName} on {time.ToLocal(session.StartUtc):ddd, d MMM yyyy HH:mm} ({time.Label}).";
+                    if (!await context.Notifications.AnyAsync(n => n.PersonId == session.TrainerId && n.Message == message, stoppingToken))
+                        await notifications.SendAsync(session.TrainerId, message, NotificationType.Appointment);
+                }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { break; }
             catch (Exception exception) { logger.LogError(exception, "Could not refresh appointment reminders; retrying on the next cycle."); }

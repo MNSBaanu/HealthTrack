@@ -44,7 +44,7 @@ public class TrainerPlanService : ITrainerPlanService
         return await _context.WorkoutPlans
             .Include(p => p.Client)
             .Include(p => p.Items)
-            .FirstOrDefaultAsync(p => p.Id == planId && p.TrainerId == trainerId);
+            .FirstOrDefaultAsync(p => p.Id == planId && p.TrainerId == trainerId && _context.ClientTrainerAssignments.Any(a => a.TrainerId == trainerId && a.ClientId == p.ClientId));
     }
 
     // Loads a diet plan owned by the trainer.
@@ -53,7 +53,7 @@ public class TrainerPlanService : ITrainerPlanService
         return await _context.DietPlans
             .Include(p => p.Client)
             .Include(p => p.Meals)
-            .FirstOrDefaultAsync(p => p.Id == planId && p.TrainerId == trainerId);
+            .FirstOrDefaultAsync(p => p.Id == planId && p.TrainerId == trainerId && _context.ClientTrainerAssignments.Any(a => a.TrainerId == trainerId && a.ClientId == p.ClientId));
     }
 
     // Creates or updates a workout plan and its exercises, then notifies the client.
@@ -77,7 +77,7 @@ public class TrainerPlanService : ITrainerPlanService
         {
             plan = await _context.WorkoutPlans
                 .Include(p => p.Items)
-                .FirstOrDefaultAsync(p => p.Id == model.Id && p.TrainerId == trainerId);
+                .FirstOrDefaultAsync(p => p.Id == model.Id && p.TrainerId == trainerId && _context.ClientTrainerAssignments.Any(a => a.TrainerId == trainerId && a.ClientId == p.ClientId));
             if (plan == null) return 0;
         }
 
@@ -150,7 +150,7 @@ public class TrainerPlanService : ITrainerPlanService
         {
             plan = await _context.DietPlans
                 .Include(p => p.Meals)
-                .FirstOrDefaultAsync(p => p.Id == model.Id && p.TrainerId == trainerId);
+                .FirstOrDefaultAsync(p => p.Id == model.Id && p.TrainerId == trainerId && _context.ClientTrainerAssignments.Any(a => a.TrainerId == trainerId && a.ClientId == p.ClientId));
             if (plan == null) return 0;
         }
 
@@ -205,7 +205,7 @@ public class TrainerPlanService : ITrainerPlanService
     // Activates or pauses a workout plan.
     public async Task<bool> ToggleWorkoutPlanStatusAsync(int planId, string trainerId)
     {
-        var plan = await _context.WorkoutPlans.FirstOrDefaultAsync(p => p.Id == planId && p.TrainerId == trainerId);
+        var plan = await _context.WorkoutPlans.FirstOrDefaultAsync(p => p.Id == planId && p.TrainerId == trainerId && _context.ClientTrainerAssignments.Any(a => a.TrainerId == trainerId && a.ClientId == p.ClientId));
         if (plan == null) return false;
 
         plan.IsActive = !plan.IsActive;
@@ -216,7 +216,7 @@ public class TrainerPlanService : ITrainerPlanService
     // Activates or pauses a diet plan.
     public async Task<bool> ToggleDietPlanStatusAsync(int planId, string trainerId)
     {
-        var plan = await _context.DietPlans.FirstOrDefaultAsync(p => p.Id == planId && p.TrainerId == trainerId);
+        var plan = await _context.DietPlans.FirstOrDefaultAsync(p => p.Id == planId && p.TrainerId == trainerId && _context.ClientTrainerAssignments.Any(a => a.TrainerId == trainerId && a.ClientId == p.ClientId));
         if (plan == null) return false;
 
         plan.IsActive = !plan.IsActive;
@@ -229,7 +229,7 @@ public class TrainerPlanService : ITrainerPlanService
     {
         var plan = await _context.WorkoutPlans
             .Include(p => p.Items)
-            .FirstOrDefaultAsync(p => p.Id == planId && p.TrainerId == trainerId);
+            .FirstOrDefaultAsync(p => p.Id == planId && p.TrainerId == trainerId && _context.ClientTrainerAssignments.Any(a => a.TrainerId == trainerId && a.ClientId == p.ClientId));
 
         if (plan == null) return false;
 
@@ -257,7 +257,7 @@ public class TrainerPlanService : ITrainerPlanService
     {
         var plan = await _context.DietPlans
             .Include(p => p.Meals)
-            .FirstOrDefaultAsync(p => p.Id == planId && p.TrainerId == trainerId);
+            .FirstOrDefaultAsync(p => p.Id == planId && p.TrainerId == trainerId && _context.ClientTrainerAssignments.Any(a => a.TrainerId == trainerId && a.ClientId == p.ClientId));
 
         if (plan == null) return false;
 

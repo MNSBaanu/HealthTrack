@@ -74,6 +74,12 @@
                             <td class="text-nowrap">@row.RequestedAt.ToString("d MMM yyyy")</td>
                             <td>
                                 <div class="ht-row-actions plain">
+                                    @if (row.Status == AppointmentStatus.Pending && row.ProviderKind == ConsultationProviderKind.HealthcareProfessional && row.Start > nowLocal)
+                                    {
+                                        <form asp-action="ApproveAppointment" asp-route-id="@row.Id" method="post">
+                                            <button type="submit" class="btn-icon" title="Approve appointment" aria-label="Approve appointment for @row.ClientName"><i class="icon-calendar-check"></i></button>
+                                        </form>
+                                    }
                                     @if (row.Status is AppointmentStatus.Pending or AppointmentStatus.Approved && row.Start > nowLocal)
                                     {
                                         <form asp-action="CancelAppointment" asp-route-id="@row.Id" method="post"

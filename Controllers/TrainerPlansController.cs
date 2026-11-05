@@ -50,7 +50,7 @@ namespace HealthTrack.Controllers
                 .Include(p => p.Client)
                 .Include(p => p.Items)
                 .AsSplitQuery()
-                .Where(p => p.TrainerId == trainerId);
+                .Where(p => p.TrainerId == trainerId && Context.ClientTrainerAssignments.Any(a => a.TrainerId == trainerId && a.ClientId == p.ClientId));
 
             if (!string.IsNullOrWhiteSpace(clientId))
             {
@@ -207,7 +207,7 @@ namespace HealthTrack.Controllers
                 .Include(p => p.Client)
                 .Include(p => p.Meals)
                 .AsSplitQuery()
-                .Where(p => p.TrainerId == trainerId);
+                .Where(p => p.TrainerId == trainerId && Context.ClientTrainerAssignments.Any(a => a.TrainerId == trainerId && a.ClientId == p.ClientId));
 
             if (!string.IsNullOrWhiteSpace(clientId))
             {

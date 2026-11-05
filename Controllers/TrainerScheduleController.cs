@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HealthTrack.Controllers
 {
+    // Trainer availability and appointment management.
     public class TrainerScheduleController : TrainerBaseController
     {
         private readonly ITrainerScheduleService _scheduleService;
@@ -23,12 +24,14 @@ namespace HealthTrack.Controllers
             _time = time;
         }
 
+        // Shows the trainer's slots, pending appointments and reschedule requests.
         public async Task<IActionResult> Index()
         {
             var model = await _scheduleService.GetScheduleAsync(CurrentUserId);
             return View(model);
         }
 
+        // Adds an availability slot.
         [HttpPost]
         public async Task<IActionResult> AddSlot([Bind(Prefix = "NewSlotForm")] AddAvailabilitySlotForm form)
         {
@@ -58,6 +61,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // Removes an unbooked slot.
         [HttpPost]
         public async Task<IActionResult> DeleteSlot(int slotId)
         {
@@ -74,6 +78,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // Shows the edit form for a slot.
         [HttpGet]
         public async Task<IActionResult> EditSlot(int slotId)
         {
@@ -90,6 +95,7 @@ namespace HealthTrack.Controllers
             return View(model);
         }
 
+        // Saves changes to a slot.
         [HttpPost]
         public async Task<IActionResult> EditSlot(EditAvailabilitySlotForm form)
         {
@@ -116,6 +122,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // Approves a pending appointment and notifies the client.
         [HttpPost]
         public async Task<IActionResult> Approve(int appointmentId)
         {
@@ -132,6 +139,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // Cancels an appointment and notifies the client.
         [HttpPost]
         public async Task<IActionResult> Cancel(int appointmentId, string? reason)
         {
@@ -148,6 +156,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // Moves an appointment to another slot and notifies the client.
         [HttpPost]
         public async Task<IActionResult> Reschedule(int appointmentId, int newSlotId)
         {
@@ -164,6 +173,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // Accepts a client's reschedule request.
         [HttpPost]
         public async Task<IActionResult> AcceptRescheduleRequest(int requestId)
         {
@@ -180,6 +190,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // Declines a client's reschedule request with an optional note.
         [HttpPost]
         public async Task<IActionResult> DeclineRescheduleRequest(int requestId, string? note)
         {
@@ -196,6 +207,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // Shows open slots for moving an appointment.
         [HttpGet]
         public async Task<IActionResult> RescheduleAppointment(int appointmentId)
         {

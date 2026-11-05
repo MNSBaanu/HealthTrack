@@ -8,10 +8,13 @@ using Microsoft.AspNetCore.Identity;
 
 namespace HealthTrack.Services
 {
+    // A user created by a bulk import.
     public record ImportedUser(string Name, string Email, string Role, string? TemporaryPassword);
 
+    // A CSV row that failed validation, with the reason.
     public record RejectedRow(int Line, string Email, string Reason);
 
+    // Summary of a bulk import.
     public class UserImportResult
     {
         public List<ImportedUser> Imported { get; } = new();
@@ -19,6 +22,7 @@ namespace HealthTrack.Services
         public string? FileError { get; set; }
     }
 
+    // Reads a CSV of users, validates each row and creates the accounts.
     public class UserImportService
     {
         public const int MaxBytes = 1_000_000;
@@ -41,6 +45,7 @@ namespace HealthTrack.Services
             _clock = clock;
         }
 
+        // Imports the CSV and returns created and rejected rows.
         public async Task<UserImportResult> ImportAsync(Stream stream)
         {
             var result = new UserImportResult();

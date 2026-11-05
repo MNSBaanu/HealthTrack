@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthTrack.Controllers;
 
+// Shows trainer feedback to the client and handles weekly check-ins and replies.
 public class ClientFeedbackController : ClientBaseController
 {
     private readonly INotificationService _notifications;
@@ -16,6 +17,7 @@ public class ClientFeedbackController : ClientBaseController
         _notifications = notifications;
     }
 
+    // Lists feedback and check-in requests from the client's trainer.
     [HttpGet]
     public async Task<IActionResult> Index()
     {
@@ -38,6 +40,7 @@ public class ClientFeedbackController : ClientBaseController
         return View(feedback);
     }
 
+    // Submits the client's answer to a weekly check-in request.
     [HttpPost]
     public async Task<IActionResult> CheckIn(int id, int energy, int mood, int pain, string? comment)
     {
@@ -77,6 +80,7 @@ public class ClientFeedbackController : ClientBaseController
         return RedirectToAction(nameof(Index));
     }
 
+    // Saves the client's one-time reply to a piece of feedback.
     [HttpPost]
     public async Task<IActionResult> Reply(int id, string reply)
     {

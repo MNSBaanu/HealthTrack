@@ -6,6 +6,7 @@ using MimeKit;
 
 namespace HealthTrack.Services
 {
+    // Sends emails over SMTP using MailKit.
     public class MailSender : IMailSender
     {
         private readonly EmailOptions _options;
@@ -21,6 +22,7 @@ namespace HealthTrack.Services
             !string.IsNullOrWhiteSpace(_options.Host) && !string.IsNullOrWhiteSpace(_options.FromAddress);
 
         // Sends in the background so a slow mail server never delays the page, and never throws into the caller.
+        // Queues an email copy of a notification for the email worker.
         public void QueueNotification(string toAddress, string toName, string message)
         {
             if (!IsConfigured)
@@ -35,6 +37,7 @@ namespace HealthTrack.Services
             });
         }
 
+        // Sends a notification email.
         public async Task SendNotificationAsync(string toAddress, string toName, string message, CancellationToken cancellationToken = default)
         {
             if (!IsConfigured) throw new InvalidOperationException("Email is not configured.");
@@ -50,6 +53,7 @@ namespace HealthTrack.Services
             await SendAsync(mail, cancellationToken);
         }
 
+        // Sends a report email with an attachment.
         public async Task SendReportAsync(string toAddress, string toName, string subject, string message,
             byte[] attachment, string fileName, CancellationToken cancellationToken = default)
         {

@@ -5,6 +5,7 @@ using Microsoft.Data.SqlClient;
 
 namespace HealthTrack.Services
 {
+    // Creates and reads in-app notifications and generates reminders.
     public class NotificationService : INotificationService
     {
         private readonly HealthTrackDbContext _context;
@@ -38,6 +39,7 @@ namespace HealthTrack.Services
             }
         }
 
+        // Creates a notification for one user.
         public async Task SendAsync(string personId, string message, NotificationType type, DateTime? scheduledFor = null)
         {
             var notification = new Notification
@@ -53,6 +55,7 @@ namespace HealthTrack.Services
             if (!scheduledFor.HasValue) await EmailAsync(new[] { personId }, message);
         }
 
+        // Creates a notification for every client.
         public async Task SendToAllClientsAsync(string message, NotificationType type, DateTime? scheduledFor = null)
         {
             var clientIds = await _context.Clients.Select(c => c.Id).ToListAsync();
@@ -69,6 +72,7 @@ namespace HealthTrack.Services
             if (!scheduledFor.HasValue) await EmailAsync(clientIds, message);
         }
 
+        // Creates a notification for every trainer.
         public async Task SendToAllTrainersAsync(string message, NotificationType type, DateTime? scheduledFor = null)
         {
             var trainerIds = await _context.Trainers.Select(t => t.Id).ToListAsync();
@@ -91,6 +95,7 @@ namespace HealthTrack.Services
                 notification.EmailDelivery = new NotificationEmail { DueAtUtc = _appointmentTime.ToUtc(scheduledFor.Value) };
         }
 
+        // Returns the user's notifications that are due and not dismissed.
         public async Task<List<Notification>> GetVisibleAsync(string personId, bool unreadOnly)
         {
             await GenerateAppointmentRemindersAsync(personId);
@@ -102,6 +107,7 @@ namespace HealthTrack.Services
                 .ToListAsync();
         }
 
+        // Counts the user's unread notifications.
         public async Task<int> GetUnreadCountAsync(string personId)
         {
             await GenerateAppointmentRemindersAsync(personId);
@@ -110,6 +116,7 @@ namespace HealthTrack.Services
                 && (n.ScheduledFor == null || n.ScheduledFor <= now));
         }
 
+        // Creates today's workout and meal reminders for a client if they do not exist yet.
         public async Task GenerateDailyRemindersAsync(string clientId)
         {
             var client = await _context.Clients.AsNoTracking().FirstOrDefaultAsync(c => c.Id == clientId);
@@ -167,6 +174,7 @@ namespace HealthTrack.Services
         private const string MealReminderMessage = "Don't forget to log your meals for today.";
         private const string WeightReminderMessage = "It's been over a week since your last weight check-in. Record a new measurement.";
 
+        // Creates reminders for appointments that start soon.
         public async Task GenerateAppointmentRemindersAsync(string clientId)
         {
             // A page request and the background worker may discover the same reminder.

@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthTrack.Services;
 
+// Saves, edits and deletes trainer feedback, limited to the trainer's own clients.
 public class TrainerFeedbackService : ITrainerFeedbackService
 {
     private readonly HealthTrackDbContext _context;
@@ -17,6 +18,7 @@ public class TrainerFeedbackService : ITrainerFeedbackService
         _notificationService = notificationService;
     }
 
+    // Saves new feedback and notifies the client.
     public async Task<int> AddFeedbackAsync(string trainerId, TrainerFeedbackFormViewModel model)
     {
         var feedback = new TrainerFeedback
@@ -41,6 +43,7 @@ public class TrainerFeedbackService : ITrainerFeedbackService
         return feedback.Id;
     }
 
+    // Loads feedback the trainer is allowed to edit.
     public async Task<TrainerFeedbackFormViewModel?> GetFeedbackForEditAsync(string trainerId, int feedbackId)
     {
         var feedback = await _context.TrainerFeedbacks
@@ -59,6 +62,7 @@ public class TrainerFeedbackService : ITrainerFeedbackService
         };
     }
 
+    // Saves changes to feedback.
     public async Task<bool> UpdateFeedbackAsync(string trainerId, int feedbackId, TrainerFeedbackFormViewModel model)
     {
         var feedback = await _context.TrainerFeedbacks
@@ -74,6 +78,7 @@ public class TrainerFeedbackService : ITrainerFeedbackService
         return true;
     }
 
+    // Deletes feedback.
     public async Task<bool> DeleteFeedbackAsync(string trainerId, int feedbackId)
     {
         var feedback = await _context.TrainerFeedbacks

@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace HealthTrack.Models;
 
+// Feedback a trainer sent to a client, with the client's reply.
 public class TrainerFeedback
 {
     public int Id { get; set; }

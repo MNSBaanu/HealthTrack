@@ -1,5 +1,6 @@
 namespace HealthTrack.Models
 {
+    // Category of a notification.
     public enum NotificationType
     {
         Workout,

@@ -4,8 +4,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthTrack.Services
 {
+    // Builds and emails the weekly system report to administrators.
     public class WeeklyReportSender(HealthTrackDbContext context, IExportService export, IMailSender mail, TimeProvider clock, AppointmentTime time)
     {
+        // Builds the report and emails it.
         public async Task<int> SendAsync(CancellationToken cancellationToken = default)
         {
             if (!mail.IsConfigured) throw new InvalidOperationException("Email is not configured, so the report can't be sent.");

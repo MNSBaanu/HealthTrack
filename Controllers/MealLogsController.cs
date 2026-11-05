@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthTrack.Controllers
 {
+    // Lets clients log and manage meals.
     public class MealLogsController : ClientBaseController
     {
         private readonly ILogger<MealLogsController> _logger;
@@ -33,6 +34,7 @@ namespace HealthTrack.Controllers
             return Context.MealLogs.FirstOrDefaultAsync(m => m.MealLogId == id && m.ClientId == CurrentUserId);
         }
 
+        // Lists the client's meals with date and meal type filters.
         public async Task<IActionResult> Index(DateTime? from = null, DateTime? to = null, string? q = null, MealType? mealType = null)
         {
             q = q?.Trim();
@@ -49,6 +51,7 @@ namespace HealthTrack.Controllers
             return View(logs);
         }
 
+        // Shows the new meal form.
         [HttpGet]
         public async Task<IActionResult> Create(int? planMealId, int? repeatId = null)
         {
@@ -95,6 +98,7 @@ namespace HealthTrack.Controllers
                 .FirstOrDefaultAsync(m => m.Id == id && m.DietPlan!.ClientId == CurrentUserId);
         }
 
+        // Saves a new meal entry.
         [HttpPost]
         public async Task<IActionResult> Create([Bind("MealType,Calories,FoodItems,LoggedAt,DietPlanMealId")] MealLog log)
         {
@@ -131,6 +135,7 @@ namespace HealthTrack.Controllers
                 : RedirectToAction("Diet", "ClientPlans", new { id = planMeal.DietPlanId });
         }
 
+        // Shows the edit form for a meal.
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
@@ -138,6 +143,7 @@ namespace HealthTrack.Controllers
             return log == null ? NotFound() : View(log);
         }
 
+        // Saves changes to a meal.
         [HttpPost]
         public async Task<IActionResult> Edit(int id, [Bind("MealType,Calories,FoodItems,LoggedAt")] MealLog input)
         {
@@ -175,6 +181,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // Shows the delete confirmation for a meal.
         [HttpGet]
         public async Task<IActionResult> Delete(int id)
         {
@@ -182,6 +189,7 @@ namespace HealthTrack.Controllers
             return log == null ? NotFound() : View(log);
         }
 
+        // Deletes the meal.
         [HttpPost, ActionName("Delete")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {

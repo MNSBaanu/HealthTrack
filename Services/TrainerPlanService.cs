@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthTrack.Services;
 
+// Creates and manages workout and diet plans, limited to the trainer's assigned clients.
 public class TrainerPlanService : ITrainerPlanService
 {
     private readonly HealthTrackDbContext _context;
@@ -17,11 +18,13 @@ public class TrainerPlanService : ITrainerPlanService
         _notificationService = notificationService;
     }
 
+    // Checks that the client is assigned to the trainer.
     public Task<bool> IsClientAssignedToTrainerAsync(string trainerId, string clientId)
     {
         return _context.ClientTrainerAssignments.AnyAsync(a => a.TrainerId == trainerId && a.ClientId == clientId);
     }
 
+    // Builds the client drop-down for plan forms.
     public async Task<List<SelectListItem>> GetAssignedClientSelectListAsync(string trainerId)
     {
         return await _context.ClientTrainerAssignments
@@ -35,6 +38,7 @@ public class TrainerPlanService : ITrainerPlanService
             .ToListAsync();
     }
 
+    // Loads a workout plan owned by the trainer.
     public async Task<WorkoutPlan?> GetWorkoutPlanByIdAsync(int planId, string trainerId)
     {
         return await _context.WorkoutPlans
@@ -43,6 +47,7 @@ public class TrainerPlanService : ITrainerPlanService
             .FirstOrDefaultAsync(p => p.Id == planId && p.TrainerId == trainerId);
     }
 
+    // Loads a diet plan owned by the trainer.
     public async Task<DietPlan?> GetDietPlanByIdAsync(int planId, string trainerId)
     {
         return await _context.DietPlans
@@ -51,6 +56,7 @@ public class TrainerPlanService : ITrainerPlanService
             .FirstOrDefaultAsync(p => p.Id == planId && p.TrainerId == trainerId);
     }
 
+    // Creates or updates a workout plan and its exercises, then notifies the client.
     public async Task<int> SaveWorkoutPlanAsync(string trainerId, WorkoutPlanFormViewModel model)
     {
         WorkoutPlan plan;
@@ -115,6 +121,7 @@ public class TrainerPlanService : ITrainerPlanService
         return plan.Id;
     }
 
+    // Creates or updates a diet plan and its meals, then notifies the client.
     public async Task<int> SaveDietPlanAsync(string trainerId, DietPlanFormViewModel model)
     {
         DietPlan plan;
@@ -176,6 +183,7 @@ public class TrainerPlanService : ITrainerPlanService
         return plan.Id;
     }
 
+    // Activates or pauses a workout plan.
     public async Task<bool> ToggleWorkoutPlanStatusAsync(int planId, string trainerId)
     {
         var plan = await _context.WorkoutPlans.FirstOrDefaultAsync(p => p.Id == planId && p.TrainerId == trainerId);
@@ -186,6 +194,7 @@ public class TrainerPlanService : ITrainerPlanService
         return true;
     }
 
+    // Activates or pauses a diet plan.
     public async Task<bool> ToggleDietPlanStatusAsync(int planId, string trainerId)
     {
         var plan = await _context.DietPlans.FirstOrDefaultAsync(p => p.Id == planId && p.TrainerId == trainerId);
@@ -196,6 +205,7 @@ public class TrainerPlanService : ITrainerPlanService
         return true;
     }
 
+    // Deletes a workout plan.
     public async Task<bool> DeleteWorkoutPlanAsync(int planId, string trainerId)
     {
         var plan = await _context.WorkoutPlans
@@ -216,6 +226,7 @@ public class TrainerPlanService : ITrainerPlanService
         return true;
     }
 
+    // Deletes a diet plan.
     public async Task<bool> DeleteDietPlanAsync(int planId, string trainerId)
     {
         var plan = await _context.DietPlans

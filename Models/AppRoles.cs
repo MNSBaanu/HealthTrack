@@ -1,5 +1,6 @@
 namespace HealthTrack.Models
 {
+    // Names of the application roles.
     public static class AppRoles
     {
         public const string Admin = "Admin";

@@ -2,6 +2,7 @@ using HealthTrack.Models;
 
 namespace HealthTrack.Services
 {
+    // Creates, reads and generates in-app notifications.
     public interface INotificationService
     {
         Task SendAsync(string personId, string message, NotificationType type, DateTime? scheduledFor = null);

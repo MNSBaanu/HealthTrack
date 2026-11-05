@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace HealthTrack.Models
 {
+    // A workout logged by a client.
     public class WorkoutLog
     {
         [Key]

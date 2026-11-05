@@ -6,6 +6,7 @@ using QuestPDF.Helpers;
 
 namespace HealthTrack.Services
 {
+    // Turns report sections into CSV, PDF or Excel files.
     public class ExportService : IExportService
     {
         private const string Ink = "#1a1823";
@@ -19,6 +20,7 @@ namespace HealthTrack.Services
         private const string OnInkMuted = "#a9a3b2";
         private const string Saffron = "#e9a21b";
 
+        // Writes the sections as a UTF-8 CSV file.
         public byte[] ToCsv(IEnumerable<ReportSection> sections)
         {
             var csv = new StringBuilder();
@@ -35,6 +37,7 @@ namespace HealthTrack.Services
             return Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(csv.ToString())).ToArray();
         }
 
+        // Renders the sections as a PDF document.
         public byte[] ToPdf(string title, IEnumerable<ReportSection> sections)
         {
             return Document.Create(container =>
@@ -113,6 +116,7 @@ namespace HealthTrack.Services
             }).GeneratePdf();
         }
 
+        // Writes the sections as an Excel workbook.
         public byte[] ToXlsx(string title, IEnumerable<ReportSection> sections)
         {
             var sectionList = sections.ToList();

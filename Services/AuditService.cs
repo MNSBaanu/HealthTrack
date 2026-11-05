@@ -6,13 +6,16 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace HealthTrack.Services;
 
+// Records audit log entries.
 public interface IAuditService
 {
     Task RecordAsync(ClaimsPrincipal user, string action, string entity, string? subjectClientId = null, string? detail = null);
 }
 
+// Writes audit entries for user and data actions.
 public class AuditService(HealthTrackDbContext context) : IAuditService
 {
+    // Saves an audit entry for the current user.
     public async Task RecordAsync(ClaimsPrincipal user, string action, string entity, string? subjectClientId = null, string? detail = null)
     {
         context.AuditLogs.Add(AuditSaveChangesInterceptor.Build(user, action, entity, subjectClientId, detail));
@@ -20,8 +23,10 @@ public class AuditService(HealthTrackDbContext context) : IAuditService
     }
 }
 
+// EF interceptor that records every add, change and delete in the audit log.
 public class AuditSaveChangesInterceptor(IHttpContextAccessor accessor) : SaveChangesInterceptor
 {
+    // Creates audit entries from the tracked changes.
     public static AuditLog Build(ClaimsPrincipal user, string action, string entity, string? subjectClientId, string? detail) => new()
     {
         ActorId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty,
@@ -33,12 +38,14 @@ public class AuditSaveChangesInterceptor(IHttpContextAccessor accessor) : SaveCh
         Detail = detail is { Length: > 300 } ? detail[..300] : detail
     };
 
+    // Adds audit entries before a synchronous save.
     public override InterceptionResult<int> SavingChanges(DbContextEventData eventData, InterceptionResult<int> result)
     {
         Audit(eventData.Context);
         return base.SavingChanges(eventData, result);
     }
 
+    // Adds audit entries before an asynchronous save.
     public override ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData,
         InterceptionResult<int> result, CancellationToken cancellationToken = default)
     {

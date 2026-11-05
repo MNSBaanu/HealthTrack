@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace HealthTrack.Models;
 
+// A sign-in attempt, kept for security review.
 public class LoginHistory
 {
     public int Id { get; set; }

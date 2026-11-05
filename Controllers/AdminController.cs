@@ -272,7 +272,15 @@ namespace HealthTrack.Controllers
                 TempData["Error"] = "This appointment has already started, so it can't be cancelled.";
                 return RedirectToAction(nameof(Appointments));
             }
-            appointment.Status = AppointmentStatus.Cancelled;
+            await using var operation = await AtomicOperation.BeginAsync(Context);
+            // The status is checked again in the update so a booking changed by the trainer meanwhile is left alone.
+            var cancelled = await Context.Appointments.Where(a => a.Id == id && a.Status == appointment.Status)
+                .ExecuteUpdateAsync(s => s.SetProperty(a => a.Status, AppointmentStatus.Cancelled));
+            if (cancelled == 0)
+            {
+                TempData["Error"] = "This appointment was just changed by someone else. Refresh and try again.";
+                return RedirectToAction(nameof(Appointments));
+            }
             // A cancelled appointment can no longer be moved, so its open reschedule request is closed too.
             var closedAt = _clock.GetUtcNow().UtcDateTime;
             foreach (var request in await Context.RescheduleRequests.Where(r => r.AppointmentId == id
@@ -282,6 +290,7 @@ namespace HealthTrack.Controllers
                 request.DecidedAtUtc ??= closedAt;
             }
             await Context.SaveChangesAsync();
+            await operation.CommitAsync();
 
             var when = $"{_time.ToLocal(appointment.Slot.StartUtc):ddd, d MMM yyyy HH:mm}";
             await _notificationService.SendAsync(appointment.ClientId,
@@ -1215,7 +1224,7 @@ namespace HealthTrack.Controllers
                 {
                     ModelState.AddModelError(string.Empty, "A slot must last between 15 minutes and 8 hours.");
                 }
-                else if (await Context.AvailabilitySlots.AnyAsync(s => s.ProviderId == provider.Id && s.StartUtc < endUtc && s.EndUtc > startUtc))
+                else if (await Context.AvailabilitySlots.AnyAsync(s => s.ProviderId == provider.Id && s.IsAvailable && s.StartUtc < endUtc && s.EndUtc > startUtc))
                 {
                     ModelState.AddModelError(string.Empty, "This slot overlaps an existing slot.");
                 }

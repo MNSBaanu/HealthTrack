@@ -73,7 +73,9 @@
         return best;
     }
     let lastTopic = null;
-    const storeKey = 'healthtrack-chat';
+    // History is kept per user so the next person signing in on this tab can't see it.
+    const storeKey = 'healthtrack-chat:' + (root.dataset.user || '');
+    try { Object.keys(sessionStorage).filter(k => k.startsWith('healthtrack-chat') && k !== storeKey).forEach(k => sessionStorage.removeItem(k)); } catch { }
     const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
     const ownData = /\b(my|me|am i|do i|have i|when is|when s|next)\b/;
     let history = [];

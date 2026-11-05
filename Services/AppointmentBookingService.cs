@@ -44,6 +44,15 @@ public class AppointmentBookingService(HealthTrackDbContext context, TimeProvide
             context.Appointments.Add(appointment);
             await context.SaveChangesAsync();
             await transaction.CommitAsync();
+
+            if (slot.Provider.PersonId is string trainerId)
+            {
+                var start = time.ToLocal(slot.StartUtc);
+                var clientName = await context.Clients.Where(c => c.Id == clientId).Select(c => c.Name).SingleAsync();
+                await notifications.SendAsync(trainerId,
+                    $"{clientName} requested a consultation on {start:MMM dd, yyyy} at {start:hh:mm tt}. Review it on your Consultations page.",
+                    NotificationType.Appointment);
+            }
             return new(appointment.Id, null);
         }
         catch (Exception exception) when (IsBookingConflict(exception))
@@ -176,18 +185,27 @@ public class AppointmentBookingService(HealthTrackDbContext context, TimeProvide
 
     public async Task<(bool Success, string? Error)> CancelClientAppointmentAsync(string clientId, int appointmentId)
     {
-        var appointment = await context.Appointments
+        var appointment = await context.Appointments.AsNoTracking()
+            .Include(a => a.Client).Include(a => a.Slot).ThenInclude(s => s.Provider)
             .SingleOrDefaultAsync(a => a.Id == appointmentId && a.ClientId == clientId);
 
         if (appointment == null)
             return (false, "Appointment not found.");
 
-        // Only allow cancelling pending appointments
-        if (appointment.Status != AppointmentStatus.Pending)
+        // Only allow cancelling pending appointments; the status is checked again in the update in case the trainer just approved it.
+        var cancelled = appointment.Status == AppointmentStatus.Pending && await context.Appointments
+            .Where(a => a.Id == appointmentId && a.ClientId == clientId && a.Status == AppointmentStatus.Pending)
+            .ExecuteUpdateAsync(s => s.SetProperty(a => a.Status, AppointmentStatus.Cancelled)) == 1;
+        if (!cancelled)
             return (false, "Only pending appointments can be cancelled by you. Contact your trainer to cancel approved appointments.");
 
-        appointment.Status = AppointmentStatus.Cancelled;
-        await context.SaveChangesAsync();
+        if (appointment.Slot.Provider.PersonId is string trainerId)
+        {
+            var start = time.ToLocal(appointment.Slot.StartUtc);
+            await notifications.SendAsync(trainerId,
+                $"{appointment.Client.Name} cancelled their consultation request for {start:MMM dd, yyyy} at {start:hh:mm tt}.",
+                NotificationType.Appointment);
+        }
         return (true, null);
     }
 }

@@ -45,13 +45,21 @@ public class AppointmentBookingService(HealthTrackDbContext context, TimeProvide
             await context.SaveChangesAsync();
             await transaction.CommitAsync();
 
+            var start = time.ToLocal(slot.StartUtc);
+            var clientName = await context.Clients.Where(c => c.Id == clientId).Select(c => c.Name).SingleAsync();
             if (slot.Provider.PersonId is string trainerId)
             {
-                var start = time.ToLocal(slot.StartUtc);
-                var clientName = await context.Clients.Where(c => c.Id == clientId).Select(c => c.Name).SingleAsync();
                 await notifications.SendAsync(trainerId,
                     $"{clientName} requested a consultation on {start:MMM dd, yyyy} at {start:hh:mm tt}. Review it on your Consultations page.",
                     NotificationType.Appointment);
+            }
+            else
+            {
+                // Healthcare professionals have no account, so administrators approve these bookings.
+                foreach (var adminId in await context.Admins.Select(a => a.Id).ToListAsync())
+                    await notifications.SendAsync(adminId,
+                        $"{clientName} requested an appointment with {slot.Provider.Name} on {start:MMM dd, yyyy} at {start:hh:mm tt}. Review it on the Appointments page.",
+                        NotificationType.Appointment);
             }
             return new(appointment.Id, null);
         }

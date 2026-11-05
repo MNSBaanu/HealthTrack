@@ -47,7 +47,8 @@ public class TrainerFeedbackService : ITrainerFeedbackService
     public async Task<TrainerFeedbackFormViewModel?> GetFeedbackForEditAsync(string trainerId, int feedbackId)
     {
         var feedback = await _context.TrainerFeedbacks
-            .FirstOrDefaultAsync(f => f.Id == feedbackId && f.TrainerId == trainerId);
+            .Include(f => f.Client)
+            .FirstOrDefaultAsync(f => f.Id == feedbackId && f.TrainerId == trainerId && f.ClientReply == null);
 
         if (feedback == null) return null;
 
@@ -66,7 +67,7 @@ public class TrainerFeedbackService : ITrainerFeedbackService
     public async Task<bool> UpdateFeedbackAsync(string trainerId, int feedbackId, TrainerFeedbackFormViewModel model)
     {
         var feedback = await _context.TrainerFeedbacks
-            .FirstOrDefaultAsync(f => f.Id == feedbackId && f.TrainerId == trainerId);
+            .FirstOrDefaultAsync(f => f.Id == feedbackId && f.TrainerId == trainerId && f.ClientReply == null);
 
         if (feedback == null) return false;
 

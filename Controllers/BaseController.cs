@@ -24,8 +24,9 @@ namespace HealthTrack.Controllers
             HttpContext.RequestServices.GetRequiredService<HealthTrack.Services.IAuditService>()
                 .RecordAsync(User, action, entity, subjectClientId, detail);
 
-        // Controllers that work in the application's time zone override this.
-        protected virtual DateTime LocalNow => DateTime.Now;
+        // Current time in the application's time zone, the same clock used for reminders and scheduled notifications.
+        protected virtual DateTime LocalNow => HttpContext.RequestServices.GetRequiredService<HealthTrack.Services.AppointmentTime>()
+            .ToLocal(HttpContext.RequestServices.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime);
 
         protected void ValidateNotInFuture(DateTime date, string fieldName)
         {

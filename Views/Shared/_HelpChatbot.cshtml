@@ -1,6 +1,6 @@
 @{ var adminBot = User.IsInRole(AppRoles.Admin); }
 @Html.AntiForgeryToken()
-<div class="ht-chat" data-healthtrack-chat data-role="@(adminBot ? "admin" : "client")">
+<div class="ht-chat" data-healthtrack-chat data-role="@(adminBot ? "admin" : "client")" data-user="@User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value">
     <section class="ht-chat-panel" id="healthtrack-chat-panel" aria-label="HealthTrack help chat" hidden>
         <header class="ht-chat-header">
             <div><strong>HealthTrack help</strong><small>Guide &amp; assistant</small></div>

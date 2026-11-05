@@ -168,10 +168,18 @@ public class AppointmentsController : ClientBaseController
         }
         var action = requestType == "Reschedule" ? "RESCHEDULE" : "CANCEL";
         var start = _time.ToLocal(record.Slot.StartUtc);
+        var summary = $"{record.Client.Name} requested to {action} the consultation on {start:MMM dd, yyyy} at {start:hh:mm tt}.";
+        // One request of each kind per appointment per day, so the trainer isn't flooded.
+        var since = LocalNow.AddDays(-1);
+        if (await Context.Notifications.AnyAsync(n => n.PersonId == record.Slot.Provider.PersonId
+            && n.Message.StartsWith(summary) && n.CreatedAt >= since))
+        {
+            TempData["Error"] = "You already sent this request today. Your trainer will respond soon.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
         var note = string.IsNullOrWhiteSpace(message) ? "" : $" Message: {message.Trim()}";
         await _notifications.SendAsync(record.Slot.Provider.PersonId,
-            $"{record.Client.Name} requested to {action} the consultation on {start:MMM dd, yyyy} at {start:hh:mm tt}.{note}",
-            NotificationType.Appointment);
+            summary + note, NotificationType.Appointment);
         TempData["Success"] = "Your request was sent to your trainer.";
         return RedirectToAction(nameof(Details), new { id });
     }

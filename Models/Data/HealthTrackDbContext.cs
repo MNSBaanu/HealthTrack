@@ -165,6 +165,8 @@ namespace HealthTrack.Models.Data
             builder.Entity<WeeklyCheckIn>().HasOne(c => c.Client).WithMany()
                 .HasForeignKey(c => c.ClientId).OnDelete(DeleteBehavior.Cascade);
             builder.Entity<WeeklyCheckIn>().HasIndex(c => new { c.ClientId, c.RequestedAtUtc });
+            builder.Entity<WeeklyCheckIn>().HasIndex(c => new { c.ClientId, c.TrainerId }).IsUnique()
+                .HasFilter("[RespondedAtUtc] IS NULL");
 
             builder.Entity<LoginHistory>().HasOne(l => l.Person).WithMany()
                 .HasForeignKey(l => l.PersonId).OnDelete(DeleteBehavior.Cascade);

@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace HealthTrack.Models;
 
+// An exercise within a workout plan.
 public class WorkoutPlanItem
 {
     public int Id { get; set; }
@@ -11,6 +12,7 @@ public class WorkoutPlanItem
 
     public DayOfWeek? DayOfWeek { get; set; }
 
+    // Returns true when the plan is active on the given date.
     public bool CanCompleteOn(DateTime date) =>
         WorkoutPlan is { IsActive: true } plan
         && date.Date >= plan.StartDate.Date

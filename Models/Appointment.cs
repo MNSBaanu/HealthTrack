@@ -3,8 +3,10 @@ using System.ComponentModel.DataAnnotations;
 namespace HealthTrack.Models;
 
 // These numeric values are persisted. Keep them stable across modules.
+// Lifecycle states of an appointment.
 public enum AppointmentStatus { Pending = 0, Approved = 1, Cancelled = 2, Completed = 3 }
 
+// A client's booking of a provider's availability slot.
 public class Appointment
 {
     public int Id { get; set; }

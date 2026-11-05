@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthTrack.Services;
 
+// Background worker that creates reminders for upcoming appointments.
 public class AppointmentReminderWorker(IServiceScopeFactory scopes,
     ILogger<AppointmentReminderWorker> logger, TimeProvider clock) : BackgroundService
 {

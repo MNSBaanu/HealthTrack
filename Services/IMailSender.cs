@@ -1,5 +1,6 @@
 namespace HealthTrack.Services
 {
+    // Sends notification and report emails.
     public interface IMailSender
     {
         bool IsConfigured { get; }

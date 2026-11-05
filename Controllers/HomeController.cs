@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HealthTrack.Controllers
 {
+    // Entry point that sends each user to the dashboard for their role.
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
@@ -17,6 +18,7 @@ namespace HealthTrack.Controllers
             _userManager = userManager;
         }
 
+        // Redirects signed-in users to their dashboard and others to sign-in.
         public IActionResult Index()
         {
             if (User.Identity?.IsAuthenticated == true)
@@ -26,6 +28,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction("Login", "Account");
         }
 
+        // Redirects to the dashboard controller that matches the user's role.
         [Authorize]
         public async Task<IActionResult> Dashboard()
         {
@@ -37,6 +40,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction("Index", user.DashboardController);
         }
 
+        // Shows the privacy policy.
         public IActionResult Privacy()
         {
             var configuration = HttpContext.RequestServices.GetRequiredService<IConfiguration>();
@@ -45,6 +49,7 @@ namespace HealthTrack.Controllers
             return View();
         }
 
+        // Shows the generic error page.
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {

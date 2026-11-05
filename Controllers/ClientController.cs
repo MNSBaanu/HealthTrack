@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthTrack.Controllers
 {
+    // Client dashboard, profile, progress analytics, data export and account deletion.
     public class ClientController : ClientBaseController
     {
         private readonly ILogger<ClientController> _logger;
@@ -29,6 +30,7 @@ namespace HealthTrack.Controllers
             _clock = clock;
         }
 
+        // Dashboard with health stats, today's tasks, active plans, appointments and reminders.
         public async Task<IActionResult> Index()
         {
             var clientId = CurrentUserId;
@@ -41,9 +43,9 @@ namespace HealthTrack.Controllers
                 .OrderBy(m => m.RecordedAt)
                 .ToListAsync();
 
-            var today = DateTime.Today;
             var nowUtc = _clock.GetUtcNow().UtcDateTime;
-            var planToday = _appointmentTime.ToLocal(nowUtc).Date;
+            var planToday = LocalToday;
+            var today = planToday;
             var upcoming = await Context.Appointments.AsNoTracking()
                 .Include(a => a.Slot).ThenInclude(s => s.Provider)
                 .Where(a => a.ClientId == clientId && a.Slot.StartUtc > nowUtc
@@ -75,17 +77,15 @@ namespace HealthTrack.Controllers
                 PlanToday = planToday,
                 TodayTasks = todayTasks,
                 DietTargetKcal = dietTarget,
+                ActiveWorkoutPlans = await Context.WorkoutPlans.AsNoTracking().Include(p => p.Trainer)
+                    .Where(p => p.ClientId == clientId && p.IsActive && p.StartDate.Date <= planToday && (!p.EndDate.HasValue || p.EndDate.Value.Date >= planToday))
+                    .OrderByDescending(p => p.StartDate).Take(2).ToListAsync(),
+                ActiveDietPlans = await Context.DietPlans.AsNoTracking().Include(p => p.Trainer)
+                    .Where(p => p.ClientId == clientId && p.IsActive && p.StartDate.Date <= planToday && (!p.EndDate.HasValue || p.EndDate.Value.Date >= planToday))
+                    .OrderByDescending(p => p.StartDate).Take(2).ToListAsync(),
                 PlannedWorkoutsToday = todayTasks.Count(t => t.Kind == "Workout"),
                 DoneWorkoutsToday = todayTasks.Count(t => t.Kind == "Workout" && t.Completed),
                 Achievements = ClientAchievements.Compute(workoutDates, planToday, mealCount, metrics.Count, goalReached),
-                AssignedWorkoutPlans = await Context.WorkoutPlans.AsNoTracking().Include(p => p.Trainer)
-                    .Where(p => p.ClientId == clientId)
-                    .OrderByDescending(p => p.IsActive && p.StartDate.Date <= planToday && (!p.EndDate.HasValue || p.EndDate.Value.Date >= planToday))
-                    .ThenByDescending(p => p.IsActive).ThenByDescending(p => p.StartDate).ThenByDescending(p => p.Id).ToListAsync(),
-                AssignedDietPlans = await Context.DietPlans.AsNoTracking().Include(p => p.Trainer)
-                    .Where(p => p.ClientId == clientId)
-                    .OrderByDescending(p => p.IsActive && p.StartDate.Date <= planToday && (!p.EndDate.HasValue || p.EndDate.Value.Date >= planToday))
-                    .ThenByDescending(p => p.IsActive).ThenByDescending(p => p.StartDate).ThenByDescending(p => p.Id).ToListAsync(),
                 UpcomingAppointments = upcoming.Select(_appointmentTime.ToViewModel).ToList(),
                 AppointmentTimeZone = _appointmentTime.Label,
                 LatestMetric = metrics.LastOrDefault(),
@@ -96,7 +96,7 @@ namespace HealthTrack.Controllers
                 MinutesThisWeek = weekWorkouts.Sum(w => w.DurationMinutes),
                 CaloriesBurnedThisWeek = weekWorkouts.Sum(w => w.CaloriesBurned),
                 CaloriesConsumedToday = await Context.MealLogs
-                    .Where(m => m.ClientId == clientId && m.LoggedAt >= today)
+                    .Where(m => m.ClientId == clientId && m.LoggedAt >= today && m.LoggedAt < today.AddDays(1))
                     .SumAsync(m => m.Calories),
                 RecentWorkouts = await Context.WorkoutLogs
                     .Where(w => w.ClientId == clientId)
@@ -113,6 +113,7 @@ namespace HealthTrack.Controllers
             return View(model);
         }
 
+        // Shows the client's profile form.
         [HttpGet]
         public async Task<IActionResult> Profile()
         {
@@ -138,6 +139,7 @@ namespace HealthTrack.Controllers
             return View(model);
         }
 
+        // Saves profile details and an optional new profile photo.
         [HttpPost]
         [RequestSizeLimit(3 * 1024 * 1024)]
         public async Task<IActionResult> Profile(ProfileViewModel model)
@@ -146,7 +148,7 @@ namespace HealthTrack.Controllers
             model.Email = client.Email ?? string.Empty;
             model.HasPhoto = client.ProfilePhoto != null;
             ValidatePastDate(model.DateOfBirth, nameof(model.DateOfBirth));
-            if (model.TargetDate.HasValue && model.TargetDate.Value.Date <= DateTime.Today)
+            if (model.TargetDate.HasValue && model.TargetDate.Value.Date <= LocalToday)
                 ModelState.AddModelError(nameof(model.TargetDate), "Choose a target date in the future.");
             byte[]? photo = null;
             string? photoType = null;
@@ -193,6 +195,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Profile));
         }
 
+        // Returns the stored profile photo image.
         [HttpGet]
         [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
         public async Task<IActionResult> ProfilePhoto()
@@ -206,6 +209,7 @@ namespace HealthTrack.Controllers
             return File(photo.ProfilePhoto, photo.ProfilePhotoContentType);
         }
 
+        // Shows weight, BMI and calorie trends with goal progress.
         public async Task<IActionResult> Progress()
         {
             var client = await Context.Clients.AsNoTracking().FirstAsync(c => c.Id == CurrentUserId);
@@ -216,18 +220,19 @@ namespace HealthTrack.Controllers
             var workoutDates = await Context.WorkoutLogs.AsNoTracking().Where(w => w.ClientId == client.Id)
                 .Select(w => w.LoggedAt).ToListAsync();
             var meals = await Context.MealLogs.CountAsync(m => m.ClientId == client.Id);
-            var today = _appointmentTime.ToLocal(_clock.GetUtcNow().UtcDateTime).Date;
+            var today = LocalToday;
             ViewData["Achievements"] = ClientAchievements.Compute(workoutDates, today, meals, metrics.Count,
                 (ViewData["Goal"] as GoalProgressViewModel)?.Reached == true);
             return View();
         }
 
+        // Returns metric and calorie series as JSON for the progress charts.
         [HttpGet]
         public async Task<IActionResult> ProgressData(int days = 30)
         {
             var clientId = CurrentUserId;
             days = Math.Clamp(days, 7, 365);
-            var from = DateTime.Today.AddDays(-(days - 1));
+            var from = LocalToday.AddDays(-(days - 1));
             var client = await Context.Clients.FirstAsync(c => c.Id == clientId);
 
             var weights = await Context.HealthMetrics
@@ -259,12 +264,14 @@ namespace HealthTrack.Controllers
             return Json(model);
         }
 
+        // Shows the account deletion confirmation page.
         [HttpGet]
         public IActionResult DeleteAccount()
         {
             return View(new DeleteAccountViewModel());
         }
 
+        // Permanently deletes the client's account and data after password confirmation.
         [HttpPost]
         public async Task<IActionResult> DeleteAccount(DeleteAccountViewModel model)
         {
@@ -297,6 +304,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction("Index", "Home");
         }
 
+        // Downloads the client's progress report or all their data as PDF or CSV.
         [HttpGet]
         public async Task<IActionResult> Export(string format = "csv", bool all = false)
         {
@@ -347,7 +355,7 @@ namespace HealthTrack.Controllers
                     notifications.Select(n => new object?[] { n.CreatedAt, n.Type, n.Message })));
             }
 
-            var fileName = $"{(all ? "HealthTrack_MyData" : "HealthTrack_Progress")}_{DateTime.Now:yyyyMMdd}";
+            var fileName = $"{(all ? "HealthTrack_MyData" : "HealthTrack_Progress")}_{LocalNow:yyyyMMdd}";
             _logger.LogInformation("Client {ClientId} exported {Scope} as {Format}", clientId, all ? "all data" : "progress", format);
             await AuditAsync("Exported", all ? "AllMyData" : "ProgressReport", clientId, format);
             if (format.Equals("pdf", StringComparison.OrdinalIgnoreCase))

@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace HealthTrack.Models
 {
+    // A meal logged by a client.
     public class MealLog
     {
         [Key]

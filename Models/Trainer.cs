@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace HealthTrack.Models;
 
 // Shared Identity entity; Trainer registration and dashboard belong to the Trainer module.
+// Trainer user who manages assigned clients; inherits from Person.
 public class Trainer : Person
 {
     public ICollection<ClientTrainerAssignment> ClientAssignments { get; set; } = new List<ClientTrainerAssignment>();

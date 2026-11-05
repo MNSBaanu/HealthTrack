@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HealthTrack.ViewComponents
 {
+    // Renders the header notification bell with the unread count.
     public class NotificationBellViewComponent : ViewComponent
     {
         private readonly INotificationService _notificationService;
@@ -16,6 +17,7 @@ namespace HealthTrack.ViewComponents
             _userManager = userManager;
         }
 
+        // Loads the unread count for the current user.
         public async Task<IViewComponentResult> InvokeAsync()
         {
             var personId = _userManager.GetUserId(UserClaimsPrincipal);

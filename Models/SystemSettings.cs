@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthTrack.Models
 {
+    // System-wide settings that admins can change.
     public class SystemSettings
     {
         public int Id { get; set; } = 1;
@@ -39,12 +40,14 @@ namespace HealthTrack.Models
 
         public DateTime? WeeklyReportSentAtUtc { get; set; }
 
+        // Copies the lockout settings into the Identity options.
         public void ApplyLockout(Microsoft.AspNetCore.Identity.IdentityOptions options)
         {
             options.Lockout.MaxFailedAccessAttempts = MaxFailedAccessAttempts;
             options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(LockoutMinutes);
         }
 
+        // Loads the settings row, or defaults when none exists.
         public static async Task<SystemSettings> LoadAsync(HealthTrackDbContext context, CancellationToken cancellationToken = default) =>
             await context.SystemSettings.AsNoTracking().FirstOrDefaultAsync(cancellationToken) ?? new SystemSettings();
     }

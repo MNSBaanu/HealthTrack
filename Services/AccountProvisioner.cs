@@ -5,8 +5,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthTrack.Services;
 
+// Creates a user account and assigns its role in one transaction.
 public static class AccountProvisioner
 {
+    // Creates the account and role together, rolling back if either step fails.
     public static async Task<IdentityResult> CreateAsync(HealthTrackDbContext context, UserManager<Person> users,
         Person person, string password, string role, string? specialty = null)
     {

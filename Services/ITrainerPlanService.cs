@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace HealthTrack.Services;
 
+// Manages the workout and diet plans trainers create.
 public interface ITrainerPlanService
 {
     Task<bool> IsClientAssignedToTrainerAsync(string trainerId, string clientId);

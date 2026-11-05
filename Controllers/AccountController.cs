@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace HealthTrack.Controllers
 {
+    // Handles registration, sign-in (including two-factor), sign-out and password changes for every role.
     public class AccountController : BaseController
     {
         private readonly ILogger<AccountController> _logger;
@@ -24,6 +25,7 @@ namespace HealthTrack.Controllers
             _clock = clock;
         }
 
+        // Shows the client self-registration form.
         [HttpGet]
         public IActionResult Register()
         {
@@ -34,20 +36,26 @@ namespace HealthTrack.Controllers
             return View();
         }
 
+        // Creates a new client account with starting health details, then signs the client in.
         [HttpPost]
         [EnableRateLimiting("auth")]
         public async Task<IActionResult> Register(RegisterViewModel model)
         {
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                return RedirectToAction("Index", "Home");
+            }
             ValidatePastDate(model.DateOfBirth, nameof(model.DateOfBirth));
             if (!ModelState.IsValid)
             {
                 return View(model);
             }
 
+            var email = model.Email.Trim();
             var client = new Client
             {
-                UserName = model.Email,
-                Email = model.Email,
+                UserName = email,
+                Email = email,
                 Name = model.Name.Trim(),
                 DateOfBirth = model.DateOfBirth!.Value,
                 HeightCm = model.HeightCm!.Value,
@@ -56,19 +64,20 @@ namespace HealthTrack.Controllers
             };
             client.HealthMetrics.Add(new HealthMetric { WeightKg = model.WeightKg!.Value });
 
-            var result = await UserManager.CreateAsync(client, model.Password);
+            // Account, role and starting weight are saved together or not at all.
+            var result = await AccountProvisioner.CreateAsync(Context, UserManager, client, model.Password, AppRoles.Client);
             if (!result.Succeeded)
             {
                 AddErrors(result);
                 return View(model);
             }
 
-            await UserManager.AddToRoleAsync(client, AppRoles.Client);
             await _signInManager.SignInAsync(client, isPersistent: false);
             _logger.LogInformation("New client registered: {Email}", client.Email);
             return RedirectToAction("Index", client.DashboardController);
         }
 
+        // Shows the sign-in form.
         [HttpGet]
         public IActionResult Login(string? returnUrl = null, bool temporaryPasswordExpired = false)
         {
@@ -78,6 +87,7 @@ namespace HealthTrack.Controllers
             return View();
         }
 
+        // Validates credentials, applies lockout rules and redirects to two-factor sign-in when it is enabled.
         [HttpPost]
         [EnableRateLimiting("auth")]
         public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
@@ -119,6 +129,7 @@ namespace HealthTrack.Controllers
             return await FinishSignInAsync(user!, returnUrl);
         }
 
+        // Shows the authenticator code form for users with two-factor sign-in enabled.
         [HttpGet]
         public async Task<IActionResult> LoginWith2fa(string? returnUrl = null, bool rememberMe = false)
         {
@@ -127,6 +138,7 @@ namespace HealthTrack.Controllers
             return View(new LoginWith2faViewModel { RememberMe = rememberMe });
         }
 
+        // Verifies the authenticator or recovery code and completes the sign-in.
         [HttpPost]
         [EnableRateLimiting("auth")]
         public async Task<IActionResult> LoginWith2fa(LoginWith2faViewModel model, string? returnUrl = null)
@@ -155,6 +167,7 @@ namespace HealthTrack.Controllers
             return await FinishSignInAsync(user, returnUrl);
         }
 
+        // Shows the QR code and shared key used to set up an authenticator app.
         [HttpGet]
         [Authorize]
         public async Task<IActionResult> EnableAuthenticator()
@@ -165,6 +178,7 @@ namespace HealthTrack.Controllers
             return View(await BuildAuthenticatorModelAsync(user));
         }
 
+        // Confirms the first authenticator code and turns on two-factor sign-in.
         [HttpPost]
         [Authorize]
         public async Task<IActionResult> EnableAuthenticator(EnableAuthenticatorViewModel model)
@@ -189,23 +203,41 @@ namespace HealthTrack.Controllers
             return View(page);
         }
 
+        // Issues a fresh set of one-time recovery codes.
         [HttpPost]
         [Authorize]
-        public async Task<IActionResult> GenerateRecoveryCodes()
+        [EnableRateLimiting("auth")]
+        public async Task<IActionResult> GenerateRecoveryCodes(string? password)
         {
             var user = await UserManager.GetUserAsync(User);
             if (user == null) return RedirectToAction(nameof(Login));
             if (!user.TwoFactorEnabled) return RedirectToAction(nameof(ChangePassword));
+            if (!await PasswordConfirmedAsync(user, password))
+            {
+                TempData["Error"] = "Enter your current password to make new recovery codes.";
+                return RedirectToAction(nameof(ChangePassword));
+            }
             var codes = await UserManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 10);
             return View("RecoveryCodes", codes?.ToArray() ?? Array.Empty<string>());
         }
 
+        // Sensitive account changes need the password again, so a stolen session cannot weaken sign-in.
+        private async Task<bool> PasswordConfirmedAsync(Person user, string? password) =>
+            !string.IsNullOrEmpty(password) && await UserManager.CheckPasswordAsync(user, password);
+
+        // Turns off two-factor sign-in unless the system requires it for this role.
         [HttpPost]
         [Authorize]
-        public async Task<IActionResult> DisableTwoFactor()
+        [EnableRateLimiting("auth")]
+        public async Task<IActionResult> DisableTwoFactor(string? password)
         {
             var user = await UserManager.GetUserAsync(User);
             if (user == null) return RedirectToAction(nameof(Login));
+            if (!await PasswordConfirmedAsync(user, password))
+            {
+                TempData["Error"] = "Enter your current password to turn off two-factor sign-in.";
+                return RedirectToAction(nameof(ChangePassword));
+            }
             if (user is Admin && (await SystemSettings.LoadAsync(Context)).RequireAdminTwoFactor)
             {
                 TempData["Error"] = "Two-factor sign-in is required for administrators, so it can't be turned off.";
@@ -263,6 +295,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction("Index", user.DashboardController);
         }
 
+        // Signs the current user out.
         [HttpPost]
         [Authorize]
         public async Task<IActionResult> Logout()
@@ -271,6 +304,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction("Index", "Home");
         }
 
+        // Shows the change password form.
         [HttpGet]
         [Authorize]
         public async Task<IActionResult> ChangePassword()
@@ -279,6 +313,7 @@ namespace HealthTrack.Controllers
             return View(new ChangePasswordViewModel());
         }
 
+        // Changes the password after checking the current one.
         [HttpPost]
         [Authorize]
         public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
@@ -310,6 +345,7 @@ namespace HealthTrack.Controllers
             return required ? RedirectToAction("Index", user.DashboardController) : RedirectToAction(nameof(ChangePassword));
         }
 
+        // Shown when a signed-in user opens a page their role cannot access.
         [HttpGet]
         public IActionResult AccessDenied()
         {

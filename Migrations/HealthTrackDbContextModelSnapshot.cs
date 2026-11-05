@@ -83,7 +83,7 @@ namespace HealthTrack.Migrations
 
                     b.Property<string>("Notes")
                         .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("RatedAtUtc")
                         .HasColumnType("datetime2");
@@ -845,12 +845,12 @@ namespace HealthTrack.Migrations
 
                     b.Property<string>("ClientReply")
                         .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Comments")
                         .IsRequired()
                         .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime2");
@@ -890,7 +890,7 @@ namespace HealthTrack.Migrations
 
                     b.Property<string>("Comment")
                         .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("Energy")
                         .HasColumnType("int");
@@ -900,7 +900,7 @@ namespace HealthTrack.Migrations
 
                     b.Property<string>("Note")
                         .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("Pain")
                         .HasColumnType("int");
@@ -1221,7 +1221,7 @@ namespace HealthTrack.Migrations
 
                     b.Property<string>("FitnessGoal")
                         .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<double>("HeightCm")
                         .HasColumnType("float");

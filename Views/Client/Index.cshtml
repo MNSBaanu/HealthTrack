@@ -1,7 +1,8 @@
 @model ClientDashboardViewModel
 @{
     ViewData["Title"] = "Overview";
-    var hour = DateTime.Now.Hour;
+    var localNow = (ViewData["LocalNow"] as DateTime? ?? DateTime.Now);
+    var hour = localNow.Hour;
     var greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
     var firstName = Model.Client.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? Model.Client.Name;
     var latest = Model.LatestMetric;
@@ -13,7 +14,7 @@
 
 <div class="ht-head">
     <div>
-        <div class="ht-overline">@DateTime.Now.ToString("dddd · d MMMM yyyy")</div>
+        <div class="ht-overline">@localNow.ToString("dddd · d MMMM yyyy")</div>
         <h1 class="ht-title">@greeting, @firstName.</h1>
         <p class="ht-lede">
             @if (!string.IsNullOrWhiteSpace(Model.Client.FitnessGoal))
@@ -25,9 +26,7 @@
         <p class="small text-muted mb-0">Trainer: <strong>@(Model.Client.TrainerAssignment?.Trainer.Name ?? "Not assigned yet")</strong></p>
     </div>
     <div class="ht-head-actions">
-        <a class="btn btn-line" asp-controller="HealthMetrics" asp-action="Create"><i class="icon-plus"></i>Measurements</a>
-        <a class="btn btn-line" asp-controller="MealLogs" asp-action="Create"><i class="icon-plus"></i>Meal</a>
-        <a class="btn btn-primary" asp-controller="WorkoutLogs" asp-action="Create"><i class="icon-plus"></i>Log workout</a>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#todayTasksModal"><i class="icon-check"></i>Today's tasks</button>
     </div>
 </div>
 
@@ -127,8 +126,6 @@
 
 <partial name="_Achievements" model="Model.Achievements" />
 
-<partial name="_AssignedPlanSummaries" model="Model" />
-
 <div class="row g-3">
     <div class="col-lg-7">
         <section class="ht-card h-100">
@@ -184,6 +181,41 @@
             else
             {
                 <div class="ht-card-body text-muted">No upcoming appointments. <a asp-controller="Appointments" asp-action="Book">Book a consultation</a>.</div>
+            }
+        </section>
+        <section class="ht-card">
+            <div class="ht-card-head">
+                <h2>Active plans</h2>
+                <a asp-controller="ClientPlans" asp-action="Index">All plans <i class="icon-arrow-right"></i></a>
+            </div>
+            @if (Model.ActiveWorkoutPlans.Any() || Model.ActiveDietPlans.Any())
+            {
+                <ul class="ht-journal">
+                    @foreach (var plan in Model.ActiveWorkoutPlans)
+                    {
+                        <li class="ht-entry">
+                            <span class="ht-glyph saffron"><i class="icon-zap"></i></span>
+                            <div>
+                                <a class="title" asp-controller="ClientPlans" asp-action="Workout" asp-route-id="@plan.Id">@plan.Title</a>
+                                <div class="meta">Workout plan &middot; @(plan.Trainer?.Name ?? "Trainer unavailable") &middot; @(plan.EndDate.HasValue ? "until " + plan.EndDate.Value.ToString("d MMM") : "ongoing")</div>
+                            </div>
+                        </li>
+                    }
+                    @foreach (var plan in Model.ActiveDietPlans)
+                    {
+                        <li class="ht-entry">
+                            <span class="ht-glyph success"><i class="icon-coffee"></i></span>
+                            <div>
+                                <a class="title" asp-controller="ClientPlans" asp-action="Diet" asp-route-id="@plan.Id">@plan.Title</a>
+                                <div class="meta">Diet plan &middot; @plan.DailyCalorieTarget.ToString("N0") kcal/day &middot; @(plan.EndDate.HasValue ? "until " + plan.EndDate.Value.ToString("d MMM") : "ongoing")</div>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <div class="ht-card-body text-muted">No active plans yet. Plans from your trainer will appear here.</div>
             }
         </section>
         <section class="ht-card">

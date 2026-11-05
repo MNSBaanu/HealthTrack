@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace HealthTrack.Models
 {
+    // Base user account shared by Client, Trainer and Admin (extends IdentityUser).
     public abstract class Person : IdentityUser
     {
         [Required]
@@ -32,6 +33,7 @@ namespace HealthTrack.Models
         [NotMapped]
         public string Initials => GetInitials(Name);
 
+        // Returns up to two initials from the person's name for avatars.
         public static string GetInitials(string name)
         {
             var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);

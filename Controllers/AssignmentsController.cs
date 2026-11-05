@@ -11,10 +11,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthTrack.Controllers;
 
+// Lets administrators assign, change or remove a client's trainer.
 [Authorize(Roles = AppRoles.Admin)]
 public class AssignmentsController(HealthTrackDbContext context, UserManager<Person> users,
     TrainerAssignmentQueries queries, TimeProvider clock, INotificationService notifications) : BaseController(context, users)
 {
+    // Lists clients with their current trainer.
     [HttpGet]
     public async Task<IActionResult> Index(string? search, bool unassignedOnly = false)
     {
@@ -30,6 +32,7 @@ public class AssignmentsController(HealthTrackDbContext context, UserManager<Per
         });
     }
 
+    // Shows the trainer picker and assignment history for a client.
     [HttpGet]
     public async Task<IActionResult> Edit(string id)
     {
@@ -43,6 +46,7 @@ public class AssignmentsController(HealthTrackDbContext context, UserManager<Per
         }));
     }
 
+    // Assigns or changes the client's trainer and records the change in history.
     [HttpPost]
     public async Task<IActionResult> Edit(AssignmentForm form)
     {
@@ -93,6 +97,7 @@ public class AssignmentsController(HealthTrackDbContext context, UserManager<Per
         return RedirectToAction(nameof(Index));
     }
 
+    // Removes the client's current trainer assignment.
     [HttpPost]
     public async Task<IActionResult> Remove(RemoveAssignmentForm form)
     {

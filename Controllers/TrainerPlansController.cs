@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthTrack.Controllers
 {
+    // Lets trainers create and manage personalised workout and diet plans.
     public class TrainerPlansController : TrainerBaseController
     {
         private readonly ITrainerPlanService _planService;
@@ -36,6 +37,7 @@ namespace HealthTrack.Controllers
 
         // ================= WORKOUT PLANS =================
 
+        // Lists the trainer's workout plans.
         public async Task<IActionResult> WorkoutPlans(string? clientId)
         {
             var trainerId = CurrentUserId;
@@ -60,6 +62,7 @@ namespace HealthTrack.Controllers
             return View(model);
         }
 
+        // Shows the new workout plan form.
         [HttpGet]
         public async Task<IActionResult> CreateWorkoutPlan(string? clientId)
         {
@@ -75,6 +78,7 @@ namespace HealthTrack.Controllers
             return View(model);
         }
 
+        // Saves a new workout plan for an assigned client.
         [HttpPost]
         public async Task<IActionResult> CreateWorkoutPlan(WorkoutPlanFormViewModel model)
         {
@@ -96,6 +100,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(WorkoutPlans), new { clientId = model.ClientId });
         }
 
+        // Shows the edit form for a workout plan.
         [HttpGet]
         public async Task<IActionResult> EditWorkoutPlan(int id)
         {
@@ -131,6 +136,7 @@ namespace HealthTrack.Controllers
             return View(model);
         }
 
+        // Saves changes to a workout plan.
         [HttpPost]
         public async Task<IActionResult> EditWorkoutPlan(WorkoutPlanFormViewModel model)
         {
@@ -146,6 +152,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(WorkoutPlans), new { clientId = model.ClientId });
         }
 
+        // Activates or pauses a workout plan.
         [HttpPost]
         public async Task<IActionResult> ToggleWorkoutPlan(int id)
         {
@@ -156,6 +163,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(WorkoutPlans));
         }
 
+        // Deletes a workout plan.
         [HttpPost]
         public async Task<IActionResult> DeleteWorkoutPlan(int id)
         {
@@ -181,6 +189,7 @@ namespace HealthTrack.Controllers
 
         // ================= DIET PLANS =================
 
+        // Lists the trainer's diet plans.
         public async Task<IActionResult> DietPlans(string? clientId)
         {
             var trainerId = CurrentUserId;
@@ -205,6 +214,7 @@ namespace HealthTrack.Controllers
             return View(model);
         }
 
+        // Shows the new diet plan form.
         [HttpGet]
         public async Task<IActionResult> CreateDietPlan(string? clientId)
         {
@@ -221,6 +231,7 @@ namespace HealthTrack.Controllers
             return View(model);
         }
 
+        // Saves a new diet plan for an assigned client.
         [HttpPost]
         public async Task<IActionResult> CreateDietPlan(DietPlanFormViewModel model)
         {
@@ -242,6 +253,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(DietPlans), new { clientId = model.ClientId });
         }
 
+        // Shows the edit form for a diet plan.
         [HttpGet]
         public async Task<IActionResult> EditDietPlan(int id)
         {
@@ -277,6 +289,7 @@ namespace HealthTrack.Controllers
             return View(model);
         }
 
+        // Saves changes to a diet plan.
         [HttpPost]
         public async Task<IActionResult> EditDietPlan(DietPlanFormViewModel model)
         {
@@ -292,6 +305,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(DietPlans), new { clientId = model.ClientId });
         }
 
+        // Activates or pauses a diet plan.
         [HttpPost]
         public async Task<IActionResult> ToggleDietPlan(int id)
         {
@@ -302,6 +316,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(DietPlans));
         }
 
+        // Deletes a diet plan.
         [HttpPost]
         public async Task<IActionResult> DeleteDietPlan(int id)
         {

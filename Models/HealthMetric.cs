@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace HealthTrack.Models
 {
+    // A health measurement recorded by a client.
     public class HealthMetric
     {
         [Key]
@@ -42,6 +43,7 @@ namespace HealthTrack.Models
         [NotMapped]
         public string BmiCategory => GetBmiCategory(Bmi);
 
+        // Calculates BMI from weight in kg and height in cm.
         public static double? CalculateBmi(double weightKg, double heightCm)
         {
             if (heightCm <= 0)
@@ -52,6 +54,7 @@ namespace HealthTrack.Models
             return Math.Round(weightKg / (heightM * heightM), 1);
         }
 
+        // Returns the weight category for a BMI value.
         public static string GetBmiCategory(double? bmi) => bmi switch
         {
             null => "Unknown",

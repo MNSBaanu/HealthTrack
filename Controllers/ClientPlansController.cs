@@ -10,6 +10,7 @@ using Microsoft.Data.SqlClient;
 namespace HealthTrack.Controllers;
 
 // Assigned plans and daily exercise checklists.
+// Shows the workout and diet plans assigned to the client.
 public class ClientPlansController : ClientBaseController
 {
     private readonly AppointmentTime _time;
@@ -22,6 +23,7 @@ public class ClientPlansController : ClientBaseController
     }
     private DateTime Today => _time.ToLocal(_clock.GetUtcNow().UtcDateTime).Date;
 
+    // Lists all assigned workout and diet plans.
     [HttpGet]
     public async Task<IActionResult> Index()
     {
@@ -37,6 +39,7 @@ public class ClientPlansController : ClientBaseController
         });
     }
 
+    // Shows a workout plan with its exercises and completion status.
     [HttpGet]
     public async Task<IActionResult> Workout(int id, DateTime? date = null)
     {
@@ -67,6 +70,7 @@ public class ClientPlansController : ClientBaseController
         return View(model);
     }
 
+    // Marks a plan exercise as done or not done for today.
     [HttpPost]
     public async Task<IActionResult> SetWorkoutCompletion(int itemId, bool completed)
     {
@@ -107,6 +111,7 @@ public class ClientPlansController : ClientBaseController
         return RedirectToAction(nameof(Workout), new { id = item.WorkoutPlanId });
     }
 
+    // Shows a diet plan with its meals and calorie target.
     [HttpGet]
     public async Task<IActionResult> Diet(int id)
     {

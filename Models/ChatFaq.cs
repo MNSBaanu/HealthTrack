@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace HealthTrack.Models
 {
+    // A question and answer used by the chatbot.
     public class ChatFaq
     {
         public int Id { get; set; }

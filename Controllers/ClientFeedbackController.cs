@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthTrack.Controllers;
 
+// Shows trainer feedback to the client and handles weekly check-ins and replies.
 public class ClientFeedbackController : ClientBaseController
 {
     private readonly INotificationService _notifications;
@@ -16,6 +17,7 @@ public class ClientFeedbackController : ClientBaseController
         _notifications = notifications;
     }
 
+    // Lists feedback and check-in requests from the client's trainer.
     [HttpGet]
     public async Task<IActionResult> Index()
     {
@@ -38,6 +40,7 @@ public class ClientFeedbackController : ClientBaseController
         return View(feedback);
     }
 
+    // Submits the client's answer to a weekly check-in request.
     [HttpPost]
     public async Task<IActionResult> CheckIn(int id, int energy, int mood, int pain, string? comment)
     {
@@ -60,18 +63,24 @@ public class ClientFeedbackController : ClientBaseController
             return RedirectToAction(nameof(Index));
         }
 
-        checkIn.Energy = energy;
-        checkIn.Mood = mood;
-        checkIn.Pain = pain;
-        checkIn.Comment = comment;
-        checkIn.RespondedAtUtc = DateTime.UtcNow;
-        await Context.SaveChangesAsync();
+        // Only the request that finds the check-in unanswered saves it and notifies the trainer,
+        // so a double submit or two open tabs cannot answer twice.
+        var saved = await Context.WeeklyCheckIns.Where(c => c.Id == id && c.ClientId == CurrentUserId && c.RespondedAtUtc == null)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(c => c.Energy, energy).SetProperty(c => c.Mood, mood).SetProperty(c => c.Pain, pain)
+                .SetProperty(c => c.Comment, comment).SetProperty(c => c.RespondedAtUtc, DateTime.UtcNow));
+        if (saved == 0)
+        {
+            TempData["Error"] = "This check-in was already answered.";
+            return RedirectToAction(nameof(Index));
+        }
         await _notifications.SendAsync(checkIn.TrainerId,
             $"{checkIn.Client!.Name} answered the weekly check-in (energy {energy}/5, mood {mood}/5, pain {pain}/10).", NotificationType.General);
         TempData["Success"] = "Check-in sent to your Trainer.";
         return RedirectToAction(nameof(Index));
     }
 
+    // Saves the client's one-time reply to a piece of feedback.
     [HttpPost]
     public async Task<IActionResult> Reply(int id, string reply)
     {
@@ -88,9 +97,19 @@ public class ClientFeedbackController : ClientBaseController
             return NotFound();
         }
 
-        feedback.ClientReply = reply;
-        feedback.ClientRepliedAtUtc = DateTime.UtcNow;
-        await Context.SaveChangesAsync();
+        if (!string.IsNullOrWhiteSpace(feedback.ClientReply))
+        {
+            TempData["Error"] = "You already replied to this feedback.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        var saved = await Context.TrainerFeedbacks.Where(f => f.Id == id && f.ClientId == CurrentUserId && f.ClientReply == null)
+            .ExecuteUpdateAsync(s => s.SetProperty(f => f.ClientReply, reply).SetProperty(f => f.ClientRepliedAtUtc, DateTime.UtcNow));
+        if (saved == 0)
+        {
+            TempData["Error"] = "You already replied to this feedback.";
+            return RedirectToAction(nameof(Index));
+        }
         await _notifications.SendAsync(feedback.TrainerId, $"Your client replied to your feedback \"{feedback.Title}\".", NotificationType.General);
         TempData["Success"] = "Reply sent.";
         return RedirectToAction(nameof(Index));

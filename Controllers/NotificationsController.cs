@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthTrack.Controllers
 {
+    // Notification centre for reminders and alerts.
     [Authorize]
     public class NotificationsController : BaseController
     {
@@ -19,17 +20,20 @@ namespace HealthTrack.Controllers
             _notificationService = notificationService;
         }
 
+        // Lists the user's notifications.
         public async Task<IActionResult> Index()
         {
             return View(await _notificationService.GetVisibleAsync(CurrentUserId, unreadOnly: false));
         }
 
+        // Returns the unread count as JSON for the notification bell.
         [HttpGet]
         public async Task<IActionResult> UnreadCount()
         {
             return Json(await _notificationService.GetUnreadCountAsync(CurrentUserId));
         }
 
+        // Marks one notification as read.
         [HttpPost]
         public async Task<IActionResult> MarkAsRead(int id)
         {
@@ -46,6 +50,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // Marks all of the user's notifications as read.
         [HttpPost]
         public async Task<IActionResult> MarkAllAsRead()
         {
@@ -58,6 +63,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // Dismisses a notification.
         [HttpPost]
         public async Task<IActionResult> Delete(int id)
         {

@@ -3,8 +3,6 @@ namespace HealthTrack.Models.ViewModels
     public class ClientDashboardViewModel
     {
         public List<ClientTaskViewModel> TodayTasks { get; set; } = new();
-        public List<WorkoutPlan> AssignedWorkoutPlans { get; set; } = new();
-        public List<DietPlan> AssignedDietPlans { get; set; } = new();
         public DateTime PlanToday { get; set; }
         public Client Client { get; set; } = null!;
         public HealthMetric? LatestMetric { get; set; }
@@ -20,6 +18,8 @@ namespace HealthTrack.Models.ViewModels
         public List<Notification> Notifications { get; set; } = new();
         public List<AppointmentViewModel> UpcomingAppointments { get; set; } = new();
         public string AppointmentTimeZone { get; set; } = string.Empty;
+        public List<WorkoutPlan> ActiveWorkoutPlans { get; set; } = new();
+        public List<DietPlan> ActiveDietPlans { get; set; } = new();
         public int? DietTargetKcal { get; set; }
         public int PlannedWorkoutsToday { get; set; }
         public int DoneWorkoutsToday { get; set; }

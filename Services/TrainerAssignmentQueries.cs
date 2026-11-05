@@ -4,8 +4,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthTrack.Services;
 
+// Queries for client and trainer assignments.
 public class TrainerAssignmentQueries(HealthTrackDbContext context)
 {
+    // Returns every client with their current trainer.
     public IQueryable<AssignmentRowViewModel> AllClients() => context.Clients.AsNoTracking()
         .Select(c => new AssignmentRowViewModel
         {
@@ -16,6 +18,7 @@ public class TrainerAssignmentQueries(HealthTrackDbContext context)
         });
 
     // Reusable query for the Trainer module. Call with the authenticated Trainer ID.
+    // Returns the clients assigned to a trainer.
     public Task<List<AssignmentRowViewModel>> ForTrainerAsync(string trainerId) =>
         AllClients().Where(c => c.TrainerId == trainerId).OrderBy(c => c.ClientName).ToListAsync();
 }

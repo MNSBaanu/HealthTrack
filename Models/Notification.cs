@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace HealthTrack.Models
 {
+    // An in-app notification or reminder for a user.
     public class Notification
     {
         [Key]

@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace HealthTrack.Models.Data
 {
+    // EF value converter that encrypts text columns with ASP.NET Core Data Protection; plain text saved before encryption is still readable.
     public class EncryptedStringConverter : ValueConverter<string, string>
     {
         public EncryptedStringConverter(IDataProtector protector)

@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthTrack.Controllers;
 
+// Client appointment booking with trainers and healthcare professionals.
 public class AppointmentsController : ClientBaseController
 {
     private readonly AppointmentBookingService _booking;
@@ -24,6 +25,7 @@ public class AppointmentsController : ClientBaseController
         _notifications = notifications;
     }
 
+    // Lists the client's upcoming and past appointments.
     [HttpGet]
     public async Task<IActionResult> Index()
     {
@@ -37,6 +39,7 @@ public class AppointmentsController : ClientBaseController
         });
     }
 
+    // Shows one appointment with its status history.
     [HttpGet]
     public async Task<IActionResult> Details(int id)
     {
@@ -48,6 +51,7 @@ public class AppointmentsController : ClientBaseController
         return View(await ToDetailsViewModel(record));
     }
 
+    // Shows the form for asking the provider to move an appointment.
     [HttpGet]
     public async Task<IActionResult> RequestReschedule(int appointmentId)
     {
@@ -62,6 +66,7 @@ public class AppointmentsController : ClientBaseController
         return View(new RescheduleRequestPageViewModel { Appointment = model, TimeZoneLabel = _time.Label });
     }
 
+    // Sends a reschedule request to the trainer.
     [HttpPost]
     public async Task<IActionResult> RequestReschedule(int appointmentId, RescheduleRequestForm form)
     {
@@ -88,6 +93,7 @@ public class AppointmentsController : ClientBaseController
         record.Rating == null && (record.Status == AppointmentStatus.Completed
             || (record.Status == AppointmentStatus.Approved && record.Slot.EndUtc < _clock.GetUtcNow().UtcDateTime));
 
+    // Saves the client's rating and comment for a completed appointment.
     [HttpPost]
     public async Task<IActionResult> Rate(int id, int rating, string? comment)
     {
@@ -120,9 +126,11 @@ public class AppointmentsController : ClientBaseController
         return RedirectToAction(nameof(Details), new { id });
     }
 
+    // Shows available slots that the client can book.
     [HttpGet]
     public async Task<IActionResult> Book(int? providerId, ConsultationProviderKind? kind) => View(await LoadPage(new BookingForm(), providerId, kind));
 
+    // Books the chosen slot as a pending appointment.
     [HttpPost]
     public async Task<IActionResult> Book(BookingForm form)
     {
@@ -139,6 +147,7 @@ public class AppointmentsController : ClientBaseController
         return View(await LoadPage(form, null, null));
     }
 
+    // Asks the provider to change an appointment's details.
     [HttpPost]
     public async Task<IActionResult> RequestChange(int id, string requestType, string? message)
     {
@@ -167,6 +176,7 @@ public class AppointmentsController : ClientBaseController
         return RedirectToAction(nameof(Details), new { id });
     }
 
+    // Shows open slots for moving a pending appointment.
     [HttpGet]
     public async Task<IActionResult> Reschedule(int appointmentId)
     {
@@ -212,6 +222,7 @@ public class AppointmentsController : ClientBaseController
         });
     }
 
+    // Moves a pending appointment to another open slot.
     [HttpPost]
     public async Task<IActionResult> Reschedule(int appointmentId, RescheduleForm form)
     {
@@ -233,6 +244,7 @@ public class AppointmentsController : ClientBaseController
         return RedirectToAction(nameof(Details), new { id = appointmentId });
     }
 
+    // Cancels the client's appointment and frees the slot.
     [HttpPost]
     public async Task<IActionResult> Cancel(int appointmentId)
     {

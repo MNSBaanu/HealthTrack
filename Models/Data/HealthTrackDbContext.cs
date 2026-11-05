@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthTrack.Models.Data
 {
+    // Entity Framework database context for HealthTrack, including the Identity tables.
     public class HealthTrackDbContext : IdentityDbContext<Person>
     {
         private readonly IDataProtector _protector;

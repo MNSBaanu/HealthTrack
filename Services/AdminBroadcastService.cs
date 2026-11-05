@@ -4,8 +4,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthTrack.Services;
 
+// Sends admin broadcast notifications to groups of users.
 public class AdminBroadcastService(HealthTrackDbContext context, AppointmentTime time, TimeProvider clock)
 {
+    // Creates the broadcast and a notification for every recipient.
     public async Task SendAsync(string senderId, string senderName, string? recipientId,
         string message, NotificationType type, DateTime? scheduledFor)
     {

@@ -6,6 +6,7 @@ using Microsoft.Data.SqlClient;
 
 namespace HealthTrack.Services;
 
+// Loads and prepares trainer schedule data.
 public class TrainerScheduleService : ITrainerScheduleService
 {
     private readonly HealthTrackDbContext _context;
@@ -25,6 +26,7 @@ public class TrainerScheduleService : ITrainerScheduleService
         _clock = clock;
     }
 
+    // Returns the trainer's consultation provider record, creating it on first use.
     public async Task<ConsultationProvider> GetOrCreateTrainerProviderAsync(string trainerId)
     {
         var provider = await _context.ConsultationProviders
@@ -53,6 +55,7 @@ public class TrainerScheduleService : ITrainerScheduleService
         return provider;
     }
 
+    // Loads the trainer's slots, appointments and reschedule requests.
     public async Task<TrainerScheduleViewModel> GetScheduleAsync(string trainerId)
     {
         var provider = await GetOrCreateTrainerProviderAsync(trainerId);
@@ -214,6 +217,7 @@ public class TrainerScheduleService : ITrainerScheduleService
         return (true, null);
     }
 
+    // Loads a slot the trainer owns for editing.
     public async Task<AvailabilitySlot?> GetSlotForEditAsync(string trainerId, int slotId)
     {
         var provider = await GetOrCreateTrainerProviderAsync(trainerId);
@@ -436,6 +440,7 @@ public class TrainerScheduleService : ITrainerScheduleService
         }
     }
 
+    // Loads an appointment and the open slots it can move to.
     public async Task<ReschedulePageViewModel?> LoadReschedulePageAsync(string trainerId, int appointmentId)
     {
         var provider = await GetOrCreateTrainerProviderAsync(trainerId);

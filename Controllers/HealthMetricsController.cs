@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthTrack.Controllers
 {
+    // Lets clients record and manage health measurements.
     public class HealthMetricsController : ClientBaseController
     {
         private readonly ILogger<HealthMetricsController> _logger;
@@ -32,6 +33,7 @@ namespace HealthTrack.Controllers
                 ModelState.AddModelError(nameof(HealthMetric.SystolicBp), "Systolic pressure must be higher than diastolic pressure.");
         }
 
+        // Lists the client's measurements with date filters.
         public async Task<IActionResult> Index(DateTime? from = null, DateTime? to = null)
         {
             if (!SetJournalFilters(from, to)) return View(new List<HealthMetric>());
@@ -46,6 +48,7 @@ namespace HealthTrack.Controllers
             return View(metrics);
         }
 
+        // Shows the new measurement form.
         [HttpGet]
         public async Task<IActionResult> Create()
         {
@@ -67,6 +70,7 @@ namespace HealthTrack.Controllers
             });
         }
 
+        // Saves a new measurement.
         [HttpPost]
         public async Task<IActionResult> Create([Bind("WeightKg,BodyFatPercent,RestingHeartRate,SystolicBp,DiastolicBp,Steps,SleepHours,RecordedAt")] HealthMetric metric)
         {
@@ -86,6 +90,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // Shows the edit form for a measurement.
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
@@ -93,6 +98,7 @@ namespace HealthTrack.Controllers
             return metric == null ? NotFound() : View(metric);
         }
 
+        // Saves changes to a measurement.
         [HttpPost]
         public async Task<IActionResult> Edit(int id, [Bind("WeightKg,BodyFatPercent,RestingHeartRate,SystolicBp,DiastolicBp,Steps,SleepHours,RecordedAt")] HealthMetric input)
         {
@@ -124,6 +130,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // Shows the delete confirmation for a measurement.
         [HttpGet]
         public async Task<IActionResult> Delete(int id)
         {
@@ -131,6 +138,7 @@ namespace HealthTrack.Controllers
             return metric == null ? NotFound() : View(metric);
         }
 
+        // Deletes the measurement.
         [HttpPost, ActionName("Delete")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {

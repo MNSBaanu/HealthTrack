@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace HealthTrack.Controllers
 {
+    // Base for client-only pages; restricts access to the Client role and shares journal helpers.
     [Authorize(Roles = AppRoles.Client)]
     public abstract class ClientBaseController : BaseController
     {
@@ -29,6 +30,7 @@ namespace HealthTrack.Controllers
 
         protected DateTime LocalToday => LocalNow.Date;
 
+        // Passes the client's local time to every view.
         public override void OnActionExecuting(ActionExecutingContext context)
         {
             // Views use this for "max" attributes and greetings instead of the server clock.

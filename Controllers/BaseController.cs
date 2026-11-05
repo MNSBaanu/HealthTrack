@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HealthTrack.Controllers
 {
+    // Shared base for app controllers: database context, current user and local time helpers.
     public abstract class BaseController : Controller
     {
         protected BaseController(HealthTrackDbContext context, UserManager<Person> userManager)

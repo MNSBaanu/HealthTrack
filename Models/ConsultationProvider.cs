@@ -2,8 +2,10 @@ using System.ComponentModel.DataAnnotations;
 
 namespace HealthTrack.Models;
 
+// Whether a provider is a trainer or a healthcare professional.
 public enum ConsultationProviderKind { Trainer, HealthcareProfessional }
 
+// Someone clients can book: a trainer or a healthcare professional.
 public class ConsultationProvider
 {
     public int Id { get; set; }

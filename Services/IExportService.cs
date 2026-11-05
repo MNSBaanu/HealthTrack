@@ -1,5 +1,6 @@
 namespace HealthTrack.Services
 {
+    // Exports report sections to downloadable files.
     public interface IExportService
     {
         byte[] ToCsv(IEnumerable<ReportSection> sections);

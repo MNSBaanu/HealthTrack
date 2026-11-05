@@ -1,5 +1,6 @@
 namespace HealthTrack.Models;
 
+// Records that a client completed a plan exercise on a date.
 public class WorkoutPlanCompletion
 {
     public int WorkoutPlanItemId { get; set; }

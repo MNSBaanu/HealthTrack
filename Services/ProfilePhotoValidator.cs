@@ -2,9 +2,11 @@ using System.Buffers.Binary;
 
 namespace HealthTrack.Services;
 
+// Checks uploaded profile photos by size and file signature.
 public static class ProfilePhotoValidator
 {
     // Derive the response type from file bytes, never from the submitted MIME type.
+    // Returns the image type, or null if the file is not an allowed image.
     public static string? GetContentType(byte[] bytes, string fileName)
     {
         var extension = Path.GetExtension(fileName).ToLowerInvariant();

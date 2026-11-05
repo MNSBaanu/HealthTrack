@@ -2,8 +2,10 @@ using Microsoft.AspNetCore.Identity;
 
 namespace HealthTrack.Models.Data
 {
+    // Creates the roles and default accounts on first run.
     public static class DbSeeder
     {
+        // Creates the seed data if it is missing.
         public static async Task SeedAsync(IServiceProvider services, IConfiguration configuration)
         {
             var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();

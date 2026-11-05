@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace HealthTrack.Models
 {
+    // A recorded data change or user action.
     public class AuditLog
     {
         public long Id { get; set; }

@@ -5,9 +5,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthTrack.Services;
 
+// Sends queued notification emails, leasing each one so it is sent only once.
 public class NotificationEmailDispatcher(HealthTrackDbContext context, IMailSender mail, TimeProvider clock,
     ILogger<NotificationEmailDispatcher> logger, AppointmentTime time)
 {
+    // Sends the emails that are due.
     public async Task DispatchAsync(CancellationToken cancellationToken = default)
     {
         // Adopt future schedules from before the outbox existed, without replaying historical messages.

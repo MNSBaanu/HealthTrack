@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthTrack.Controllers
 {
+    // Lets clients log and manage workouts.
     public class WorkoutLogsController : ClientBaseController
     {
         private readonly ILogger<WorkoutLogsController> _logger;
@@ -31,6 +32,7 @@ namespace HealthTrack.Controllers
             return Context.WorkoutLogs.FirstOrDefaultAsync(w => w.WorkoutLogId == id && w.ClientId == CurrentUserId);
         }
 
+        // Lists the client's workouts with date and search filters.
         public async Task<IActionResult> Index(DateTime? from = null, DateTime? to = null, string? q = null)
         {
             q = q?.Trim();
@@ -52,6 +54,7 @@ namespace HealthTrack.Controllers
                 .FirstOrDefaultAsync(i => i.Id == id && i.WorkoutPlan!.ClientId == CurrentUserId);
         }
 
+        // Shows the new workout form.
         [HttpGet]
         public async Task<IActionResult> Create(int? planItemId, int? repeatId = null)
         {
@@ -92,6 +95,7 @@ namespace HealthTrack.Controllers
             return View(log);
         }
 
+        // Saves a new workout entry.
         [HttpPost]
         public async Task<IActionResult> Create([Bind("Activity,DurationMinutes,CaloriesBurned,LoggedAt,WorkoutPlanItemId")] WorkoutLog log)
         {
@@ -132,6 +136,7 @@ namespace HealthTrack.Controllers
                 : RedirectToAction("Workout", "ClientPlans", new { id = planItem.WorkoutPlanId });
         }
 
+        // Shows the edit form for a workout.
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
@@ -139,6 +144,7 @@ namespace HealthTrack.Controllers
             return log == null ? NotFound() : View(log);
         }
 
+        // Saves changes to a workout.
         [HttpPost]
         public async Task<IActionResult> Edit(int id, [Bind("Activity,DurationMinutes,CaloriesBurned,LoggedAt")] WorkoutLog input)
         {
@@ -181,6 +187,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // Shows the delete confirmation for a workout.
         [HttpGet]
         public async Task<IActionResult> Delete(int id)
         {
@@ -188,6 +195,7 @@ namespace HealthTrack.Controllers
             return log == null ? NotFound() : View(log);
         }
 
+        // Deletes the workout.
         [HttpPost, ActionName("Delete")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {

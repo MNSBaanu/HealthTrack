@@ -3,6 +3,7 @@ using HealthTrack.Models.ViewModels;
 
 namespace HealthTrack.Services;
 
+// Manages trainer availability and schedule pages.
 public interface ITrainerScheduleService
 {
     Task<ConsultationProvider> GetOrCreateTrainerProviderAsync(string trainerId);

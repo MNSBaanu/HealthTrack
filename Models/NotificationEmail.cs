@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace HealthTrack.Models;
 
+// Email delivery state for a notification.
 public class NotificationEmail
 {
     public int NotificationId { get; set; }

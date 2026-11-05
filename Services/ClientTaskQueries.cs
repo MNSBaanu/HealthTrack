@@ -4,8 +4,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthTrack.Services;
 
+// Builds a client's task list for a day from their active plans.
 public static class ClientTaskQueries
 {
+    // Loads the day's planned workouts, meals and measurements with completion status.
     public static async Task<List<ClientTaskViewModel>> LoadAsync(HealthTrackDbContext context, string clientId, DateTime today)
     {
         var day = today.DayOfWeek;

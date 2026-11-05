@@ -1,5 +1,6 @@
 namespace HealthTrack.Models;
 
+// Topics a trainer's feedback can belong to.
 public enum FeedbackCategory
 {
     General = 0,

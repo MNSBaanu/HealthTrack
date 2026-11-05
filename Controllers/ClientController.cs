@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthTrack.Controllers
 {
+    // Client dashboard, profile, progress analytics, data export and account deletion.
     public class ClientController : ClientBaseController
     {
         private readonly ILogger<ClientController> _logger;
@@ -29,6 +30,7 @@ namespace HealthTrack.Controllers
             _clock = clock;
         }
 
+        // Dashboard with health stats, today's tasks, active plans, appointments and reminders.
         public async Task<IActionResult> Index()
         {
             var clientId = CurrentUserId;
@@ -111,6 +113,7 @@ namespace HealthTrack.Controllers
             return View(model);
         }
 
+        // Shows the client's profile form.
         [HttpGet]
         public async Task<IActionResult> Profile()
         {
@@ -136,6 +139,7 @@ namespace HealthTrack.Controllers
             return View(model);
         }
 
+        // Saves profile details and an optional new profile photo.
         [HttpPost]
         [RequestSizeLimit(3 * 1024 * 1024)]
         public async Task<IActionResult> Profile(ProfileViewModel model)
@@ -191,6 +195,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Profile));
         }
 
+        // Returns the stored profile photo image.
         [HttpGet]
         [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
         public async Task<IActionResult> ProfilePhoto()
@@ -204,6 +209,7 @@ namespace HealthTrack.Controllers
             return File(photo.ProfilePhoto, photo.ProfilePhotoContentType);
         }
 
+        // Shows weight, BMI and calorie trends with goal progress.
         public async Task<IActionResult> Progress()
         {
             var client = await Context.Clients.AsNoTracking().FirstAsync(c => c.Id == CurrentUserId);
@@ -220,6 +226,7 @@ namespace HealthTrack.Controllers
             return View();
         }
 
+        // Returns metric and calorie series as JSON for the progress charts.
         [HttpGet]
         public async Task<IActionResult> ProgressData(int days = 30)
         {
@@ -257,12 +264,14 @@ namespace HealthTrack.Controllers
             return Json(model);
         }
 
+        // Shows the account deletion confirmation page.
         [HttpGet]
         public IActionResult DeleteAccount()
         {
             return View(new DeleteAccountViewModel());
         }
 
+        // Permanently deletes the client's account and data after password confirmation.
         [HttpPost]
         public async Task<IActionResult> DeleteAccount(DeleteAccountViewModel model)
         {
@@ -295,6 +304,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction("Index", "Home");
         }
 
+        // Downloads the client's progress report or all their data as PDF or CSV.
         [HttpGet]
         public async Task<IActionResult> Export(string format = "csv", bool all = false)
         {

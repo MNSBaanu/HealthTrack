@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthTrack.Controllers
 {
+    // Trainer dashboard, client progress tracking and feedback.
     public class TrainerController : TrainerBaseController
     {
         private readonly ITrainerFeedbackService _feedbackService;
@@ -30,6 +31,7 @@ namespace HealthTrack.Controllers
             _time = time;
         }
 
+        // Dashboard with assigned clients, pending appointments, recent activity and feedback.
         public async Task<IActionResult> Index()
         {
             var trainerId = CurrentUserId;
@@ -156,6 +158,7 @@ namespace HealthTrack.Controllers
             return View(model);
         }
 
+        // Lists the trainer's assigned clients with progress summaries.
         public async Task<IActionResult> Clients()
         {
             var trainerId = CurrentUserId;
@@ -197,6 +200,7 @@ namespace HealthTrack.Controllers
             return View(list);
         }
 
+        // Shows an assigned client's metrics, logs, plans and feedback.
         public async Task<IActionResult> ClientDetails(string id)
         {
             var trainerId = CurrentUserId;
@@ -260,6 +264,7 @@ namespace HealthTrack.Controllers
             return View(model);
         }
 
+        // Asks a client to complete a weekly check-in.
         [HttpPost]
         public async Task<IActionResult> RequestCheckIn(string clientId, string? note)
         {
@@ -292,6 +297,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(ClientDetails), new { id = clientId });
         }
 
+        // Sends feedback to an assigned client.
         [HttpPost]
         public async Task<IActionResult> SendFeedback(
             [Bind(Prefix = nameof(TrainerClientDetailsViewModel.NewFeedbackForm))] TrainerFeedbackFormViewModel model)
@@ -338,6 +344,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(ClientDetails), new { id = model.ClientId });
         }
 
+        // Shows the edit form for feedback.
         [HttpGet]
         public async Task<IActionResult> EditFeedback(int id)
         {
@@ -349,6 +356,7 @@ namespace HealthTrack.Controllers
             return View(model);
         }
 
+        // Saves changes to feedback.
         [HttpPost]
         public async Task<IActionResult> EditFeedback(int id, TrainerFeedbackFormViewModel model)
         {
@@ -373,6 +381,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(ClientDetails), new { id = feedback?.ClientId });
         }
 
+        // Deletes feedback.
         [HttpPost]
         public async Task<IActionResult> DeleteFeedback(int id)
         {

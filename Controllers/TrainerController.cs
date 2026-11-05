@@ -311,33 +311,12 @@ namespace HealthTrack.Controllers
             [Bind(Prefix = nameof(TrainerClientDetailsViewModel.NewFeedbackForm))] TrainerFeedbackFormViewModel model)
         {
             var trainerId = CurrentUserId;
-            
-            // Check if this client exists first
-            var clientExists = await Context.Clients.AnyAsync(c => c.Id == model.ClientId);
-            if (!clientExists)
-            {
-                TempData["Error"] = "Client not found.";
-                return RedirectToAction(nameof(Clients));
-            }
-            
-            // Check assignment with detailed error handling
             var isAssigned = await Context.ClientTrainerAssignments
                 .AnyAsync(a => a.TrainerId == trainerId && a.ClientId == model.ClientId);
 
             if (!isAssigned)
             {
-                // Check if there's an assignment at all for this client
-                var anyAssignment = await Context.ClientTrainerAssignments
-                    .FirstOrDefaultAsync(a => a.ClientId == model.ClientId);
-                
-                if (anyAssignment != null && anyAssignment.TrainerId != trainerId)
-                {
-                    TempData["Error"] = "This client is assigned to a different trainer.";
-                }
-                else
-                {
-                    TempData["Error"] = "Client is not assigned to you.";
-                }
+                TempData["Error"] = "Client is not assigned to you.";
                 return RedirectToAction(nameof(Clients));
             }
 
@@ -359,7 +338,11 @@ namespace HealthTrack.Controllers
             var trainerId = CurrentUserId;
             var model = await _feedbackService.GetFeedbackForEditAsync(trainerId, id);
 
-            if (model == null) return NotFound();
+            if (model == null)
+            {
+                TempData["Error"] = "Feedback not found, or the client has already replied to it.";
+                return RedirectToAction(nameof(Clients));
+            }
 
             return View(model);
         }
@@ -368,17 +351,20 @@ namespace HealthTrack.Controllers
         [HttpPost]
         public async Task<IActionResult> EditFeedback(int id, TrainerFeedbackFormViewModel model)
         {
+            var trainerId = CurrentUserId;
             if (!ModelState.IsValid)
             {
+                model.ClientName = await Context.TrainerFeedbacks
+                    .Where(f => f.Id == id && f.TrainerId == trainerId)
+                    .Select(f => f.Client.Name).FirstOrDefaultAsync();
                 return View(model);
             }
 
-            var trainerId = CurrentUserId;
             var success = await _feedbackService.UpdateFeedbackAsync(trainerId, id, model);
 
             if (!success)
             {
-                TempData["Error"] = "Feedback not found or you don't have permission to edit it.";
+                TempData["Error"] = "Feedback not found, or the client has already replied to it.";
                 return RedirectToAction(nameof(Clients));
             }
 

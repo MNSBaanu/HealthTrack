@@ -75,6 +75,12 @@ namespace HealthTrack.Controllers
                 PlanToday = planToday,
                 TodayTasks = todayTasks,
                 DietTargetKcal = dietTarget,
+                ActiveWorkoutPlans = await Context.WorkoutPlans.AsNoTracking().Include(p => p.Trainer)
+                    .Where(p => p.ClientId == clientId && p.IsActive && p.StartDate.Date <= planToday && (!p.EndDate.HasValue || p.EndDate.Value.Date >= planToday))
+                    .OrderByDescending(p => p.StartDate).Take(2).ToListAsync(),
+                ActiveDietPlans = await Context.DietPlans.AsNoTracking().Include(p => p.Trainer)
+                    .Where(p => p.ClientId == clientId && p.IsActive && p.StartDate.Date <= planToday && (!p.EndDate.HasValue || p.EndDate.Value.Date >= planToday))
+                    .OrderByDescending(p => p.StartDate).Take(2).ToListAsync(),
                 PlannedWorkoutsToday = todayTasks.Count(t => t.Kind == "Workout"),
                 DoneWorkoutsToday = todayTasks.Count(t => t.Kind == "Workout" && t.Completed),
                 Achievements = ClientAchievements.Compute(workoutDates, planToday, mealCount, metrics.Count, goalReached),

@@ -85,15 +85,20 @@ public class AssignmentsController(HealthTrackDbContext context, UserManager<Per
         {
             ClientId = client.Id, TrainerId = trainer.Id, AssignedAtUtc = now
         });
-        try { await Context.SaveChangesAsync(); }
-        catch (DbUpdateConcurrencyException) { return Changed(form.ClientId); }
-        catch (DbUpdateException ex) when (ex.InnerException is SqlException { Number: 2601 or 2627 or 547 })
-        { return Changed(form.ClientId); }
+        await using (var operation = await AtomicOperation.BeginAsync(Context))
+        {
+            try { await Context.SaveChangesAsync(); }
+            catch (DbUpdateConcurrencyException) { return Changed(form.ClientId); }
+            catch (DbUpdateException ex) when (ex.InnerException is SqlException { Number: 2601 or 2627 or 547 })
+            { return Changed(form.ClientId); }
+            await TrainerHandover.MoveClientAsync(Context, client.Id, trainer.Id);
+            await operation.CommitAsync();
+        }
         await notifications.SendAsync(client.Id, $"{trainer.Name} is now your Trainer.", NotificationType.General);
         await notifications.SendAsync(trainer.Id, $"{client.Name} has been assigned to you.", NotificationType.General);
         if (oldTrainerId != null)
             await notifications.SendAsync(oldTrainerId, $"{client.Name} is no longer assigned to you.", NotificationType.General);
-        TempData["Success"] = "Trainer assignment saved. Existing plans and appointments are unchanged.";
+        TempData["Success"] = "Trainer assignment saved. The client's plans moved to the new Trainer; appointments are unchanged.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -108,8 +113,13 @@ public class AssignmentsController(HealthTrackDbContext context, UserManager<Per
         Context.Entry(assignment).Property(a => a.RowVersion).OriginalValue = Convert.FromBase64String(form.RowVersion);
         Context.ClientTrainerAssignments.Remove(assignment);
         await CloseHistory(assignment.ClientId, clock.GetUtcNow().UtcDateTime);
-        try { await Context.SaveChangesAsync(); }
-        catch (DbUpdateConcurrencyException) { return Changed(form.ClientId); }
+        await using (var operation = await AtomicOperation.BeginAsync(Context))
+        {
+            try { await Context.SaveChangesAsync(); }
+            catch (DbUpdateConcurrencyException) { return Changed(form.ClientId); }
+            await TrainerHandover.MoveClientAsync(Context, assignment.ClientId, null);
+            await operation.CommitAsync();
+        }
         await notifications.SendAsync(assignment.ClientId, $"{assignment.Trainer.Name} is no longer your Trainer.", NotificationType.General);
         await notifications.SendAsync(assignment.TrainerId, $"{assignment.Client.Name} is no longer assigned to you.", NotificationType.General);
         TempData["Success"] = "Trainer assignment removed. Existing plans and appointments are unchanged.";

@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthTrack.Controllers
 {
-    // Backs the help chatbot: answers from the FAQ list first, then from the AI fallback.
+    // Backs the help chatbot: answers from the FAQ list first, then from the external chat service.
     [Authorize]
     [EnableRateLimiting("chat")]
     public class ChatController : BaseController
@@ -93,7 +93,7 @@ namespace HealthTrack.Controllers
             return Json(new { answer = (string?)null });
         }
 
-        // Answers a question with the AI client when no FAQ matches.
+        // Answers a question through the external chat service when no FAQ matches.
         [HttpPost]
         public async Task<IActionResult> Fallback([FromBody] ChatRequest request, CancellationToken cancellationToken)
         {

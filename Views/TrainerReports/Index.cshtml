@@ -129,7 +129,7 @@
                             <li class="py-2 border-bottom border-light">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <strong class="small">@act.Activity</strong>
-                                    <span class="badge bg-light text-dark border">@act.Sessions sessions</span>
+                                    <span class="badge bg-light text-dark border">@(act.Sessions == 1 ? "1 session" : $"{act.Sessions} sessions")</span>
                                 </div>
                                 <div class="text-muted small mt-1">
                                     @act.ClientCount client(s) &middot; @act.TotalMinutes total minutes

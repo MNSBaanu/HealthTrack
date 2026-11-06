@@ -2,7 +2,10 @@
 @{ ViewData["Title"] = "Assigned plans"; }
 <div class="ht-head">
     <div><h1 class="ht-title">Assigned plans</h1></div>
-    <a class="btn btn-line" asp-controller="Client" asp-action="Index">Back to overview</a>
+    <div class="ht-head-actions">
+        <a class="btn btn-line" asp-controller="ClientFeedback" asp-action="Index"><i class="icon-message-square-text"></i>Trainer feedback</a>
+        <a class="btn btn-line" asp-controller="Client" asp-action="Index">Back to overview</a>
+    </div>
 </div>
 <div class="row g-3">
     <div class="col-lg-6"><section class="ht-card h-100">

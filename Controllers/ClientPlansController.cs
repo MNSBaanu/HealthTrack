@@ -124,6 +124,12 @@ public class ClientPlansController : ClientBaseController
             .Where(l => l.ClientId == CurrentUserId && l.DietPlanMealId != null && mealIds.Contains(l.DietPlanMealId.Value)
                 && l.LoggedAt >= today && l.LoggedAt < today.AddDays(1))
             .Select(l => l.DietPlanMealId!.Value).ToListAsync();
-        return View(new ClientDietPlanViewModel { Plan = plan, Today = today, LoggedTodayMealIds = loggedToday.ToHashSet() });
+        var caloriesToday = await Context.MealLogs.AsNoTracking()
+            .Where(l => l.ClientId == CurrentUserId && l.LoggedAt >= today && l.LoggedAt < today.AddDays(1))
+            .SumAsync(l => l.Calories);
+        return View(new ClientDietPlanViewModel
+        {
+            Plan = plan, Today = today, LoggedTodayMealIds = loggedToday.ToHashSet(), CaloriesToday = caloriesToday
+        });
     }
 }

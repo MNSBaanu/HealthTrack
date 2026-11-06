@@ -5,6 +5,15 @@ public static class ClientPlanStatus
     public static string Get(bool active, DateTime start, DateTime? end, DateTime today) =>
         !active ? "Inactive" : end.HasValue && end.Value.Date < today.Date ? "Ended" :
         start.Date > today.Date ? "Upcoming" : "Active";
+
+    public static string Timing(DateTime start, DateTime? end, DateTime today)
+    {
+        static string Days(int count) => count == 1 ? "1 day" : $"{count} days";
+        if (start.Date > today.Date) return $"Starts in {Days((start.Date - today.Date).Days)}";
+        if (!end.HasValue) return "No end date";
+        if (end.Value.Date < today.Date) return $"Ended {Days((today.Date - end.Value.Date).Days)} ago";
+        return end.Value.Date == today.Date ? "Ends today" : $"{Days((end.Value.Date - today.Date).Days)} left";
+    }
 }
 
 public class ClientPlansViewModel
@@ -34,4 +43,5 @@ public class ClientDietPlanViewModel
     public DietPlan Plan { get; set; } = null!;
     public DateTime Today { get; set; }
     public HashSet<int> LoggedTodayMealIds { get; set; } = new();
+    public int CaloriesToday { get; set; }
 }

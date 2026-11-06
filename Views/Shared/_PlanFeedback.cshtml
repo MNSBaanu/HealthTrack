@@ -1,0 +1,30 @@
+@model List<TrainerFeedback>
+@if (Model.Any())
+{
+    <section class="ht-card mb-3">
+        <div class="ht-card-head">
+            <h2>Trainer feedback for this plan</h2>
+            <a asp-controller="ClientFeedback" asp-action="Index">All feedback</a>
+        </div>
+        <div class="ht-card-body">
+            @foreach (var feedback in Model)
+            {
+                <article class="@(feedback == Model[^1] ? "" : "border-bottom pb-3 mb-3")">
+                    <div class="d-flex justify-content-between flex-wrap gap-2">
+                        <strong>@feedback.Title</strong>
+                        <span class="small text-muted">@feedback.CreatedAtUtc.ToString("d MMM yyyy")@if (!feedback.IsReadByClient) { <span class="ht-pill ms-2">New</span> }</span>
+                    </div>
+                    <p class="mb-1 mt-1" style="white-space: pre-line">@feedback.Comments</p>
+                    @if (!string.IsNullOrWhiteSpace(feedback.ClientReply))
+                    {
+                        <p class="small text-muted mb-0">Your reply: @feedback.ClientReply</p>
+                    }
+                    else
+                    {
+                        <a class="small" asp-controller="ClientFeedback" asp-action="Index">Reply to your trainer</a>
+                    }
+                </article>
+            }
+        </div>
+    </section>
+}

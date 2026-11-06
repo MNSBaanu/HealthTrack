@@ -22,9 +22,25 @@
 .plan-ledger .value.text { font-size: 1.25rem; white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; line-height: 1.25; }
 @media (max-width: 767px) { .plan-ledger > div:last-child:nth-child(odd) { grid-column: 1 / -1; } }
 .plan-ledger .macros { margin-top: .4rem; font-size: .9rem; line-height: 1.5; }
+.workout-week-day.is-missed { border-color: #c4553b; background: #f6ddd5; }
+a.workout-week-day.is-missed:hover, a.workout-week-day.is-missed:focus-visible { border-color: #a63f27; background: #f6ddd5; }
+.workout-week-day.is-missed [data-week-summary] { color: #a63f27; font-weight: 600; }
+a.workout-week-day[aria-pressed="false"] { opacity: .5; border-style: dashed; border-color: #cfc4b2; background: transparent; }
+.workout-checklist-item.is-missed { background: #fbefec; border-color: #e8b9ad; }
+.workout-checklist-item.is-missed .workout-task-state { color: #a63f27; font-weight: 600; }
+.plan-missed-pill { background: #f6ddd5; color: #a63f27; font-size: .75rem; font-weight: 700; padding: .15rem .6rem; border-radius: 999px; }
+.plan-legend { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem 1.25rem; margin-top: .75rem; }
+.plan-legend-dot { display: inline-block; width: .7rem; height: .7rem; margin-right: .4rem; border: 1px solid transparent; border-radius: 3px; vertical-align: -1px; }
+.plan-legend-dot.today { background: #fff4d9; border-color: #e9a21b; }
+.plan-legend-dot.missed { background: #f6ddd5; border-color: #c4553b; }
 a.workout-week-day { color: inherit; text-decoration: none; transition: border-color .15s, background-color .15s; }
 a.workout-week-day:hover, a.workout-week-day:focus-visible { border-color: #e9a21b; background: #fff4d9; }
 .workout-checklist-day { scroll-margin-top: 6rem; }
+.plan-day-summary { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .35rem 0; cursor: pointer; list-style: none; }
+.plan-day-summary::-webkit-details-marker { display: none; }
+.plan-day-summary:focus-visible { outline: 2px solid #e9a21b; outline-offset: 2px; border-radius: 6px; }
+.plan-day-chevron { transition: transform .15s ease; }
+details.workout-checklist-day:not([open]) .plan-day-chevron { transform: rotate(-90deg); }
 @media (max-width: 767px) { .workout-week-days { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 576px) { .workout-checklist-item { gap: .75rem; padding: .85rem; } }
 @media (prefers-reduced-motion: reduce) { .workout-checklist-item, .workout-checklist-progress::-webkit-progress-value { transition: none; } }

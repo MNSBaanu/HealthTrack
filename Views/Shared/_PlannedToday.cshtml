@@ -2,11 +2,14 @@
 @if (Model.Any())
 {
     var isMeal = Model[0].Kind == "Meal";
-    <section class="ht-card mb-3">
-        <div class="ht-card-head">
+    <details class="ht-card ht-collapsible mb-3" open>
+        <summary class="ht-card-head">
             <h2>Planned for today</h2>
-            <span class="small text-muted">@Model.Count(t => t.Completed) of @Model.Count done</span>
-        </div>
+            <span class="d-flex align-items-center gap-2">
+                <span class="small text-muted">@Model.Count(t => t.Completed) of @Model.Count done</span>
+                <i class="icon-chevron-down ht-chevron" aria-hidden="true"></i>
+            </span>
+        </summary>
         <div class="ht-card-body">
             @foreach (var task in Model)
             {
@@ -30,5 +33,5 @@
                 </div>
             }
         </div>
-    </section>
+    </details>
 }

@@ -15,6 +15,24 @@
     </div>
 </div>
 
+@if (ViewData["CalorieTarget"] is int calorieTarget && calorieTarget > 0)
+{
+    var eatenToday = ViewData["CaloriesToday"] as int? ?? 0;
+    <link rel="stylesheet" href="~/css/workout-checklist.css" asp-append-version="true" />
+    <section class="ht-card mb-3">
+        <div class="ht-card-body">
+            <div class="d-flex justify-content-between flex-wrap gap-2">
+                <strong>Calories today</strong>
+                <span class="text-muted">Assigned <strong>@calorieTarget.ToString("N0") kcal</strong> &middot; Taken <strong>@eatenToday.ToString("N0") kcal</strong></span>
+            </div>
+            <progress class="workout-checklist-progress" value="@Math.Min(eatenToday, calorieTarget)" max="@calorieTarget" aria-label="Calories taken today">@(eatenToday * 100 / calorieTarget)%</progress>
+            <div class="small mt-2">
+                @if (eatenToday <= calorieTarget) { <span>@((calorieTarget - eatenToday).ToString("N0")) kcal left for today.</span> }
+                else { <span>@((eatenToday - calorieTarget).ToString("N0")) kcal over today's target.</span> }
+            </div>
+        </div>
+    </section>
+}
 @if (ViewData["PlannedToday"] is List<ClientTaskViewModel> plannedToday) { <partial name="_PlannedToday" model="plannedToday" /> }
 <partial name="_JournalFilters" model="@((JournalFilterViewModel)ViewData["JournalFilter"]!)" />
 @if (Model.Any())

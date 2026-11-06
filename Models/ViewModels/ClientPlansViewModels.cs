@@ -26,22 +26,32 @@ public class ClientPlansViewModel
 public class ClientWorkoutPlanViewModel
 {
     public WorkoutPlan Plan { get; set; } = null!;
+    public List<TrainerFeedback> Feedback { get; set; } = new();
     public DateTime Today { get; set; }
-    public HashSet<int> CompletedItemIds { get; set; } = new();
-    public HashSet<int> JournalItemIds { get; set; } = new();
+    public HashSet<(int ItemId, DateTime Date)> CompletedPairs { get; set; } = new();
+    public HashSet<(int ItemId, DateTime Date)> JournalPairs { get; set; } = new();
     public DateTime? SelectedDate { get; set; }
     public DateTime DisplayDate => (SelectedDate ?? Today).Date;
     public DateTime WeekStart => DisplayDate.AddDays(-((int)DisplayDate.DayOfWeek + 6) % 7);
-    public DateTime ScheduledDate(WorkoutPlanItem item) => item.DayOfWeek.HasValue
-        ? WeekStart.AddDays(((int)item.DayOfWeek.Value + 6) % 7) : DisplayDate;
-    public bool IsInPlanDates(WorkoutPlanItem item) => ScheduledDate(item) >= Plan.StartDate.Date
-        && (!Plan.EndDate.HasValue || ScheduledDate(item) <= Plan.EndDate.Value.Date);
+    public IEnumerable<DateTime> WeekDays => Enumerable.Range(0, 7).Select(offset => WeekStart.AddDays(offset));
+    public bool IsInPlan(DateTime day) => day.Date >= Plan.StartDate.Date && (!Plan.EndDate.HasValue || day.Date <= Plan.EndDate.Value.Date);
+
+    // Exercises scheduled on a day: those set for that weekday, plus the every-day ones.
+    public List<WorkoutPlanItem> ItemsOn(DateTime day) => !IsInPlan(day)
+        ? new List<WorkoutPlanItem>()
+        : Plan.Items.Where(i => !i.DayOfWeek.HasValue || i.DayOfWeek == day.DayOfWeek).OrderBy(i => i.Id).ToList();
+
+    public bool IsCompleted(WorkoutPlanItem item, DateTime day) => CompletedPairs.Contains((item.Id, day.Date));
+    public bool IsJournal(WorkoutPlanItem item, DateTime day) => JournalPairs.Contains((item.Id, day.Date));
 }
 
 public class ClientDietPlanViewModel
 {
     public DietPlan Plan { get; set; } = null!;
+    public List<TrainerFeedback> Feedback { get; set; } = new();
     public DateTime Today { get; set; }
     public HashSet<int> LoggedTodayMealIds { get; set; } = new();
     public int CaloriesToday { get; set; }
+    public Dictionary<int, int> LoggedCaloriesToday { get; set; } = new();
+    public Dictionary<DateTime, int> CaloriesByDate { get; set; } = new();
 }

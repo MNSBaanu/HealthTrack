@@ -748,6 +748,33 @@ a:hover {
   font-weight: 600;
 }
 
+.ht-collapsible > summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.ht-collapsible > summary::-webkit-details-marker {
+  display: none;
+}
+
+.ht-collapsible > summary:focus-visible {
+  outline: 2px solid var(--ht-saffron);
+  outline-offset: -2px;
+  border-radius: var(--ht-radius-lg);
+}
+
+.ht-collapsible > summary .ht-chevron {
+  transition: transform 0.15s ease;
+}
+
+.ht-collapsible:not([open]) > summary {
+  border-bottom: 0;
+}
+
+.ht-collapsible:not([open]) > summary .ht-chevron {
+  transform: rotate(-90deg);
+}
+
 .ht-card-body {
   padding: 1.4rem;
 }

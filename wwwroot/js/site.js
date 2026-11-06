@@ -301,3 +301,9 @@ document.querySelectorAll('form.ht-filter, form[data-autofilter], form[data-jour
         }
     });
 })();
+
+(() => {
+    document.querySelectorAll('.ht-tabs [data-bs-toggle="dropdown"]').forEach(toggle => {
+        new bootstrap.Dropdown(toggle, { popperConfig: { strategy: 'fixed' } });
+    });
+})();

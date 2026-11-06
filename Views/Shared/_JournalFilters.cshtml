@@ -14,7 +14,6 @@
         </select></div>
     }
     <a asp-action="Index" class="btn btn-line">Clear</a>
-    <p class="small text-muted mb-0 w-100">Filters apply automatically.</p>
     <div asp-validation-summary="All" class="text-danger w-100" role="alert"></div>
     @if (Model.HasFilters) { <p class="small text-muted mb-0 w-100">Totals below reflect the filtered records.</p> }
 </form>

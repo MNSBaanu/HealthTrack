@@ -5,6 +5,7 @@ namespace HealthTrack.Models.ViewModels
         public List<ClientTaskViewModel> TodayTasks { get; set; } = new();
         public DateTime PlanToday { get; set; }
         public Client Client { get; set; } = null!;
+        public TrainerRequest? PendingTrainerRequest { get; set; }
         public HealthMetric? LatestMetric { get; set; }
         public double? WeightChangeKg { get; set; }
         public double? StartingWeightKg { get; set; }

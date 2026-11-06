@@ -121,10 +121,13 @@ public class TrainerScheduleService : ITrainerScheduleService
                 Status = appt.Status,
                 Notes = appt.Notes,
                 RequestedAtLocal = _time.ToLocal(appt.RequestedAtUtc),
-                ClientMayReschedule = request?.Status == RescheduleRequestStatus.Accepted && isUpcomingApproved
+                ClientMayReschedule = request?.Status == RescheduleRequestStatus.Accepted && isUpcomingApproved,
+                Rating = appt.RatingHidden ? null : appt.Rating,
+                RatingComment = appt.RatingHidden ? null : appt.RatingComment
             };
 
-            if (appt.Status == AppointmentStatus.Pending)
+            // Requests whose time has passed can no longer be approved, so they move to the past list.
+            if (appt.Status == AppointmentStatus.Pending && appt.Slot.StartUtc > nowUtc)
             {
                 pending.Add(item);
             }

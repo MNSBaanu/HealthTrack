@@ -255,6 +255,32 @@ namespace HealthTrack.Controllers
                 _time.ToLocal(a.StartUtc), a.Status, _time.ToLocal(a.RequestedAtUtc))).ToList());
         }
 
+        // Approves a pending appointment with a healthcare professional, since no trainer is there to approve it.
+        [HttpPost]
+        public async Task<IActionResult> ApproveAppointment(int id)
+        {
+            var appointment = await Context.Appointments.AsNoTracking().Include(a => a.Slot).ThenInclude(s => s.Provider)
+                .SingleOrDefaultAsync(a => a.Id == id && a.Slot.Provider.Kind == ConsultationProviderKind.HealthcareProfessional);
+            if (appointment == null) return NotFound();
+            if (appointment.Slot.StartUtc <= _clock.GetUtcNow().UtcDateTime)
+            {
+                TempData["Error"] = "This appointment time has already passed.";
+                return RedirectToAction(nameof(Appointments));
+            }
+            var approved = await Context.Appointments.Where(a => a.Id == id && a.Status == AppointmentStatus.Pending)
+                .ExecuteUpdateAsync(s => s.SetProperty(a => a.Status, AppointmentStatus.Approved));
+            if (approved == 0)
+            {
+                TempData["Error"] = "This appointment was just changed by someone else. Refresh and try again.";
+                return RedirectToAction(nameof(Appointments));
+            }
+            var when = $"{_time.ToLocal(appointment.Slot.StartUtc):ddd, d MMM yyyy HH:mm}";
+            await _notificationService.SendAsync(appointment.ClientId,
+                $"Your appointment with {appointment.Slot.Provider.Name} on {when} was approved.", NotificationType.Appointment);
+            TempData["Success"] = "Appointment approved. The client has been notified.";
+            return RedirectToAction(nameof(Appointments));
+        }
+
         // Cancels an appointment on behalf of the system and notifies the client.
         [HttpPost]
         public async Task<IActionResult> CancelAppointment(int id)
@@ -581,6 +607,12 @@ namespace HealthTrack.Controllers
 
             _logger.LogInformation("Admin {AdminId} {Action} user {UserId}", CurrentUserId, isLocked ? "unlocked" : "locked", id);
             TempData["Success"] = $"{user.Name} has been {(isLocked ? "unlocked" : "locked")}.";
+            if (!isLocked && user is Trainer)
+            {
+                var assigned = await Context.ClientTrainerAssignments.CountAsync(a => a.TrainerId == id);
+                if (assigned > 0)
+                    TempData["Error"] = $"{assigned} {(assigned == 1 ? "client is" : "clients are")} still assigned to {user.Name}. Reassign them on the Assignments page.";
+            }
             return RedirectToAction(nameof(Users));
         }
 
@@ -790,7 +822,30 @@ namespace HealthTrack.Controllers
             var result = await UserManager.SetLockoutEnabledAsync(user, true);
             if (result.Succeeded) result = await UserManager.SetLockoutEndDateAsync(user, lockAccount ? DateTimeOffset.MaxValue : null);
             if (result.Succeeded) result = await UserManager.UpdateSecurityStampAsync(user);
-            if (result.Succeeded) await operation.CommitAsync();
+            if (!result.Succeeded) return result;
+
+            // A locked trainer can't be booked, and their unanswered requests are cancelled so clients can book someone else.
+            var cancelled = new List<Appointment>();
+            if (user is Trainer && await Context.ConsultationProviders.SingleOrDefaultAsync(p => p.PersonId == user.Id) is { } provider)
+            {
+                provider.IsActive = !lockAccount;
+                if (lockAccount)
+                {
+                    cancelled = await Context.Appointments.Include(a => a.Slot)
+                        .Where(a => a.Slot.ProviderId == provider.Id && a.Status == AppointmentStatus.Pending).ToListAsync();
+                    foreach (var appointment in cancelled) appointment.Status = AppointmentStatus.Cancelled;
+                }
+                await Context.SaveChangesAsync();
+            }
+            await operation.CommitAsync();
+
+            var now = _clock.GetUtcNow().UtcDateTime;
+            foreach (var appointment in cancelled.Where(a => a.Slot.StartUtc > now))
+            {
+                await _notificationService.SendAsync(appointment.ClientId,
+                    $"Your consultation request with {user.Name} on {_time.ToLocal(appointment.Slot.StartUtc):ddd, d MMM yyyy HH:mm} was cancelled because the trainer is unavailable. Please book another time.",
+                    NotificationType.Appointment);
+            }
             return result;
         }
 
@@ -800,6 +855,11 @@ namespace HealthTrack.Controllers
             if (user is Trainer && await Context.ClientTrainerAssignments.AnyAsync(a => a.TrainerId == id))
             {
                 return "Reassign or remove this Trainer's Client assignments before deleting the account.";
+            }
+            if (user is Trainer && (await Context.WorkoutPlans.AnyAsync(p => p.TrainerId == id) || await Context.DietPlans.AnyAsync(p => p.TrainerId == id)
+                || await Context.TrainerFeedbacks.AnyAsync(f => f.TrainerId == id) || await Context.WeeklyCheckIns.AnyAsync(c => c.TrainerId == id)))
+            {
+                return "This Trainer has plans, feedback or check-ins on record. Lock the account instead of deleting it.";
             }
             await using var transaction = await AtomicOperation.BeginAsync(Context);
             if (user is Trainer)
@@ -815,6 +875,8 @@ namespace HealthTrack.Controllers
                     Context.ConsultationProviders.Remove(provider);
                 }
                 Context.TrainerAssignmentHistories.RemoveRange(Context.TrainerAssignmentHistories.Where(h => h.TrainerId == id));
+                foreach (var request in await Context.TrainerRequests.Where(r => r.PreferredTrainerId == id).ToListAsync())
+                    request.PreferredTrainerId = null;
                 await Context.SaveChangesAsync();
             }
             IdentityResult result;
@@ -857,8 +919,12 @@ namespace HealthTrack.Controllers
                     row.EndedAtUtc = now;
                 }
                 Context.TrainerAssignmentHistories.Add(new TrainerAssignmentHistory { ClientId = client.Id, TrainerId = trainer.Id, AssignedAtUtc = now });
+                await TrainerRequestWorkflow.FulfillAsync(Context, client.Id, now);
             }
+            await using var operation = await AtomicOperation.BeginAsync(Context);
             await Context.SaveChangesAsync();
+            foreach (var client in changed) await TrainerHandover.MoveClientAsync(Context, client.Id, trainer.Id);
+            await operation.CommitAsync();
 
             foreach (var client in changed)
             {

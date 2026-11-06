@@ -28,8 +28,33 @@ public class AssignmentsController(HealthTrackDbContext context, UserManager<Per
         return View(new AssignmentListViewModel
         {
             Clients = await query.OrderBy(c => c.ClientName).ToListAsync(),
+            Requests = await PendingRequests().ToListAsync(),
             Search = search, UnassignedOnly = unassignedOnly
         });
+    }
+
+    // Closes a waiting trainer request without assigning anyone and tells the client.
+    [HttpPost]
+    public async Task<IActionResult> Decline(DeclineTrainerRequestForm form)
+    {
+        if (!ModelState.IsValid) return BadRequest();
+        var request = await Context.TrainerRequests
+            .SingleOrDefaultAsync(r => r.Id == form.Id && r.Status == TrainerRequestStatus.Pending);
+        if (request == null)
+        {
+            TempData["Error"] = "That request was already handled.";
+            return RedirectToAction(nameof(Index));
+        }
+        var message = string.IsNullOrWhiteSpace(form.Message) ? null : form.Message.Trim();
+        request.Status = TrainerRequestStatus.Declined;
+        request.ResolvedAtUtc = clock.GetUtcNow().UtcDateTime;
+        request.AdminResponse = message;
+        await Context.SaveChangesAsync();
+        await notifications.SendAsync(request.ClientId,
+            message == null ? "Your trainer request was declined." : $"Your trainer request was declined: {message}",
+            NotificationType.General);
+        TempData["Success"] = "Trainer request declined.";
+        return RedirectToAction(nameof(Index));
     }
 
     // Shows the trainer picker and assignment history for a client.
@@ -85,15 +110,21 @@ public class AssignmentsController(HealthTrackDbContext context, UserManager<Per
         {
             ClientId = client.Id, TrainerId = trainer.Id, AssignedAtUtc = now
         });
-        try { await Context.SaveChangesAsync(); }
-        catch (DbUpdateConcurrencyException) { return Changed(form.ClientId); }
-        catch (DbUpdateException ex) when (ex.InnerException is SqlException { Number: 2601 or 2627 or 547 })
-        { return Changed(form.ClientId); }
+        await TrainerRequestWorkflow.FulfillAsync(Context, client.Id, now);
+        await using (var operation = await AtomicOperation.BeginAsync(Context))
+        {
+            try { await Context.SaveChangesAsync(); }
+            catch (DbUpdateConcurrencyException) { return Changed(form.ClientId); }
+            catch (DbUpdateException ex) when (ex.InnerException is SqlException { Number: 2601 or 2627 or 547 })
+            { return Changed(form.ClientId); }
+            await TrainerHandover.MoveClientAsync(Context, client.Id, trainer.Id);
+            await operation.CommitAsync();
+        }
         await notifications.SendAsync(client.Id, $"{trainer.Name} is now your Trainer.", NotificationType.General);
         await notifications.SendAsync(trainer.Id, $"{client.Name} has been assigned to you.", NotificationType.General);
         if (oldTrainerId != null)
             await notifications.SendAsync(oldTrainerId, $"{client.Name} is no longer assigned to you.", NotificationType.General);
-        TempData["Success"] = "Trainer assignment saved. Existing plans and appointments are unchanged.";
+        TempData["Success"] = "Trainer assignment saved. The client's plans moved to the new Trainer; appointments are unchanged.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -108,8 +139,13 @@ public class AssignmentsController(HealthTrackDbContext context, UserManager<Per
         Context.Entry(assignment).Property(a => a.RowVersion).OriginalValue = Convert.FromBase64String(form.RowVersion);
         Context.ClientTrainerAssignments.Remove(assignment);
         await CloseHistory(assignment.ClientId, clock.GetUtcNow().UtcDateTime);
-        try { await Context.SaveChangesAsync(); }
-        catch (DbUpdateConcurrencyException) { return Changed(form.ClientId); }
+        await using (var operation = await AtomicOperation.BeginAsync(Context))
+        {
+            try { await Context.SaveChangesAsync(); }
+            catch (DbUpdateConcurrencyException) { return Changed(form.ClientId); }
+            await TrainerHandover.MoveClientAsync(Context, assignment.ClientId, null);
+            await operation.CommitAsync();
+        }
         await notifications.SendAsync(assignment.ClientId, $"{assignment.Trainer.Name} is no longer your Trainer.", NotificationType.General);
         await notifications.SendAsync(assignment.TrainerId, $"{assignment.Client.Name} is no longer assigned to you.", NotificationType.General);
         TempData["Success"] = "Trainer assignment removed. Existing plans and appointments are unchanged.";
@@ -137,6 +173,18 @@ public class AssignmentsController(HealthTrackDbContext context, UserManager<Per
         catch (FormatException) { return false; }
     }
 
+    private IQueryable<TrainerRequestRowViewModel> PendingRequests() =>
+        Context.TrainerRequests.AsNoTracking().Where(r => r.Status == TrainerRequestStatus.Pending)
+            .OrderBy(r => r.CreatedAtUtc)
+            .Select(r => new TrainerRequestRowViewModel
+            {
+                Id = r.Id, ClientId = r.ClientId, ClientName = r.Client.Name,
+                CurrentTrainerName = r.Client.TrainerAssignment == null ? null : r.Client.TrainerAssignment.Trainer.Name,
+                PreferredTrainerId = r.PreferredTrainerId,
+                PreferredTrainerName = r.PreferredTrainer == null ? null : r.PreferredTrainer.Name,
+                Note = r.Note, IsChange = r.IsChange, CreatedAtUtc = r.CreatedAtUtc
+            });
+
     private async Task<AssignmentEditViewModel> LoadPage(Client client, AssignmentForm form)
     {
         var now = clock.GetUtcNow();
@@ -149,13 +197,18 @@ public class AssignmentsController(HealthTrackDbContext context, UserManager<Per
         var leastBusy = trainers.OrderBy(t => t.Clients).ThenBy(t => t.Name).FirstOrDefault();
         var history = await Context.TrainerAssignmentHistories.AsNoTracking().Include(h => h.Trainer)
             .Where(h => h.ClientId == client.Id).OrderByDescending(h => h.AssignedAtUtc).ToListAsync();
+        var pending = await PendingRequests().Where(r => r.ClientId == client.Id).FirstOrDefaultAsync();
+        var selectedTrainerId = form.TrainerId;
+        if (pending?.PreferredTrainerId != null && trainers.Any(t => t.Id == pending.PreferredTrainerId)
+            && (string.IsNullOrEmpty(selectedTrainerId) || selectedTrainerId == client.TrainerAssignment?.TrainerId))
+            selectedTrainerId = pending.PreferredTrainerId;
         return new AssignmentEditViewModel
         {
             ClientId = client.Id, ClientName = client.Name, ClientEmail = client.Email ?? string.Empty,
-            CurrentTrainerName = client.TrainerAssignment?.Trainer.Name,
+            CurrentTrainerName = client.TrainerAssignment?.Trainer.Name, PendingRequest = pending,
             Trainers = trainers.Select(t => new SelectListItem { Value = t.Id, Text = $"{t.Name} ({t.Email}) · {t.Clients} {(t.Clients == 1 ? "client" : "clients")}" }).ToList(),
             SuggestedTrainerName = leastBusy == null ? null : $"{leastBusy.Name} ({leastBusy.Clients} {(leastBusy.Clients == 1 ? "client" : "clients")})",
-            TrainerId = form.TrainerId, RowVersion = form.RowVersion, History = history
+            TrainerId = selectedTrainerId, RowVersion = form.RowVersion, History = history
         };
     }
 }

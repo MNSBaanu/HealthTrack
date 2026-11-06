@@ -331,6 +331,7 @@
                                     <th>Client</th>
                                     <th>Date</th>
                                     <th>Status</th>
+                                    <th>Client rating</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -344,9 +345,27 @@
                                             {
                                                 <span class="ht-pill danger">Cancelled</span>
                                             }
+                                            else if (appt.Status == AppointmentStatus.Pending)
+                                            {
+                                                <span class="ht-pill">Not approved</span>
+                                            }
                                             else
                                             {
                                                 <span class="ht-pill success">Completed</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (appt.Rating is int rating)
+                                            {
+                                                <span>@rating/5</span>
+                                                @if (!string.IsNullOrWhiteSpace(appt.RatingComment))
+                                                {
+                                                    <div class="small text-muted">@appt.RatingComment</div>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span class="small text-muted">Not rated</span>
                                             }
                                         </td>
                                     </tr>

@@ -74,6 +74,8 @@ namespace HealthTrack.Controllers
             var model = new ClientDashboardViewModel
             {
                 Client = client,
+                PendingTrainerRequest = await Context.TrainerRequests.AsNoTracking()
+                    .FirstOrDefaultAsync(r => r.ClientId == clientId && r.Status == TrainerRequestStatus.Pending),
                 PlanToday = planToday,
                 TodayTasks = todayTasks,
                 DietTargetKcal = dietTarget,

@@ -876,6 +876,54 @@ namespace HealthTrack.Migrations
                     b.ToTable("TrainerFeedbacks");
                 });
 
+            modelBuilder.Entity("HealthTrack.Models.TrainerRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AdminResponse")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("ClientId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsChange")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PreferredTrainerId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("ResolvedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClientId")
+                        .IsUnique()
+                        .HasFilter("[Status] = 0");
+
+                    b.HasIndex("PreferredTrainerId");
+
+                    b.HasIndex("Status", "CreatedAtUtc");
+
+                    b.ToTable("TrainerRequests");
+                });
+
             modelBuilder.Entity("HealthTrack.Models.WeeklyCheckIn", b =>
                 {
                     b.Property<int>("Id")
@@ -1482,6 +1530,24 @@ namespace HealthTrack.Migrations
                     b.Navigation("Client");
 
                     b.Navigation("Trainer");
+                });
+
+            modelBuilder.Entity("HealthTrack.Models.TrainerRequest", b =>
+                {
+                    b.HasOne("HealthTrack.Models.Client", "Client")
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("HealthTrack.Models.Trainer", "PreferredTrainer")
+                        .WithMany()
+                        .HasForeignKey("PreferredTrainerId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("Client");
+
+                    b.Navigation("PreferredTrainer");
                 });
 
             modelBuilder.Entity("HealthTrack.Models.WeeklyCheckIn", b =>

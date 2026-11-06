@@ -40,6 +40,7 @@ namespace HealthTrack.Models.Data
         public DbSet<WeeklyCheckIn> WeeklyCheckIns { get; set; }
         public DbSet<LoginHistory> LoginHistories { get; set; }
         public DbSet<TrainerAssignmentHistory> TrainerAssignmentHistories { get; set; }
+        public DbSet<TrainerRequest> TrainerRequests { get; set; }
         public DbSet<SystemSettings> SystemSettings { get; set; }
         public DbSet<ChatFaq> ChatFaqs { get; set; }
 
@@ -73,6 +74,14 @@ namespace HealthTrack.Models.Data
             builder.Entity<ClientTrainerAssignment>().HasOne(a => a.Trainer).WithMany(t => t.ClientAssignments)
                 .HasForeignKey(a => a.TrainerId).OnDelete(DeleteBehavior.Restrict);
             builder.Entity<ClientTrainerAssignment>().Property(a => a.RowVersion).IsRowVersion();
+
+            builder.Entity<TrainerRequest>().Property(r => r.Note).HasConversion(encrypted).HasColumnType("nvarchar(max)");
+            builder.Entity<TrainerRequest>().HasOne(r => r.Client).WithMany()
+                .HasForeignKey(r => r.ClientId).OnDelete(DeleteBehavior.Cascade);
+            builder.Entity<TrainerRequest>().HasOne(r => r.PreferredTrainer).WithMany()
+                .HasForeignKey(r => r.PreferredTrainerId).OnDelete(DeleteBehavior.NoAction);
+            builder.Entity<TrainerRequest>().HasIndex(r => r.ClientId).IsUnique().HasFilter("[Status] = 0");
+            builder.Entity<TrainerRequest>().HasIndex(r => new { r.Status, r.CreatedAtUtc });
 
             builder.Entity<ConsultationProvider>().HasOne(p => p.Person).WithMany()
                 .HasForeignKey(p => p.PersonId).OnDelete(DeleteBehavior.Restrict);

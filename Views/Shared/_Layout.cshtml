@@ -13,6 +13,9 @@
         var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
         string Tab(string controller, params string[] actions) =>
             currentController == controller && (actions.Length == 0 || Array.IndexOf(actions, currentAction) >= 0) ? "ht-tab active" : "ht-tab";
+        string TabGroup(params string[] controllers) =>
+            Array.IndexOf(controllers, currentController) >= 0 ? "ht-tab dropdown-toggle active" : "ht-tab dropdown-toggle";
+        string GroupItem(string controller) => currentController == controller ? "dropdown-item active" : "dropdown-item";
     }
     <header class="ht-masthead">
         <div class="container-xl ht-masthead-inner">
@@ -24,13 +27,23 @@
                     @if (isClient)
                     {
                         <a class="@Tab("Client", "Index")" asp-controller="Client" asp-action="Index"><i class="icon-layout-dashboard"></i>Overview</a>
-                        <a class="@Tab("ClientPlans")" asp-controller="ClientPlans" asp-action="Index"><i class="icon-calendar-range"></i>Plans</a>
+                        <div class="dropdown">
+                            <button type="button" class="@TabGroup("WorkoutLogs", "MealLogs", "HealthMetrics")" data-bs-toggle="dropdown" aria-expanded="false"><i class="icon-pen-line"></i>Log</button>
+                            <ul class="dropdown-menu">
+                                <li><a class="@GroupItem("WorkoutLogs")" asp-controller="WorkoutLogs" asp-action="Index"><i class="icon-zap me-2"></i>Workouts</a></li>
+                                <li><a class="@GroupItem("MealLogs")" asp-controller="MealLogs" asp-action="Index"><i class="icon-coffee me-2"></i>Meals</a></li>
+                                <li><a class="@GroupItem("HealthMetrics")" asp-controller="HealthMetrics" asp-action="Index"><i class="icon-ruler me-2"></i>Measurements</a></li>
+                            </ul>
+                        </div>
+                        <div class="dropdown">
+                            <button type="button" class="@TabGroup("ClientPlans", "ClientFeedback", "Appointments", "TrainerRequests")" data-bs-toggle="dropdown" aria-expanded="false"><i class="icon-message-square-text"></i>Coaching</button>
+                            <ul class="dropdown-menu">
+                                <li><a class="@GroupItem("ClientPlans")" asp-controller="ClientPlans" asp-action="Index"><i class="icon-calendar-range me-2"></i>Plans</a></li>
+                                <li><a class="@GroupItem("ClientFeedback")" asp-controller="ClientFeedback" asp-action="Index"><i class="icon-message-square-text me-2"></i>Feedback</a></li>
+                                <li><a class="@GroupItem("Appointments")" asp-controller="Appointments" asp-action="Index"><i class="icon-calendar-check me-2"></i>Appointments</a></li>
+                            </ul>
+                        </div>
                         <a class="@Tab("Client", "Progress")" asp-controller="Client" asp-action="Progress"><i class="icon-trending-up"></i>Progress</a>
-                        <a class="@Tab("HealthMetrics")" asp-controller="HealthMetrics" asp-action="Index"><i class="icon-ruler"></i>Metrics</a>
-                        <a class="@Tab("WorkoutLogs")" asp-controller="WorkoutLogs" asp-action="Index"><i class="icon-zap"></i>Workouts</a>
-                        <a class="@Tab("MealLogs")" asp-controller="MealLogs" asp-action="Index"><i class="icon-coffee"></i>Meals</a>
-                        <a class="@Tab("Appointments")" asp-controller="Appointments" asp-action="Index"><i class="icon-calendar-check"></i>Appointments</a>
-                        <a class="@Tab("ClientFeedback")" asp-controller="ClientFeedback" asp-action="Index"><i class="icon-message-square-text"></i>Feedback</a>
                     }
                     @if (isTrainer)
                     {

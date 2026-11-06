@@ -32,7 +32,9 @@ namespace HealthTrack.Models.ViewModels
         public string? FitnessGoal { get; set; }
 
         [Required]
-        [StringLength(100, MinimumLength = 8)]
+        [StringLength(100, MinimumLength = 8, ErrorMessage = "Password must be 8 to 100 characters.")]
+        [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).*$",
+            ErrorMessage = "Use an uppercase letter, a lowercase letter, a number and a symbol.")]
         [DataType(DataType.Password)]
         public string Password { get; set; } = string.Empty;
 
@@ -42,7 +44,7 @@ namespace HealthTrack.Models.ViewModels
         [Display(Name = "Confirm Password")]
         public string ConfirmPassword { get; set; } = string.Empty;
 
-        [Range(typeof(bool), "true", "true", ErrorMessage = "You must accept the privacy policy to create an account.")]
+        [MustBeTrue(ErrorMessage = "You must accept the privacy policy to create an account.")]
         [Display(Name = "Privacy policy")]
         public bool AcceptPrivacy { get; set; }
     }

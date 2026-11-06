@@ -875,6 +875,8 @@ namespace HealthTrack.Controllers
                     Context.ConsultationProviders.Remove(provider);
                 }
                 Context.TrainerAssignmentHistories.RemoveRange(Context.TrainerAssignmentHistories.Where(h => h.TrainerId == id));
+                foreach (var request in await Context.TrainerRequests.Where(r => r.PreferredTrainerId == id).ToListAsync())
+                    request.PreferredTrainerId = null;
                 await Context.SaveChangesAsync();
             }
             IdentityResult result;
@@ -917,6 +919,7 @@ namespace HealthTrack.Controllers
                     row.EndedAtUtc = now;
                 }
                 Context.TrainerAssignmentHistories.Add(new TrainerAssignmentHistory { ClientId = client.Id, TrainerId = trainer.Id, AssignedAtUtc = now });
+                await TrainerRequestWorkflow.FulfillAsync(Context, client.Id, now);
             }
             await using var operation = await AtomicOperation.BeginAsync(Context);
             await Context.SaveChangesAsync();

@@ -24,8 +24,19 @@
 
         </p>
         <p class="small text-muted mb-0">Trainer: <strong>@(Model.Client.TrainerAssignment?.Trainer.Name ?? "Not assigned yet")</strong></p>
+        @if (Model.PendingTrainerRequest is { } trainerRequest)
+        {
+            <form asp-controller="TrainerRequests" asp-action="Cancel" asp-route-id="@trainerRequest.Id" method="post" class="small text-muted mt-1">
+                @(trainerRequest.IsChange ? "Trainer change" : "Trainer") request sent, waiting for an administrator.
+                <button type="submit" class="btn btn-link btn-sm p-0 align-baseline">Cancel request</button>
+            </form>
+        }
     </div>
     <div class="ht-head-actions">
+        @if (Model.PendingTrainerRequest == null)
+        {
+            <a class="btn btn-line" asp-controller="TrainerRequests" asp-action="Create"><i class="icon-user-plus"></i>@(Model.Client.TrainerAssignment == null ? "Request a trainer" : "Request a different trainer")</a>
+        }
         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#todayTasksModal"><i class="icon-check"></i>Today's tasks</button>
     </div>
 </div>

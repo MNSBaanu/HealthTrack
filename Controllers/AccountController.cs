@@ -15,14 +15,17 @@ namespace HealthTrack.Controllers
         private readonly ILogger<AccountController> _logger;
         private readonly SignInManager<Person> _signInManager;
         private readonly TimeProvider _clock;
+        private readonly INotificationService _notifications;
 
         public AccountController(ILogger<AccountController> logger, HealthTrackDbContext context,
-            UserManager<Person> userManager, SignInManager<Person> signInManager, TimeProvider clock)
+            UserManager<Person> userManager, SignInManager<Person> signInManager, TimeProvider clock,
+            INotificationService notifications)
             : base(context, userManager)
         {
             _logger = logger;
             _signInManager = signInManager;
             _clock = clock;
+            _notifications = notifications;
         }
 
         // Shows the client self-registration form.
@@ -74,6 +77,14 @@ namespace HealthTrack.Controllers
 
             await _signInManager.SignInAsync(client, isPersistent: false);
             _logger.LogInformation("New client registered: {Email}", client.Email);
+            try
+            {
+                await _notifications.SendToAllAdminsAsync($"{client.Name} just joined as a new client and has no trainer yet. Assign one on Trainer assignments.", NotificationType.General);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not notify administrators about new client {Email}", client.Email);
+            }
             return RedirectToAction("Index", client.DashboardController);
         }
 

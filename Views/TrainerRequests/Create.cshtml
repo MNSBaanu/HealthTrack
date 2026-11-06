@@ -1,0 +1,48 @@
+@model TrainerRequestPageViewModel
+@{
+    var isChange = Model.CurrentTrainerName != null;
+    ViewData["FormPage"] = "standard";
+    ViewData["Title"] = isChange ? "Request a different trainer" : "Request a trainer";
+}
+
+<a class="ht-back" asp-controller="Client" asp-action="Index"><i class="icon-arrow-left"></i>Overview</a>
+<div class="ht-head">
+    <div>
+        <h1 class="ht-title">@ViewData["Title"]</h1>
+        <p class="ht-lede">
+            @if (isChange) { <text>Your current trainer is @Model.CurrentTrainerName. An administrator will review your request.</text> }
+            else { <text>An administrator will match you with a trainer.</text> }
+        </p>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <section class="ht-card">
+            <div class="ht-card-body">
+                <form asp-action="Create" method="post" novalidate>
+                    <div asp-validation-summary="ModelOnly" class="ht-flash error" role="alert"></div>
+                    <div class="mb-3">
+                        <label asp-for="PreferredTrainerId" class="form-label"></label>
+                        <select asp-for="PreferredTrainerId" asp-items="Model.Trainers" class="form-select"><option value="">No preference</option></select>
+                        <div class="form-text">The administrator makes the final choice.</div>
+                        <span asp-validation-for="PreferredTrainerId" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Note" class="form-label">@(isChange ? "Why do you want a different trainer?" : "Anything the administrator should know? (optional)")</label>
+                        <textarea asp-for="Note" class="form-control" rows="4" maxlength="300"></textarea>
+                        <span asp-validation-for="Note" class="text-danger"></span>
+                    </div>
+                    <div class="ht-form-actions">
+                        <button type="submit" class="btn btn-primary">Send request</button>
+                        <a class="btn btn-line" asp-controller="Client" asp-action="Index">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

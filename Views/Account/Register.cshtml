@@ -7,7 +7,7 @@
 <div class="ht-auth-form wide">
     <h1>Open your journal.</h1>
 
-    <form asp-controller="Account" asp-action="Register" method="post" novalidate>
+    <form asp-controller="Account" asp-action="Register" method="post" novalidate data-submit-when-valid>
         <div asp-validation-summary="ModelOnly" class="ht-flash error" role="alert"></div>
 
         <fieldset class="ht-fieldset">
@@ -78,12 +78,13 @@
         </fieldset>
 
         <div class="form-check mt-3">
-            <input asp-for="AcceptPrivacy" class="form-check-input" />
+            <input asp-for="AcceptPrivacy" class="form-check-input" data-require-checked />
             <label asp-for="AcceptPrivacy" class="form-check-label">I have read and accept the <a asp-controller="Home" asp-action="Privacy" target="_blank" rel="noopener">privacy policy</a>.</label>
             <span asp-validation-for="AcceptPrivacy" class="text-danger d-block"></span>
         </div>
 
-        <button type="submit" class="btn btn-primary btn-lg w-100 mt-3">Create my account <i class="icon-arrow-right"></i></button>
+        <button type="submit" class="btn btn-primary btn-lg w-100 mt-3" disabled>Create my account <i class="icon-arrow-right"></i></button>
+        <p class="form-text text-center mt-2 mb-0" data-submit-hint>Fill in every required field correctly and accept the privacy policy to continue.</p>
     </form>
 
     <div class="ht-auth-switch">
@@ -93,4 +94,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/submit-when-valid.js" asp-append-version="true"></script>
 }

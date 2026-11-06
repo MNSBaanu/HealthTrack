@@ -496,21 +496,6 @@ a:hover {
   font-weight: 700;
 }
 
-button.ht-tab {
-  border: 0;
-  background-color: transparent;
-  font-family: inherit;
-}
-
-.ht-tab.show:not(.active) {
-  color: var(--ht-on-ink);
-  background-color: var(--ht-ink-2);
-}
-
-.ht-tabs > .dropdown {
-  flex: 0 0 auto;
-}
-
 .ht-bell {
   position: relative;
   width: 2.5rem;

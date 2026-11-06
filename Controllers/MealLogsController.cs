@@ -39,7 +39,10 @@ namespace HealthTrack.Controllers
         {
             q = q?.Trim();
             if (!SetJournalFilters(from, to, q, mealType, meals: true)) return View(new List<MealLog>());
+            ViewData["PlannedToday"] = (await ClientTaskQueries.LoadAsync(Context, CurrentUserId, LocalToday))
+                .Where(t => t.Kind == "Meal").ToList();
             var logs = await Context.MealLogs
+                .Include(m => m.DietPlanMeal).ThenInclude(x => x!.DietPlan)
                 .Where(m => m.ClientId == CurrentUserId)
                 .Where(m => (!from.HasValue || m.LoggedAt.Date >= from.Value.Date)
                     && (!to.HasValue || m.LoggedAt.Date <= to.Value.Date)

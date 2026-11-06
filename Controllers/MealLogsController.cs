@@ -39,7 +39,17 @@ namespace HealthTrack.Controllers
         {
             q = q?.Trim();
             if (!SetJournalFilters(from, to, q, mealType, meals: true)) return View(new List<MealLog>());
+            var today = LocalToday;
+            ViewData["PlannedToday"] = (await ClientTaskQueries.LoadAsync(Context, CurrentUserId, today))
+                .Where(t => t.Kind == "Meal").ToList();
+            ViewData["CalorieTarget"] = await Context.DietPlans.AsNoTracking()
+                .Where(p => p.ClientId == CurrentUserId && p.IsActive && p.StartDate.Date <= today && (!p.EndDate.HasValue || p.EndDate.Value.Date >= today))
+                .OrderByDescending(p => p.StartDate).Select(p => (int?)p.DailyCalorieTarget).FirstOrDefaultAsync();
+            ViewData["CaloriesToday"] = await Context.MealLogs.AsNoTracking()
+                .Where(l => l.ClientId == CurrentUserId && l.LoggedAt >= today && l.LoggedAt < today.AddDays(1))
+                .SumAsync(l => l.Calories);
             var logs = await Context.MealLogs
+                .Include(m => m.DietPlanMeal).ThenInclude(x => x!.DietPlan)
                 .Where(m => m.ClientId == CurrentUserId)
                 .Where(m => (!from.HasValue || m.LoggedAt.Date >= from.Value.Date)
                     && (!to.HasValue || m.LoggedAt.Date <= to.Value.Date)

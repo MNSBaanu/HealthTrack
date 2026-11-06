@@ -13,6 +13,7 @@
         var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
         string Tab(string controller, params string[] actions) =>
             currentController == controller && (actions.Length == 0 || Array.IndexOf(actions, currentAction) >= 0) ? "ht-tab active" : "ht-tab";
+        string TabIf(bool active) => active ? "ht-tab active" : "ht-tab";
     }
     <header class="ht-masthead">
         <div class="container-xl ht-masthead-inner">
@@ -24,13 +25,11 @@
                     @if (isClient)
                     {
                         <a class="@Tab("Client", "Index")" asp-controller="Client" asp-action="Index"><i class="icon-layout-dashboard"></i>Overview</a>
-                        <a class="@Tab("ClientPlans")" asp-controller="ClientPlans" asp-action="Index"><i class="icon-calendar-range"></i>Plans</a>
-                        <a class="@Tab("Client", "Progress")" asp-controller="Client" asp-action="Progress"><i class="icon-trending-up"></i>Progress</a>
-                        <a class="@Tab("HealthMetrics")" asp-controller="HealthMetrics" asp-action="Index"><i class="icon-ruler"></i>Metrics</a>
                         <a class="@Tab("WorkoutLogs")" asp-controller="WorkoutLogs" asp-action="Index"><i class="icon-zap"></i>Workouts</a>
                         <a class="@Tab("MealLogs")" asp-controller="MealLogs" asp-action="Index"><i class="icon-coffee"></i>Meals</a>
+                        <a class="@TabIf(currentController is "ClientPlans" or "ClientFeedback" or "TrainerRequests")" asp-controller="ClientPlans" asp-action="Index"><i class="icon-calendar-range"></i>Plans</a>
                         <a class="@Tab("Appointments")" asp-controller="Appointments" asp-action="Index"><i class="icon-calendar-check"></i>Appointments</a>
-                        <a class="@Tab("ClientFeedback")" asp-controller="ClientFeedback" asp-action="Index"><i class="icon-message-square-text"></i>Feedback</a>
+                        <a class="@TabIf((currentController == "Client" && currentAction == "Progress") || currentController == "HealthMetrics")" asp-controller="Client" asp-action="Progress"><i class="icon-trending-up"></i>Progress</a>
                     }
                     @if (isTrainer)
                     {

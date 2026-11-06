@@ -48,7 +48,7 @@ public class TrainerFeedbackService : ITrainerFeedbackService
     {
         var feedback = await _context.TrainerFeedbacks
             .Include(f => f.Client)
-            .FirstOrDefaultAsync(f => f.Id == feedbackId && f.TrainerId == trainerId && f.ClientReply == null);
+            .FirstOrDefaultAsync(f => f.Id == feedbackId && f.TrainerId == trainerId && f.ClientReply == null && _context.ClientTrainerAssignments.Any(a => a.TrainerId == trainerId && a.ClientId == f.ClientId));
 
         if (feedback == null) return null;
 
@@ -66,24 +66,20 @@ public class TrainerFeedbackService : ITrainerFeedbackService
     // Saves changes to feedback.
     public async Task<bool> UpdateFeedbackAsync(string trainerId, int feedbackId, TrainerFeedbackFormViewModel model)
     {
-        var feedback = await _context.TrainerFeedbacks
-            .FirstOrDefaultAsync(f => f.Id == feedbackId && f.TrainerId == trainerId && f.ClientReply == null);
-
-        if (feedback == null) return false;
-
-        feedback.Title = model.Title.Trim();
-        feedback.Comments = model.Comments.Trim();
-        feedback.Category = model.Category;
-
-        await _context.SaveChangesAsync();
-        return true;
+        // The reply check is part of the update, so an edit can't land after the client has already replied.
+        var title = model.Title.Trim();
+        var comments = model.Comments.Trim();
+        return await _context.TrainerFeedbacks
+            .Where(f => f.Id == feedbackId && f.TrainerId == trainerId && f.ClientReply == null && _context.ClientTrainerAssignments.Any(a => a.TrainerId == trainerId && a.ClientId == f.ClientId))
+            .ExecuteUpdateAsync(s => s.SetProperty(f => f.Title, title).SetProperty(f => f.Comments, comments)
+                .SetProperty(f => f.Category, model.Category)) == 1;
     }
 
     // Deletes feedback.
     public async Task<bool> DeleteFeedbackAsync(string trainerId, int feedbackId)
     {
         var feedback = await _context.TrainerFeedbacks
-            .FirstOrDefaultAsync(f => f.Id == feedbackId && f.TrainerId == trainerId);
+            .FirstOrDefaultAsync(f => f.Id == feedbackId && f.TrainerId == trainerId && _context.ClientTrainerAssignments.Any(a => a.TrainerId == trainerId && a.ClientId == f.ClientId));
 
         if (feedback == null) return false;
 

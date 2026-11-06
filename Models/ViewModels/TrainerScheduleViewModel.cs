@@ -42,6 +42,8 @@ public class TrainerAppointmentItemViewModel
     public string? Notes { get; set; }
     public DateTime RequestedAtLocal { get; set; }
     public bool ClientMayReschedule { get; set; }
+    public int? Rating { get; set; }
+    public string? RatingComment { get; set; }
 }
 
 public class TrainerRescheduleRequestViewModel

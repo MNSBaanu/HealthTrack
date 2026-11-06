@@ -1,6 +1,34 @@
 @model AssignmentListViewModel
 @{ ViewData["Title"] = "Trainer assignments"; }
 <div class="ht-head"><div><h1 class="ht-title">Trainer assignments</h1><p class="ht-lede">Manage the current Trainer for each Client.</p></div></div>
+@if (Model.Requests.Any())
+{
+    <section class="ht-card mb-3">
+        <div class="ht-card-head"><h2>Trainer requests (@Model.Requests.Count)</h2></div>
+        <div class="table-responsive"><table class="ht-table">
+            <thead><tr><th scope="col">Client</th><th scope="col">Request</th><th scope="col">Preferred</th><th scope="col">Note</th><th scope="col">Actions</th></tr></thead>
+            <tbody>
+                @foreach (var request in Model.Requests)
+                {
+                    <tr>
+                        <td><strong>@request.ClientName</strong><div class="small text-muted">@request.CreatedAtUtc.ToString("dd MMM yyyy HH:mm")</div></td>
+                        <td>@(request.IsChange ? $"Change from {request.CurrentTrainerName ?? "current trainer"}" : "New trainer")</td>
+                        <td>@(request.PreferredTrainerName ?? "No preference")</td>
+                        <td>@(string.IsNullOrWhiteSpace(request.Note) ? "-" : request.Note)</td>
+                        <td>
+                            <a asp-action="Edit" asp-route-id="@request.ClientId">Assign</a>
+                            <form asp-action="Decline" method="post" class="d-inline-flex gap-1 ms-2 align-middle">
+                                <input type="hidden" name="Id" value="@request.Id" />
+                                <input name="Message" class="form-control form-control-sm" maxlength="300" placeholder="Reason (optional)" aria-label="Reason for declining @request.ClientName's request" />
+                                <button type="submit" class="btn btn-line btn-sm">Decline</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table></div>
+    </section>
+}
 <form asp-action="Index" method="get" class="ht-card ht-filter mb-3">
     <input name="search" value="@Model.Search" type="search" class="form-control w-auto flex-grow-1" placeholder="Search Client or Trainer" aria-label="Search assignments" />
     <label class="text-nowrap mb-0"><input name="unassignedOnly" type="checkbox" value="true" checked="@Model.UnassignedOnly" /> Unassigned only</label>

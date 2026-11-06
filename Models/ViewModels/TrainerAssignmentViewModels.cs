@@ -16,6 +16,7 @@ public class AssignmentRowViewModel
 public class AssignmentListViewModel
 {
     public List<AssignmentRowViewModel> Clients { get; set; } = new();
+    public List<TrainerRequestRowViewModel> Requests { get; set; } = new();
     public string? Search { get; set; }
     public bool UnassignedOnly { get; set; }
 }
@@ -37,6 +38,7 @@ public class AssignmentEditViewModel : AssignmentForm
     public string ClientEmail { get; set; } = string.Empty;
     public string? CurrentTrainerName { get; set; }
     public string? SuggestedTrainerName { get; set; }
+    public TrainerRequestRowViewModel? PendingRequest { get; set; }
     public List<SelectListItem> Trainers { get; set; } = new();
     public List<TrainerAssignmentHistory> History { get; set; } = new();
 }

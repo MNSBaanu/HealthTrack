@@ -95,6 +95,22 @@ namespace HealthTrack.Services
             if (!scheduledFor.HasValue) await EmailAsync(trainerIds, message);
         }
 
+        // Creates a notification for every administrator.
+        public async Task SendToAllAdminsAsync(string message, NotificationType type)
+        {
+            var adminIds = await _context.Admins.Select(a => a.Id).ToListAsync();
+            var text = message.Length > 300 ? message[..300] : message;
+            _context.Notifications.AddRange(adminIds.Select(id => new Notification
+            {
+                PersonId = id,
+                Message = text,
+                Type = type,
+                CreatedAt = LocalNow
+            }));
+            await _context.SaveChangesAsync();
+            await EmailAsync(adminIds, text);
+        }
+
         private void AddScheduledEmail(Notification notification, DateTime? scheduledFor)
         {
             if (scheduledFor.HasValue)

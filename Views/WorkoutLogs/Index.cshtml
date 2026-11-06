@@ -14,6 +14,7 @@
     </div>
 </div>
 
+@if (ViewData["PlannedToday"] is List<ClientTaskViewModel> plannedToday) { <partial name="_PlannedToday" model="plannedToday" /> }
 <partial name="_JournalFilters" model="@((JournalFilterViewModel)ViewData["JournalFilter"]!)" />
 @if (Model.Any())
 {
@@ -46,7 +47,7 @@
                 <li class="ht-entry with-actions">
                     <partial name="_DateBadge" model="workout.LoggedAt" />
                     <div>
-                        <div class="title">@workout.Activity</div>
+                        <div class="title">@workout.Activity@if (workout.WorkoutPlanItem?.WorkoutPlan is { } plan) { <span class="ht-pill ms-2">From plan: @plan.Title</span> }</div>
                         <div class="meta">@workout.LoggedAt.ToString("dddd, HH:mm") &middot; @workout.DurationMinutes min</div>
                     </div>
                     <div class="figure">@workout.CaloriesBurned.ToString("N0")<small>kcal</small></div>

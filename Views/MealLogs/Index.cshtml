@@ -15,6 +15,7 @@
     </div>
 </div>
 
+@if (ViewData["PlannedToday"] is List<ClientTaskViewModel> plannedToday) { <partial name="_PlannedToday" model="plannedToday" /> }
 <partial name="_JournalFilters" model="@((JournalFilterViewModel)ViewData["JournalFilter"]!)" />
 @if (Model.Any())
 {
@@ -60,7 +61,7 @@
                                 <span class="sub">@meal.LoggedAt.ToString("dddd, HH:mm")</span>
                             </td>
                             <td data-label="Meal"><partial name="_MealTypePill" model="meal.MealType" /></td>
-                            <td data-label="Food" class="text-muted">@(string.IsNullOrWhiteSpace(meal.FoodItems) ? "—" : meal.FoodItems)</td>
+                            <td data-label="Food" class="text-muted">@(string.IsNullOrWhiteSpace(meal.FoodItems) ? "—" : meal.FoodItems)@if (meal.DietPlanMeal?.DietPlan is { } plan) { <div><span class="ht-pill">From plan: @plan.Title</span></div> }</td>
                             <td data-label="Calories" class="num"><span>@meal.Calories.ToString("N0") <small>kcal</small></span></td>
                             <td data-label="Actions">
                                 <div class="ht-row-actions">

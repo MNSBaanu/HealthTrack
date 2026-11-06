@@ -1,0 +1,34 @@
+@model List<ClientTaskViewModel>
+@if (Model.Any())
+{
+    var isMeal = Model[0].Kind == "Meal";
+    <section class="ht-card mb-3">
+        <div class="ht-card-head">
+            <h2>Planned for today</h2>
+            <span class="small text-muted">@Model.Count(t => t.Completed) of @Model.Count done</span>
+        </div>
+        <div class="ht-card-body">
+            @foreach (var task in Model)
+            {
+                <div class="d-flex justify-content-between align-items-center gap-3 py-2 border-bottom">
+                    <div>
+                        <div class="fw-semibold">@task.Title</div>
+                        <div class="small text-muted">@task.Detail</div>
+                    </div>
+                    @if (task.Completed)
+                    {
+                        <span class="ht-pill">Done</span>
+                    }
+                    else if (isMeal)
+                    {
+                        <a class="btn btn-line btn-sm text-nowrap" asp-controller="MealLogs" asp-action="Create" asp-route-planMealId="@task.Id">Log this meal</a>
+                    }
+                    else
+                    {
+                        <a class="btn btn-line btn-sm text-nowrap" asp-controller="WorkoutLogs" asp-action="Create" asp-route-planItemId="@task.Id">Log this workout</a>
+                    }
+                </div>
+            }
+        </div>
+    </section>
+}

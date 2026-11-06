@@ -48,6 +48,9 @@ public class AppointmentsController : ClientBaseController
             .SingleOrDefaultAsync(a => a.Id == id && a.ClientId == CurrentUserId);
         if (record == null) return NotFound();
         ViewData["TimeZoneLabel"] = _time.Label;
+        ViewData["Rating"] = record.Rating;
+        ViewData["RatingComment"] = record.RatingComment;
+        ViewData["CanRate"] = CanRate(record);
         return View(await ToDetailsViewModel(record));
     }
 

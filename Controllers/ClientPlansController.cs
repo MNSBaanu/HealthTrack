@@ -50,7 +50,11 @@ public class ClientPlansController : ClientBaseController
         var today = Today;
         // Leave room for week navigation and avoid DateTime boundary overflow.
         if (date.HasValue && (date.Value.Year < 1900 || date.Value.Year > 9998)) return BadRequest();
-        var model = new ClientWorkoutPlanViewModel { Plan = plan, Today = today, SelectedDate = date };
+        var model = new ClientWorkoutPlanViewModel
+        {
+            Plan = plan, Today = today, SelectedDate = date,
+            Feedback = await PlanFeedbackAsync(plan.TrainerId, FeedbackCategory.Workout, plan.StartDate, plan.EndDate)
+        };
         var weekEnd = model.WeekStart.AddDays(7);
         var logs = await Context.WorkoutLogs.AsNoTracking()
             .Where(l => l.ClientId == CurrentUserId && l.WorkoutPlanItemId != null && itemIds.Contains(l.WorkoutPlanItemId.Value)
@@ -60,13 +64,8 @@ public class ClientPlansController : ClientBaseController
             .Where(c => c.ClientId == CurrentUserId && itemIds.Contains(c.WorkoutPlanItemId)
                 && c.CompletedOn >= model.WeekStart && c.CompletedOn < weekEnd)
             .Select(c => new { ItemId = c.WorkoutPlanItemId, Date = c.CompletedOn }).ToListAsync();
-        foreach (var item in plan.Items.Where(model.IsInPlanDates))
-        {
-            var scheduledDate = model.ScheduledDate(item);
-            if (logs.Any(l => l.ItemId == item.Id && l.Date == scheduledDate)) model.JournalItemIds.Add(item.Id);
-            if (model.JournalItemIds.Contains(item.Id) || checks.Any(c => c.ItemId == item.Id && c.Date == scheduledDate))
-                model.CompletedItemIds.Add(item.Id);
-        }
+        model.JournalPairs = logs.Select(l => (l.ItemId, l.Date)).ToHashSet();
+        model.CompletedPairs = model.JournalPairs.Concat(checks.Select(c => (c.ItemId, c.Date.Date))).ToHashSet();
         return View(model);
     }
 
@@ -123,7 +122,33 @@ public class ClientPlansController : ClientBaseController
         var loggedToday = await Context.MealLogs.AsNoTracking()
             .Where(l => l.ClientId == CurrentUserId && l.DietPlanMealId != null && mealIds.Contains(l.DietPlanMealId.Value)
                 && l.LoggedAt >= today && l.LoggedAt < today.AddDays(1))
-            .Select(l => l.DietPlanMealId!.Value).ToListAsync();
-        return View(new ClientDietPlanViewModel { Plan = plan, Today = today, LoggedTodayMealIds = loggedToday.ToHashSet() });
+            .Select(l => new { MealId = l.DietPlanMealId!.Value, l.Calories }).ToListAsync();
+        var recent = await Context.MealLogs.AsNoTracking()
+            .Where(l => l.ClientId == CurrentUserId && l.LoggedAt >= today.AddDays(-6) && l.LoggedAt < today.AddDays(1))
+            .Select(l => new { l.LoggedAt, l.Calories }).ToListAsync();
+        var caloriesByDate = recent.GroupBy(l => l.LoggedAt.Date).ToDictionary(g => g.Key, g => g.Sum(l => l.Calories));
+        return View(new ClientDietPlanViewModel
+        {
+            Plan = plan, Today = today,
+            LoggedTodayMealIds = loggedToday.Select(l => l.MealId).ToHashSet(),
+            LoggedCaloriesToday = loggedToday.GroupBy(l => l.MealId).ToDictionary(g => g.Key, g => g.Sum(l => l.Calories)),
+            CaloriesToday = caloriesByDate.GetValueOrDefault(today),
+            CaloriesByDate = caloriesByDate,
+            Feedback = await PlanFeedbackAsync(plan.TrainerId, FeedbackCategory.Nutrition, plan.StartDate, plan.EndDate)
+        });
+    }
+
+    // Feedback from the plan's trainer on the same topic that was given while the plan was running.
+    private async Task<List<TrainerFeedback>> PlanFeedbackAsync(string trainerId, FeedbackCategory category, DateTime start, DateTime? end)
+    {
+        var from = start.Date;
+        var query = Context.TrainerFeedbacks.AsNoTracking()
+            .Where(f => f.ClientId == CurrentUserId && f.TrainerId == trainerId && f.Category == category && f.CreatedAtUtc >= from);
+        if (end.HasValue)
+        {
+            var until = end.Value.Date.AddDays(1);
+            query = query.Where(f => f.CreatedAtUtc < until);
+        }
+        return await query.OrderByDescending(f => f.CreatedAtUtc).Take(5).ToListAsync();
     }
 }

@@ -1,43 +1,178 @@
 @model ClientDietPlanViewModel
-@{ var plan = Model.Plan; ViewData["Title"] = "Diet plan"; }
+@{
+    var plan = Model.Plan;
+    ViewData["Title"] = "Diet plan";
+    var planStatus = ClientPlanStatus.Get(plan.IsActive, plan.StartDate, plan.EndDate, Model.Today);
+    var macros = new[]
+    {
+        plan.TargetProteinGrams.HasValue ? $"Protein {plan.TargetProteinGrams} g" : null,
+        plan.TargetCarbsGrams.HasValue ? $"Carbs {plan.TargetCarbsGrams} g" : null,
+        plan.TargetFatGrams.HasValue ? $"Fat {plan.TargetFatGrams} g" : null
+    }.Where(m => m != null).ToList();
+    var target = plan.DailyCalorieTarget;
+    var taken = Model.CaloriesToday;
+    var assignedToday = plan.Meals.Where(m => !m.Day.HasValue || m.Day == Model.Today.DayOfWeek).Sum(m => m.ApproximateCalories ?? 0);
+    var history = Enumerable.Range(0, 7).Select(i => Model.Today.AddDays(-i))
+        .Where(d => d >= plan.StartDate.Date && (!plan.EndDate.HasValue || d <= plan.EndDate.Value.Date)).ToList();
+    var loggedDays = history.Where(d => Model.CaloriesByDate.ContainsKey(d)).ToList();
+}
+<link rel="stylesheet" href="~/css/workout-checklist.css" asp-append-version="true" />
 <div class="ht-head"><div><div class="ht-overline">Assigned diet plan</div><h1 class="ht-title">@plan.Title</h1></div><a class="btn btn-line" asp-action="Index">All assigned plans</a></div>
-<section class="ht-card mb-3"><div class="ht-card-body">
-    <span class="ht-pill">@ClientPlanStatus.Get(plan.IsActive, plan.StartDate, plan.EndDate, Model.Today)</span>
-    <p class="mt-3">Assigned Trainer: <strong>@(plan.Trainer?.Name ?? "Trainer unavailable")</strong></p>
-    <p>Active dates: @plan.StartDate.ToString("d MMM yyyy") – @(plan.EndDate?.ToString("d MMM yyyy") ?? "No end date")</p>
-    <p>Daily calorie target: <strong>@plan.DailyCalorieTarget.ToString("N0") kcal</strong></p>
-    <div class="d-flex flex-wrap gap-3 mb-3">
-        @if (plan.TargetProteinGrams.HasValue) { <span>Protein: @plan.TargetProteinGrams g</span> }
-        @if (plan.TargetCarbsGrams.HasValue) { <span>Carbohydrates: @plan.TargetCarbsGrams g</span> }
-        @if (plan.TargetFatGrams.HasValue) { <span>Fat: @plan.TargetFatGrams g</span> }
+<div class="ht-ledger plan-ledger">
+    <div><div class="ht-overline">Status</div><div class="value"><span class="ht-pill">@planStatus</span></div></div>
+    <div><div class="ht-overline">Trainer</div><div class="value text">@(plan.Trainer?.Name ?? "Unavailable")</div></div>
+    <div>
+        <div class="ht-overline">Dates</div>
+        <div class="value text">@plan.StartDate.ToString("d MMM") – @(plan.EndDate?.ToString("d MMM yyyy") ?? "open")</div>
+        <div class="hint">@ClientPlanStatus.Timing(plan.StartDate, plan.EndDate, Model.Today)</div>
     </div>
-    @if (!string.IsNullOrWhiteSpace(plan.Description)) { <p style="white-space: pre-line">@plan.Description</p> }
-</div></section>
+    <div>
+        <div class="ht-overline">Daily target</div>
+        <div class="value">@plan.DailyCalorieTarget.ToString("N0")<small>kcal</small></div>
+        <div class="hint">Today: @Model.CaloriesToday.ToString("N0") of @plan.DailyCalorieTarget.ToString("N0") kcal</div>
+    </div>
+    @if (macros.Any())
+    {
+        <div>
+            <div class="ht-overline">Macro targets</div>
+            <div class="macros">@foreach (var macro in macros) { <div>@macro</div> }</div>
+        </div>
+    }
+</div>
+@if (!string.IsNullOrWhiteSpace(plan.Description))
+{
+    <section class="ht-card mb-3"><div class="ht-card-body"><div class="ht-overline mb-1">About this plan</div><p class="mb-0" style="white-space: pre-line">@plan.Description</p></div></section>
+}
+<partial name="_PlanFeedback" model="Model.Feedback" />
+<section class="ht-card mb-3">
+    <div class="ht-card-body">
+        <div class="d-flex justify-content-between flex-wrap gap-2">
+            <strong>Calories today</strong>
+            <span class="text-muted">Assigned <strong>@target.ToString("N0") kcal</strong> &middot; Taken <strong>@taken.ToString("N0") kcal</strong></span>
+        </div>
+        <progress class="workout-checklist-progress" value="@Math.Min(taken, Math.Max(target, 1))" max="@Math.Max(target, 1)" aria-label="Calories taken today">@(target == 0 ? 0 : taken * 100 / target)%</progress>
+        <div class="small mt-2">
+            @if (taken <= target) { <span>@((target - taken).ToString("N0")) kcal left for today.</span> }
+            else { <span>@((taken - target).ToString("N0")) kcal over today's target.</span> }
+            @if (assignedToday > 0) { <span class="text-muted"> The meals planned for today add up to @assignedToday.ToString("N0") kcal.</span> }
+        </div>
+    </div>
+</section>
+@if (history.Any())
+{
+    <details class="ht-past-plans mb-3">
+        <summary>
+            <span><strong>Calories: last 7 days</strong><span class="d-block small text-muted">Assigned compared with taken each day. Select to show or hide.</span></span>
+            <i class="icon-chevron-down" aria-hidden="true"></i>
+        </summary>
+        <div class="ht-card">
+        <div class="table-responsive">
+            <table class="ht-table" data-nofilter>
+                <thead><tr><th>Date</th><th class="text-end">Assigned</th><th class="text-end">Taken</th><th class="text-end">Difference</th></tr></thead>
+                <tbody>
+                    @foreach (var day in history)
+                    {
+                        var dayTaken = Model.CaloriesByDate.GetValueOrDefault(day);
+                        var diff = dayTaken - target;
+                        <tr>
+                            <td>@day.ToString("ddd, d MMM") @if (day == Model.Today) { <span class="ht-pill ms-1">Today</span> }</td>
+                            <td class="text-end">@target.ToString("N0") kcal</td>
+                            <td class="text-end">@(dayTaken == 0 ? "–" : dayTaken.ToString("N0") + " kcal")</td>
+                            <td class="text-end">@(dayTaken == 0 ? "No meals logged" : diff > 0 ? $"{diff:N0} kcal over" : diff < 0 ? $"{-diff:N0} kcal under" : "On target")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        @if (loggedDays.Any())
+        {
+            <p class="small text-muted px-3 py-2 mb-0">Average on days with meals logged: @(((int)Math.Round(loggedDays.Average(d => Model.CaloriesByDate[d]), MidpointRounding.AwayFromZero)).ToString("N0")) kcal against @target.ToString("N0") kcal assigned.</p>
+        }
+        </div>
+    </details>
+}
+
+@{
+    var weekdays = Enumerable.Range(1, 7).Select(i => (DayOfWeek)(i % 7)).ToList();
+    var daily = weekdays.Select(d => (Day: d, Meals: plan.Meals.Where(m => !m.Day.HasValue || m.Day == d)
+        .OrderBy(m => m.Time ?? TimeOnly.MaxValue).ThenBy(m => m.MealType).ThenBy(m => m.Id).ToList())).ToList();
+}
 <section class="ht-card"><div class="ht-card-head"><h2>Meals and daily schedule</h2></div><div class="ht-card-body">
     @if (!plan.Meals.Any()) { <p class="text-muted">No meal items have been added to this plan yet.</p> }
-    @foreach (var meal in plan.Meals.OrderBy(m => m.Day.HasValue).ThenBy(m => ((int?)m.Day + 6) % 7).ThenBy(m => m.Time ?? TimeOnly.MaxValue).ThenBy(m => m.MealType).ThenBy(m => m.Id))
+    else
     {
-        <article class="border-bottom py-3">
-            <div class="d-flex justify-content-between align-items-start gap-2">
-                <h3 class="h5">@meal.MealType</h3>
-                @if (Model.LoggedTodayMealIds.Contains(meal.Id))
+        <div class="workout-week-days" aria-label="Weekly meal schedule">
+            @foreach (var day in daily)
+            {
+                var summary = day.Meals.Count == 0 ? "No meals" : day.Meals.Count == 1 ? "1 meal" : $"{day.Meals.Count} meals";
+                if (day.Meals.Count > 0)
                 {
-                    <span class="ht-pill"><i class="icon-check"></i>Logged today</span>
-                }
-                else if (meal.CanLogOn(Model.Today))
-                {
-                    <a class="btn btn-line btn-sm" asp-controller="MealLogs" asp-action="Create" asp-route-planMealId="@meal.Id"><i class="icon-check"></i>Log this meal</a>
+                    <a class="workout-week-day @(day.Day == Model.Today.DayOfWeek ? "is-today" : "")" href="#day-@((int)day.Day)" aria-pressed="true" aria-label="@day.Day: show only this day">
+                        <strong>@day.Day.ToString()[..3]</strong><span class="small">@summary</span>
+                    </a>
                 }
                 else
                 {
-                    <span class="small text-muted">@(ClientPlanStatus.Get(plan.IsActive, plan.StartDate, plan.EndDate, Model.Today) != "Active" ? "Plan is not active today" : $"Scheduled for {meal.Day}")</span>
+                    <div class="workout-week-day @(day.Day == Model.Today.DayOfWeek ? "is-today" : "")">
+                        <strong>@day.Day.ToString()[..3]</strong><span class="small">@summary</span>
+                    </div>
                 }
-            </div>
-            <p class="small text-muted mb-2">@(meal.Day?.ToString() ?? "Every day") · @(meal.Time?.ToString("HH:mm") ?? "Any time")</p>
-            <p style="white-space: pre-line">@meal.FoodRecommendations</p>
-            @if (meal.ApproximateCalories.HasValue) { <p class="small">Estimated calories: @meal.ApproximateCalories kcal</p> }
-            @if (!string.IsNullOrWhiteSpace(meal.Notes)) { <p class="text-muted mb-0" style="white-space: pre-line">@meal.Notes</p> }
-        </article>
+            }
+        </div>
+        <div class="plan-legend small text-muted"><span>Select a day to see only that day. Select it again to see every day.</span></div>
+        <div class="d-flex justify-content-end mt-3">
+            <button type="button" class="btn btn-line btn-sm" data-toggle-all-days aria-pressed="true"><i class="icon-list-checks"></i><span data-toggle-all-label>Deselect all days</span></button>
+        </div>
+        <p class="text-muted mt-3" data-no-days hidden>Select a day above to see its meals.</p>
+    }
+    @foreach (var day in daily.Where(d => d.Meals.Count > 0))
+    {
+        var dayKcal = day.Meals.Sum(m => m.ApproximateCalories ?? 0);
+        var isToday = day.Day == Model.Today.DayOfWeek;
+        <details class="workout-checklist-day" id="day-@((int)day.Day)" open>
+            <summary class="plan-day-summary">
+                <h3 class="h5 mb-0">@day.Day @if (isToday) { <span class="ht-pill ms-2">Today</span> }</h3>
+                <span class="d-flex align-items-center gap-2">
+                    <span class="small text-muted">@day.Meals.Count @(day.Meals.Count == 1 ? "meal" : "meals")@(dayKcal > 0 ? $" · {dayKcal:N0} kcal assigned" : "")</span>
+                    <i class="icon-chevron-down plan-day-chevron" aria-hidden="true"></i>
+                </span>
+            </summary>
+            @foreach (var meal in day.Meals)
+            {
+                var logged = isToday && Model.LoggedTodayMealIds.Contains(meal.Id);
+                <article class="workout-checklist-item @(logged ? "is-complete" : "")">
+                    <div class="workout-task-content">
+                        <div class="d-flex justify-content-between align-items-start gap-2">
+                            <h4 class="h6 mb-1">@meal.MealType <span class="small text-muted fw-normal">· @(meal.Time?.ToString("HH:mm") ?? "Any time")@(meal.Day.HasValue ? "" : " · Every day")</span></h4>
+                            @if (logged)
+                            {
+                                <span class="ht-pill"><i class="icon-check"></i>Logged today</span>
+                            }
+                            else if (isToday && meal.CanLogOn(Model.Today))
+                            {
+                                <a class="btn btn-line btn-sm text-nowrap" asp-controller="MealLogs" asp-action="Create" asp-route-planMealId="@meal.Id"><i class="icon-plus"></i>Log this meal</a>
+                            }
+                            else if (isToday && planStatus != "Active")
+                            {
+                                <span class="small text-muted">Plan is not active today</span>
+                            }
+                        </div>
+                        <p class="mb-2" style="white-space: pre-line">@meal.FoodRecommendations</p>
+                        @if (meal.ApproximateCalories.HasValue || (isToday && Model.LoggedCaloriesToday.ContainsKey(meal.Id)))
+                        {
+                            <p class="small mb-1">
+                                @if (meal.ApproximateCalories.HasValue) { <span>Assigned: <strong>@meal.ApproximateCalories kcal</strong></span> }
+                                @if (isToday && Model.LoggedCaloriesToday.TryGetValue(meal.Id, out var takenKcal)) { <span class="@(meal.ApproximateCalories.HasValue ? "ms-3" : "")">Taken today: <strong>@takenKcal.ToString("N0") kcal</strong></span> }
+                            </p>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(meal.Notes)) { <p class="small text-muted mb-0" style="white-space: pre-line">@meal.Notes</p> }
+                    </div>
+                </article>
+            }
+        </details>
     }
 </div></section>
 <p class="small mt-3"><a asp-controller="MealLogs" asp-action="Index">Meal diary</a></p>
+@section Scripts {
+    <script src="~/js/plan-sections.js" asp-append-version="true"></script>
+}

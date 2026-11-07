@@ -108,14 +108,17 @@ Alternatively, open `HealthTrack.sln` in Visual Studio, select the root HealthTr
 
 ## First login
 
-The checked-in development configuration seeds this Admin account on a new database:
+No Admin account is seeded until you set a password. Add this to `appsettings.Local.json` (git-ignored) before the first run:
 
-| Field | Development value |
-| --- | --- |
-| Email | `admin@healthtrack.com` |
-| Password | `CHANGE-ME` |
+```json
+"AdminAccount": {
+  "Name": "System Administrator",
+  "Email": "admin@example.com",
+  "Password": "choose-a-strong-password"
+}
+```
 
-Override the `AdminAccount` name, email, and password in `appsettings.Local.json` before initializing a shared database. The seeder only creates the account when its configured email does not already exist; changing the configuration does not reset an existing account's password.
+The seeder only creates the account when its configured email does not already exist; changing the configuration does not reset an existing account's password. All sample data is fictional and for demonstration only.
 
 For a Client account, use the registration page and provide the initial health measurements. Passwords must meet the Identity password rules, including a minimum of eight characters.
 

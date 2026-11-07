@@ -42,7 +42,3 @@ Desktop.ini
 
 # Per-developer settings (SQL Server connection)
 appsettings.Local.json
-
-# Database dumps and backups (contain real data)
-Database/*.bak
-Database/*.sql

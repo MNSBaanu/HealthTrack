@@ -102,7 +102,7 @@ dotnet run --project HealthTrack.csproj --launch-profile HealthTrack
 
 The launch profile opens **https://localhost:56364**. An HTTP endpoint is also configured at `http://localhost:56365`, with HTTPS redirection enabled.
 
-On startup, the application automatically applies the checked-in EF Core migrations and seeds the Client/Admin roles and initial Admin account. A separate database-update command is not required for normal local startup.
+On startup, the application automatically applies the checked-in EF Core migrations and seeds the Client/Admin roles and initial Admin account. A separate database-update command is not required for normal local startup. To get the schema as a SQL script instead, run `dotnet ef migrations script --idempotent -o HealthTrackDB.sql`.
 
 Alternatively, open `HealthTrack.sln` in Visual Studio, select the root HealthTrack project, and run the HealthTrack launch profile.
 
